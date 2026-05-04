@@ -1,0 +1,329 @@
+{
+  "抓取时间": "2026-05-02 16:36:34 CST",
+  "数据": [
+    {
+      "名称": "open-llm-leaderboard/open_llm_leaderboard",
+      "链接": "https://huggingface.co/spaces/open-llm-leaderboard/open_llm_leaderboard",
+      "点赞数": 13977,
+      "SDK": "docker",
+      "标签": [
+        "docker",
+        "leaderboard",
+        "modality:text",
+        "submission:automatic",
+        "test:public",
+        "language:english",
+        "eval:code",
+        "eval:math",
+        "region:us"
+      ],
+      "创建时间": "2023-04-17T11:40:06.000Z",
+      "中文说明": "榜单或评测类 Space，用于查看模型、任务或数据集的排名。"
+    },
+    {
+      "名称": "jbilcke-hf/ai-comic-factory",
+      "链接": "https://huggingface.co/spaces/jbilcke-hf/ai-comic-factory",
+      "点赞数": 11061,
+      "SDK": "docker",
+      "标签": [
+        "docker",
+        "region:us"
+      ],
+      "创建时间": "2023-08-25T14:46:47.000Z",
+      "中文说明": "图像生成、图像编辑或视觉创作相关 Space。"
+    },
+    {
+      "名称": "Kwai-Kolors/Kolors-Virtual-Try-On",
+      "链接": "https://huggingface.co/spaces/Kwai-Kolors/Kolors-Virtual-Try-On",
+      "点赞数": 10060,
+      "SDK": "gradio",
+      "标签": [
+        "gradio",
+        "region:us"
+      ],
+      "创建时间": "2024-08-07T09:42:50.000Z",
+      "中文说明": "图像生成、图像编辑或视觉创作相关 Space。"
+    },
+    {
+      "名称": "black-forest-labs/FLUX.1-dev",
+      "链接": "https://huggingface.co/spaces/black-forest-labs/FLUX.1-dev",
+      "点赞数": 9441,
+      "SDK": "gradio",
+      "标签": [
+        "gradio",
+        "region:us"
+      ],
+      "创建时间": "2024-08-01T14:14:02.000Z",
+      "中文说明": "图像生成、图像编辑或视觉创作相关 Space。"
+    },
+    {
+      "名称": "mteb/leaderboard",
+      "链接": "https://huggingface.co/spaces/mteb/leaderboard",
+      "点赞数": 7335,
+      "SDK": "docker",
+      "标签": [
+        "docker",
+        "leaderboard",
+        "region:us"
+      ],
+      "创建时间": "2022-09-29T11:29:23.000Z",
+      "中文说明": "榜单或评测类 Space，用于查看模型、任务或数据集的排名。"
+    },
+    {
+      "名称": "dalle-mini/dalle-mini",
+      "链接": "https://huggingface.co/spaces/dalle-mini/dalle-mini",
+      "点赞数": 5681,
+      "SDK": "static",
+      "标签": [
+        "static",
+        "region:us"
+      ],
+      "创建时间": "2022-04-07T00:55:48.000Z",
+      "中文说明": "Hugging Face 上的热门交互应用 Space。"
+    },
+    {
+      "名称": "AP123/IllusionDiffusion",
+      "链接": "https://huggingface.co/spaces/AP123/IllusionDiffusion",
+      "点赞数": 5401,
+      "SDK": "gradio",
+      "标签": [
+        "gradio",
+        "region:us"
+      ],
+      "创建时间": "2023-09-15T16:46:58.000Z",
+      "中文说明": "Hugging Face 上的热门交互应用 Space。"
+    },
+    {
+      "名称": "Wan-AI/Wan2.2-Animate",
+      "链接": "https://huggingface.co/spaces/Wan-AI/Wan2.2-Animate",
+      "点赞数": 5112,
+      "SDK": "gradio",
+      "标签": [
+        "gradio",
+        "region:us"
+      ],
+      "创建时间": "2025-09-18T07:05:32.000Z",
+      "中文说明": "Hugging Face 上的热门交互应用 Space。"
+    },
+    {
+      "名称": "facebook/MusicGen",
+      "链接": "https://huggingface.co/spaces/facebook/MusicGen",
+      "点赞数": 5068,
+      "SDK": "gradio",
+      "标签": [
+        "gradio",
+        "music generation",
+        "language models",
+        "LLMs",
+        "region:us"
+      ],
+      "创建时间": "2023-06-08T18:00:26.000Z",
+      "中文说明": "Hugging Face 上的热门交互应用 Space。"
+    },
+    {
+      "名称": "black-forest-labs/FLUX.1-schnell",
+      "链接": "https://huggingface.co/spaces/black-forest-labs/FLUX.1-schnell",
+      "点赞数": 5060,
+      "SDK": "gradio",
+      "标签": [
+        "gradio",
+        "region:us"
+      ],
+      "创建时间": "2024-08-01T09:32:41.000Z",
+      "中文说明": "图像生成、图像编辑或视觉创作相关 Space。"
+    },
+    {
+      "名称": "lmarena-ai/arena-leaderboard",
+      "链接": "https://huggingface.co/spaces/lmarena-ai/arena-leaderboard",
+      "点赞数": 4869,
+      "SDK": "static",
+      "标签": [
+        "static",
+        "leaderboard",
+        "region:us"
+      ],
+      "创建时间": "2023-05-20T09:26:19.000Z",
+      "中文说明": "榜单或评测类 Space，用于查看模型、任务或数据集的排名。"
+    },
+    {
+      "名称": "microsoft/TRELLIS",
+      "链接": "https://huggingface.co/spaces/microsoft/TRELLIS",
+      "点赞数": 4776,
+      "SDK": "gradio",
+      "标签": [
+        "gradio",
+        "region:us"
+      ],
+      "创建时间": "2024-12-02T16:21:14.000Z",
+      "中文说明": "Hugging Face 上的热门交互应用 Space。"
+    },
+    {
+      "名称": "KingNish/OpenGPT-4o",
+      "链接": "https://huggingface.co/spaces/KingNish/OpenGPT-4o",
+      "点赞数": 4311,
+      "SDK": "gradio",
+      "标签": [
+        "gradio",
+        "region:us"
+      ],
+      "创建时间": "2024-05-14T04:19:59.000Z",
+      "中文说明": "Hugging Face 上的热门交互应用 Space。"
+    },
+    {
+      "名称": "nanotron/ultrascale-playbook",
+      "链接": "https://huggingface.co/spaces/nanotron/ultrascale-playbook",
+      "点赞数": 3819,
+      "SDK": "static",
+      "标签": [
+        "static",
+        "region:us"
+      ],
+      "创建时间": "2024-06-18T17:12:28.000Z",
+      "中文说明": "Hugging Face 上的热门交互应用 Space。"
+    },
+    {
+      "名称": "KlingTeam/LivePortrait",
+      "链接": "https://huggingface.co/spaces/KlingTeam/LivePortrait",
+      "点赞数": 3741,
+      "SDK": "gradio",
+      "标签": [
+        "gradio",
+        "Multimodal",
+        "Motion control",
+        "Image-to-Video",
+        "Video-to-Video",
+        "language models",
+        "LLMs",
+        "region:us"
+      ],
+      "创建时间": "2024-07-05T16:35:24.000Z",
+      "中文说明": "Hugging Face 上的热门交互应用 Space。"
+    },
+    {
+      "名称": "InstantX/InstantID",
+      "链接": "https://huggingface.co/spaces/InstantX/InstantID",
+      "点赞数": 3598,
+      "SDK": "gradio",
+      "标签": [
+        "gradio",
+        "region:us"
+      ],
+      "创建时间": "2024-01-19T11:58:11.000Z",
+      "中文说明": "Hugging Face 上的热门交互应用 Space。"
+    },
+    {
+      "名称": "hexgrad/Kokoro-TTS",
+      "链接": "https://huggingface.co/spaces/hexgrad/Kokoro-TTS",
+      "点赞数": 3303,
+      "SDK": "gradio",
+      "标签": [
+        "gradio",
+        "region:us"
+      ],
+      "创建时间": "2024-11-02T08:32:25.000Z",
+      "中文说明": "Hugging Face 上的热门交互应用 Space。"
+    },
+    {
+      "名称": "tencent/Hunyuan3D-2",
+      "链接": "https://huggingface.co/spaces/tencent/Hunyuan3D-2",
+      "点赞数": 3261,
+      "SDK": "gradio",
+      "标签": [
+        "gradio",
+        "region:us"
+      ],
+      "创建时间": "2025-01-20T06:59:11.000Z",
+      "中文说明": "Hugging Face 上的热门交互应用 Space。"
+    },
+    {
+      "名称": "akhaliq/anycoder",
+      "链接": "https://huggingface.co/spaces/akhaliq/anycoder",
+      "点赞数": 3237,
+      "SDK": "docker",
+      "标签": [
+        "docker",
+        "region:us"
+      ],
+      "创建时间": "2024-11-17T01:04:34.000Z",
+      "中文说明": "Hugging Face 上的热门交互应用 Space。"
+    },
+    {
+      "名称": "HuggingFaceTB/smol-training-playbook",
+      "链接": "https://huggingface.co/spaces/HuggingFaceTB/smol-training-playbook",
+      "点赞数": 3138,
+      "SDK": "docker",
+      "标签": [
+        "docker",
+        "research-article-template",
+        "research paper",
+        "scientific paper",
+        "data visualization",
+        "region:us"
+      ],
+      "创建时间": "2025-09-12T15:07:42.000Z",
+      "中文说明": "Hugging Face 上的热门交互应用 Space。"
+    },
+    {
+      "名称": "mrfakename/Z-Image-Turbo",
+      "链接": "https://huggingface.co/spaces/mrfakename/Z-Image-Turbo",
+      "点赞数": 3071,
+      "SDK": "gradio",
+      "标签": [
+        "gradio",
+        "mcp-server",
+        "region:us"
+      ],
+      "创建时间": "2025-11-26T19:54:05.000Z",
+      "中文说明": "图像生成、图像编辑或视觉创作相关 Space。"
+    },
+    {
+      "名称": "mukaist/Midjourney",
+      "链接": "https://huggingface.co/spaces/mukaist/Midjourney",
+      "点赞数": 2976,
+      "SDK": "gradio",
+      "标签": [
+        "gradio",
+        "region:us"
+      ],
+      "创建时间": "2024-06-12T16:36:30.000Z",
+      "中文说明": "Hugging Face 上的热门交互应用 Space。"
+    },
+    {
+      "名称": "pharmapsychotic/CLIP-Interrogator",
+      "链接": "https://huggingface.co/spaces/pharmapsychotic/CLIP-Interrogator",
+      "点赞数": 2970,
+      "SDK": "gradio",
+      "标签": [
+        "gradio",
+        "region:us"
+      ],
+      "创建时间": "2022-09-26T00:07:52.000Z",
+      "中文说明": "Hugging Face 上的热门交互应用 Space。"
+    },
+    {
+      "名称": "zerogpu-aoti/wan2-2-fp8da-aoti-faster",
+      "链接": "https://huggingface.co/spaces/zerogpu-aoti/wan2-2-fp8da-aoti-faster",
+      "点赞数": 2960,
+      "SDK": "gradio",
+      "标签": [
+        "gradio",
+        "mcp-server",
+        "region:us"
+      ],
+      "创建时间": "2025-07-30T19:03:28.000Z",
+      "中文说明": "Hugging Face 上的热门交互应用 Space。"
+    },
+    {
+      "名称": "mrfakename/E2-F5-TTS",
+      "链接": "https://huggingface.co/spaces/mrfakename/E2-F5-TTS",
+      "点赞数": 2856,
+      "SDK": "gradio",
+      "标签": [
+        "gradio",
+        "region:us"
+      ],
+      "创建时间": "2024-03-08T18:02:07.000Z",
+      "中文说明": "Hugging Face 上的热门交互应用 Space。"
+    }
+  ]
+}

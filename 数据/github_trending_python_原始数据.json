@@ -1,0 +1,135 @@
+{
+  "抓取时间": "2026-05-02 16:36:34 CST",
+  "数据": [
+    {
+      "仓库": "TauricResearch/TradingAgents",
+      "链接": "https://github.com/TauricResearch/TradingAgents",
+      "简介": "TradingAgents: Multi-Agents LLM Financial Trading Framework",
+      "语言": "Python",
+      "星标数": 60485,
+      "Fork 数": 11660,
+      "今日新增星标": "2,112 stars today",
+      "中文说明": "多智能体金融交易框架，用大模型代理协作完成市场分析、决策和交易研究。"
+    },
+    {
+      "仓库": "soxoj/maigret",
+      "链接": "https://github.com/soxoj/maigret",
+      "简介": "🕵️‍♂️ Collect a dossier on a person by username from 3000+ sites",
+      "语言": "Python",
+      "星标数": 21977,
+      "Fork 数": 1549,
+      "今日新增星标": "535 stars today",
+      "中文说明": "根据用户名在大量网站中检索公开账号信息，适合做开源情报和身份线索整理。"
+    },
+    {
+      "仓库": "hugohe3/ppt-master",
+      "链接": "https://github.com/hugohe3/ppt-master",
+      "简介": "AI generates natively editable PPTX from any document — real PowerPoint shapes with native animations, not images · by Hugo He",
+      "语言": "Python",
+      "星标数": 10561,
+      "Fork 数": 1107,
+      "今日新增星标": "370 stars today",
+      "中文说明": "把文档自动生成可编辑的 PowerPoint 文件，输出是真正的 PPT 形状和动画。"
+    },
+    {
+      "仓库": "google-research/timesfm",
+      "链接": "https://github.com/google-research/timesfm",
+      "简介": "TimesFM (Time Series Foundation Model) is a pretrained time-series foundation model developed by Google Research for time-series forecasting.",
+      "语言": "Python",
+      "星标数": 19242,
+      "Fork 数": 1861,
+      "今日新增星标": "132 stars today",
+      "中文说明": "Google Research 的时间序列基础模型，用于预测和分析时间序列数据。"
+    },
+    {
+      "仓库": "NVlabs/GR00T-WholeBodyControl",
+      "链接": "https://github.com/NVlabs/GR00T-WholeBodyControl",
+      "简介": "Welcome to GR00T Whole-Body Control (WBC)! This is a unified platform for developing and deploying advanced humanoid controllers. This includes: Decoupled WBC models used in NVIDIA Isaac-Gr00t, Gr00t N1.5 and N1.6 and GEAR-SONIC",
+      "语言": "Python",
+      "星标数": 1798,
+      "Fork 数": 224,
+      "今日新增星标": "32 stars today",
+      "中文说明": "NVIDIA 人形机器人全身控制平台，用于开发和部署高级机器人控制器。"
+    },
+    {
+      "仓库": "AIDC-AI/Pixelle-Video",
+      "链接": "https://github.com/AIDC-AI/Pixelle-Video",
+      "简介": "🚀 AI 全自动短视频引擎 | AI Fully Automated Short Video Engine",
+      "语言": "Python",
+      "星标数": 8828,
+      "Fork 数": 1405,
+      "今日新增星标": "296 stars today",
+      "中文说明": "AI 自动短视频生成引擎，用于自动生成短视频内容。"
+    },
+    {
+      "仓库": "Lightricks/LTX-2",
+      "链接": "https://github.com/Lightricks/LTX-2",
+      "简介": "Official Python inference and LoRA trainer package for the LTX-2 audio–video generative model.",
+      "语言": "Python",
+      "星标数": 6257,
+      "Fork 数": 1003,
+      "今日新增星标": "30 stars today",
+      "中文说明": "LTX-2 音视频生成模型的 Python 推理和 LoRA 训练工具包。"
+    },
+    {
+      "仓库": "nikopueringer/CorridorKey",
+      "链接": "https://github.com/nikopueringer/CorridorKey",
+      "简介": "Perfect Green Screen Keys",
+      "语言": "Python",
+      "星标数": 12778,
+      "Fork 数": 757,
+      "今日新增星标": "215 stars today",
+      "中文说明": "绿幕抠像工具，面向视频制作中的精细背景分离。"
+    },
+    {
+      "仓库": "the-momentum/open-wearables",
+      "链接": "https://github.com/the-momentum/open-wearables",
+      "简介": "Self-hosted platform to unify wearable health data through one AI-ready API.",
+      "语言": "Python",
+      "星标数": 1514,
+      "Fork 数": 238,
+      "今日新增星标": "29 stars today",
+      "中文说明": "自托管可穿戴健康数据平台，把不同设备的数据统一成 AI 可用接口。"
+    },
+    {
+      "仓库": "public-apis/public-apis",
+      "链接": "https://github.com/public-apis/public-apis",
+      "简介": "A collective list of free APIs",
+      "语言": "Python",
+      "星标数": 430065,
+      "Fork 数": 46928,
+      "今日新增星标": "716 stars today",
+      "中文说明": "免费 API 资源清单，方便开发者查找可用的公开接口。"
+    },
+    {
+      "仓库": "Tencent/AngelSlim",
+      "链接": "https://github.com/Tencent/AngelSlim",
+      "简介": "Model compression toolkit engineered for enhanced usability, comprehensiveness, and efficiency.",
+      "语言": "Python",
+      "星标数": 763,
+      "Fork 数": 92,
+      "今日新增星标": "38 stars today",
+      "中文说明": "腾讯模型压缩工具包，面向模型压缩、加速和部署优化。"
+    },
+    {
+      "仓库": "microsoft/TRELLIS",
+      "链接": "https://github.com/microsoft/TRELLIS",
+      "简介": "Official repo for paper \"Structured 3D Latents for Scalable and Versatile 3D Generation\" (CVPR'25 Spotlight).",
+      "语言": "Python",
+      "星标数": 12408,
+      "Fork 数": 1176,
+      "今日新增星标": "19 stars today",
+      "中文说明": "结构化 3D 潜变量生成项目，用于可扩展的 3D 内容生成。"
+    },
+    {
+      "仓库": "github/awesome-copilot",
+      "链接": "https://github.com/github/awesome-copilot",
+      "简介": "Community-contributed instructions, agents, skills, and configurations to help you make the most of GitHub Copilot.",
+      "语言": "Python",
+      "星标数": 31943,
+      "Fork 数": 3866,
+      "今日新增星标": "116 stars today",
+      "中文说明": "GitHub Copilot 相关指令、代理、技能和配置集合。"
+    }
+  ]
+}

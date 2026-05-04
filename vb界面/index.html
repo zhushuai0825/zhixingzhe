@@ -1,0 +1,608 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>知行者 - 个人 AI 知识与行动助手</title>
+    <link rel="stylesheet" href="./styles.css" />
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="brand">
+          <div class="brand-mark">知</div>
+          <div>
+            <strong>知行者</strong>
+            <span>AI Knowledge OS</span>
+          </div>
+        </div>
+
+        <nav class="nav-list" aria-label="主导航">
+          <button class="nav-item is-active" data-view="dashboard">
+            <span class="nav-icon">⌂</span>
+            <span>工作台</span>
+          </button>
+          <button class="nav-item" data-view="knowledge">
+            <span class="nav-icon">▣</span>
+            <span>知识库</span>
+          </button>
+          <button class="nav-item" data-view="documents">
+            <span class="nav-icon">▤</span>
+            <span>文档</span>
+          </button>
+          <button class="nav-item" data-view="visualization">
+            <span class="nav-icon">◫</span>
+            <span>大屏</span>
+          </button>
+          <button class="nav-item" data-view="chat">
+            <span class="nav-icon">✦</span>
+            <span>AI 问答</span>
+          </button>
+          <button class="nav-item" data-view="tasks">
+            <span class="nav-icon">✓</span>
+            <span>任务</span>
+          </button>
+          <button class="nav-item" data-view="goals">
+            <span class="nav-icon">◎</span>
+            <span>目标</span>
+          </button>
+          <button class="nav-item" data-view="review">
+            <span class="nav-icon">◷</span>
+            <span>复盘</span>
+          </button>
+          <button class="nav-item" data-view="settings">
+            <span class="nav-icon">⚙</span>
+            <span>设置</span>
+          </button>
+        </nav>
+
+        <div class="sidebar-panel">
+          <span class="eyebrow">任务进度</span>
+          <div class="progress-ring" id="taskProgressRing" aria-label="任务完成率 0%">
+            <span id="taskProgressValue">0%</span>
+          </div>
+          <p id="taskProgressText">暂无真实任务数据。</p>
+        </div>
+      </aside>
+
+      <main class="main">
+        <header class="topbar">
+          <div class="search-wrap">
+            <span>⌕</span>
+            <input id="globalSearch" type="search" placeholder="搜索知识库、文档、任务..." />
+          </div>
+          <div class="topbar-actions">
+            <button class="icon-btn" id="quickUpload" title="上传文档">⇧</button>
+            <button class="icon-btn" id="quickAsk" title="快速提问">?</button>
+            <button class="primary-btn" id="createKbBtn">新建知识库</button>
+          </div>
+        </header>
+
+        <section class="view is-active" id="dashboard">
+          <div class="page-head">
+            <div>
+              <span class="eyebrow">Overview</span>
+              <h1>把资料变成知识，把知识变成行动</h1>
+            </div>
+            <div class="head-actions">
+              <button class="secondary-btn" data-view-link="chat">开始问答</button>
+              <button class="primary-btn" data-open-modal="uploadModal">上传资料</button>
+            </div>
+          </div>
+
+          <div class="metric-grid">
+            <article class="metric-card" data-metric-link="knowledge">
+              <span>知识库</span>
+              <strong id="metricKb">0</strong>
+              <small id="metricKbHint">来自数据库</small>
+            </article>
+            <article class="metric-card" data-metric-link="documents">
+              <span>文档</span>
+              <strong id="metricDocs">0</strong>
+              <small id="metricDocsHint">来自数据库</small>
+            </article>
+            <article class="metric-card" data-metric-link="chat">
+              <span>AI 问答</span>
+              <strong id="metricChats">0</strong>
+              <small id="metricChatsHint">来自数据库</small>
+            </article>
+            <article class="metric-card" data-metric-link="tasks">
+              <span>待办任务</span>
+              <strong id="metricTasks">0</strong>
+              <small id="metricTasksHint">来自数据库</small>
+            </article>
+          </div>
+
+          <div class="content-grid">
+            <section class="panel wide-panel">
+              <div class="panel-head">
+                <div>
+                  <h2>最近知识库</h2>
+                  <p>按最近访问排序</p>
+                </div>
+                <button class="text-btn" data-view-link="knowledge">查看全部</button>
+              </div>
+              <div class="kb-row-list" id="dashboardKbList"></div>
+            </section>
+
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <h2>今日任务</h2>
+                  <p>从知识和计划转化而来</p>
+                </div>
+                <button class="text-btn" data-view-link="tasks">管理</button>
+              </div>
+              <div class="task-stack" id="dashboardTasks"></div>
+            </section>
+
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <h2>学习目标</h2>
+                  <p>后端未实现</p>
+                </div>
+              </div>
+              <div class="goal-card compact">
+                <p class="empty-text">目标模块还没有真实数据表，暂不展示数据。</p>
+              </div>
+            </section>
+          </div>
+        </section>
+
+        <section class="view" id="visualization">
+          <div class="cockpit-scale-wrap">
+          <div class="cockpit" id="cockpitCanvas">
+            <header class="cockpit-top">
+              <div class="cockpit-title">知行者数据资产分析大屏</div>
+              <div class="cockpit-clock">
+                <strong id="screenTemperature">AI</strong>
+                <span id="screenClock">--</span>
+              </div>
+            </header>
+
+            <main class="cockpit-body">
+              <aside class="cockpit-side left">
+                <section class="cockpit-panel">
+                  <div class="cockpit-panel-title">GitHub 实时趋势</div>
+                  <div class="cockpit-subtabs" id="githubTrendTabs">
+                    <button data-trend-filter="github_all">全部</button>
+                    <button class="is-active" data-trend-filter="github_python">Python</button>
+                    <button data-trend-filter="github_all">开源项目</button>
+                  </div>
+                  <div class="cockpit-section-title">趋势热度</div>
+                  <div class="cockpit-chart" id="kbDocumentChart"></div>
+                  <div class="cockpit-section-title">热门项目</div>
+                  <div class="cockpit-list" id="recentQuestionList"></div>
+                </section>
+              </aside>
+
+              <section class="cockpit-center">
+                <div class="data-orbit">
+                  <div class="orbit-label">DATA</div>
+                  <div class="orbit-core">
+                    <strong id="screenTotal">0</strong>
+                    <span>当前文档总数</span>
+                  </div>
+                </div>
+                <div class="center-stats">
+                  <article><strong id="screenQuestions">0</strong><span>累计问题</span></article>
+                  <article><strong id="screenAnswers">0</strong><span>累计回答</span></article>
+                  <article><strong id="screenTasks">0</strong><span>任务数量</span></article>
+                </div>
+                <div class="center-keywords" id="answerWordCloud"></div>
+              </section>
+
+              <aside class="cockpit-side right">
+                <section class="cockpit-panel">
+                  <div class="cockpit-panel-title">Hugging Face</div>
+                  <div class="cockpit-subtabs" id="hfTrendTabs">
+                    <button data-trend-filter="hf_spaces">Spaces</button>
+                    <button class="is-active" data-trend-filter="hf_papers">论文</button>
+                    <button data-trend-filter="hf_papers">模型</button>
+                  </div>
+                  <div class="cockpit-section-title">来源构成</div>
+                  <div class="cockpit-chart small" id="taskStatusChart"></div>
+                  <div class="cockpit-section-title">热门论文</div>
+                  <div class="cockpit-rank" id="topCitedDocuments"></div>
+                </section>
+              </aside>
+            </main>
+
+            <footer class="cockpit-bottom">
+              <div class="cockpit-actions">
+                <button class="cockpit-action" id="refreshAnalyticsBtn">刷新实时</button>
+                <button class="cockpit-action" id="saveLiveTrendsBtn">拉取入库</button>
+                <button class="cockpit-action" data-view-link="chat">数据使用</button>
+              </div>
+              <div class="cockpit-live-note" id="screenDocumentList">实时数据将写入 github / hugging-face 两个知识库</div>
+            </footer>
+          </div>
+          </div>
+        </section>
+
+        <section class="view" id="trendExplain">
+          <div class="page-head">
+            <div>
+              <span class="eyebrow">MiniMax</span>
+              <h1 id="trendExplainTitle">趋势条目解读</h1>
+            </div>
+            <div class="head-actions">
+              <button type="button" class="secondary-btn" id="trendExplainBackBtn">返回大屏</button>
+              <button type="button" class="secondary-btn" id="trendExplainRetryBtn" hidden>重新生成</button>
+            </div>
+          </div>
+          <div class="trend-explain-layout panel">
+            <div class="trend-explain-meta" id="trendExplainMeta"></div>
+            <div class="trend-explain-body" id="trendExplainBody"></div>
+          </div>
+        </section>
+
+        <section class="view" id="knowledge">
+          <div class="page-head">
+            <div>
+              <span class="eyebrow">Knowledge Base</span>
+              <h1>知识库</h1>
+            </div>
+            <div class="head-actions">
+              <button class="secondary-btn" data-open-modal="uploadModal">上传文档</button>
+              <button class="primary-btn" id="createKbBtn2">新建知识库</button>
+            </div>
+          </div>
+
+          <div class="toolbar">
+            <select id="kbSort">
+              <option value="updated">最近更新</option>
+              <option value="docs">文档数量</option>
+              <option value="name">名称</option>
+            </select>
+          </div>
+
+          <div class="kb-grid" id="kbGrid"></div>
+        </section>
+
+        <section class="view" id="documents">
+          <div class="page-head">
+            <div>
+              <span class="eyebrow">Documents</span>
+              <h1>文档数据</h1>
+            </div>
+            <div class="head-actions">
+              <input id="documentSearchInput" type="search" placeholder="按文档名称或内容筛选" />
+              <select id="documentKbFilter"></select>
+              <button class="secondary-btn" id="clearDocumentFilter">全部文档</button>
+              <button class="primary-btn" data-open-modal="uploadModal">上传文档</button>
+            </div>
+          </div>
+          <div class="document-layout">
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <h2 id="documentListTitle">全部文档</h2>
+                  <p id="documentListHint">点击文档可以查看详情</p>
+                </div>
+              </div>
+              <div class="document-list" id="documentList"></div>
+            </section>
+            <section class="panel wide-panel">
+              <div class="panel-head">
+                <div>
+                  <h2>文档详情</h2>
+                  <p>支持查看、修改名称、智能摘要和删除</p>
+                </div>
+              </div>
+              <div class="document-detail" id="documentDetail"></div>
+            </section>
+          </div>
+        </section>
+
+        <section class="view" id="chat">
+          <div class="page-head">
+            <div>
+              <span class="eyebrow">RAG Chat</span>
+              <h1>AI 知识库问答</h1>
+            </div>
+            <div class="head-actions">
+              <select id="chatKbSelect"></select>
+              <select id="modelSelect">
+                <option value="">默认启用模型</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="chat-layout">
+            <aside class="chat-sessions">
+              <button class="secondary-btn full" id="newSessionBtn">新建会话</button>
+              <div class="session-list" id="sessionList"></div>
+            </aside>
+
+            <section class="chat-panel">
+              <div class="chat-messages" id="chatMessages"></div>
+              <form class="chat-input" id="chatForm">
+                <textarea id="chatQuestion" placeholder="基于当前知识库提问，例如：RAG 系统的核心流程是什么？"></textarea>
+                <button class="primary-btn" type="submit">发送</button>
+              </form>
+            </section>
+
+            <aside class="citation-panel">
+              <div class="panel-head">
+                <div>
+                  <h2>引用来源</h2>
+                  <p>回答依据会在这里展示</p>
+                </div>
+              </div>
+              <div id="citationList" class="citation-list"></div>
+            </aside>
+          </div>
+        </section>
+
+        <section class="view" id="tasks">
+          <div class="page-head">
+            <div>
+              <span class="eyebrow">Action</span>
+              <h1>任务中心</h1>
+            </div>
+            <button class="primary-btn" id="addTaskBtn">新增任务</button>
+          </div>
+
+          <div class="toolbar">
+            <div class="segmented" id="taskFilter">
+              <button class="is-active" data-filter="all">全部</button>
+              <button data-filter="todo">待办</button>
+              <button data-filter="doing">进行中</button>
+              <button data-filter="done">已完成</button>
+            </div>
+            <select id="priorityFilter">
+              <option value="all">全部优先级</option>
+              <option value="high">高优先级</option>
+              <option value="medium">中优先级</option>
+              <option value="low">低优先级</option>
+            </select>
+          </div>
+
+          <div class="task-board" id="taskBoard"></div>
+        </section>
+
+        <section class="view" id="goals">
+          <div class="page-head">
+            <div>
+              <span class="eyebrow">Goals</span>
+              <h1>学习目标</h1>
+            </div>
+            <button class="primary-btn" id="generatePlanBtn">AI 生成计划</button>
+          </div>
+
+          <div class="goal-layout">
+            <section class="panel wide-panel">
+              <div class="panel-head">
+                <div>
+                  <h2>当前目标</h2>
+                  <p>后端未实现</p>
+                </div>
+              </div>
+              <div class="goal-card">
+                <p class="empty-text">暂无真实目标数据。目标表和计划接口做好后，这里会读取数据库展示。</p>
+                <div class="week-list" id="weekList"></div>
+              </div>
+            </section>
+
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <h2>AI 计划生成器</h2>
+                  <p>输入目标后生成阶段计划</p>
+                </div>
+              </div>
+              <form class="stack-form" id="planForm">
+                <label>
+                  学习目标
+                  <textarea id="goalInput" placeholder="目标模块后端未实现，当前不会保存"></textarea>
+                </label>
+                <label>
+                  每周可投入时间
+                  <input id="hoursInput" type="number" value="8" min="1" max="80" />
+                </label>
+                <button class="primary-btn" type="submit">生成计划</button>
+              </form>
+            </section>
+          </div>
+        </section>
+
+        <section class="view" id="review">
+          <div class="page-head">
+            <div>
+              <span class="eyebrow">Review</span>
+              <h1>复盘</h1>
+            </div>
+          </div>
+
+          <div class="review-layout">
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <h2>写一段复盘</h2>
+                  <p>AI 会给出总结和调整建议</p>
+                </div>
+              </div>
+              <form class="stack-form" id="reviewForm">
+                <label>
+                  今天完成了什么？
+                  <textarea id="doneInput" placeholder="复盘模块后端未实现，当前不会保存"></textarea>
+                </label>
+                <label>
+                  卡在哪里？
+                  <textarea id="stuckInput" placeholder="复盘模块后端未实现，当前不会保存"></textarea>
+                </label>
+                <button class="primary-btn" type="submit">生成复盘建议</button>
+              </form>
+            </section>
+            <section class="panel wide-panel">
+              <div class="panel-head">
+                <div>
+                  <h2>AI 复盘建议</h2>
+                  <p>根据完成情况生成</p>
+                </div>
+              </div>
+              <div class="review-result" id="reviewResult">
+                <p class="empty-text">暂无真实复盘数据。复盘表和 AI 复盘接口做好后，这里会读取数据库展示。</p>
+              </div>
+            </section>
+          </div>
+        </section>
+
+        <section class="view" id="settings">
+          <div class="page-head">
+            <div>
+              <span class="eyebrow">Settings</span>
+              <h1>系统设置</h1>
+            </div>
+          </div>
+
+          <div class="settings-grid">
+            <section class="panel">
+                <div class="panel-head">
+                <div>
+                  <h2>模型配置</h2>
+                  <p>支持 DeepSeek、千问等 OpenAI 兼容接口。大屏「解释」使用已启用的 MiniMax（服务商或 Base URL 含 minimax）。</p>
+                </div>
+              </div>
+              <form class="stack-form" id="modelForm">
+                <label>
+                  服务商
+                  <select id="providerInput">
+                    <option>MiniMax</option>
+                    <option>DeepSeek</option>
+                    <option>千问 Qwen</option>
+                    <option>OpenAI Compatible</option>
+                  </select>
+                </label>
+                <label>
+                  API Base URL
+                  <input id="baseUrlInput" value="https://api.minimaxi.com" />
+                </label>
+                <label>
+                  API Key
+                  <input id="apiKeyInput" type="password" placeholder="只会保存到后端数据库，不会写进前端源码" />
+                </label>
+                <label>
+                  默认模型
+                  <input id="modelNameInput" value="MiniMax-M2.7" />
+                </label>
+                <button class="primary-btn" type="submit">保存并测试</button>
+              </form>
+              <div class="setting-list" id="modelConfigList"></div>
+            </section>
+
+            <section class="panel" id="kbParamsPanel">
+              <div class="panel-head">
+                <div>
+                  <h2>知识库参数</h2>
+                  <p>MVP 阶段可使用默认值（拖动滑块会更新下方数字；后端持久化后续版本接入）</p>
+                </div>
+              </div>
+              <div class="setting-list">
+                <label>
+                  切片长度
+                  <input type="range" id="kbChunkRange" min="300" max="1500" value="800" step="10" />
+                  <span class="kb-range-value" id="kbChunkRangeVal">800 tokens</span>
+                </label>
+                <label>
+                  重叠长度
+                  <input type="range" id="kbOverlapRange" min="0" max="300" value="120" step="5" />
+                  <span class="kb-range-value" id="kbOverlapRangeVal">120 tokens</span>
+                </label>
+                <label>
+                  检索 Top K
+                  <input type="range" id="kbTopKRange" min="3" max="12" value="5" step="1" />
+                  <span class="kb-range-value" id="kbTopKRangeVal">5 条</span>
+                </label>
+              </div>
+            </section>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <div class="modal-backdrop" id="uploadModal" aria-hidden="true">
+      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="uploadTitle">
+        <div class="modal-head">
+          <h2 id="uploadTitle">上传文档</h2>
+          <button class="icon-btn" data-close-modal="uploadModal" title="关闭">×</button>
+        </div>
+        <div class="upload-drop" id="uploadDrop">
+          <strong>拖拽或点击选择文件</strong>
+          <span>当前支持 txt、md、markdown。上传后会保存文件、解析文本、切片并写入 SQLite。</span>
+          <input id="fileInput" type="file" multiple accept=".txt,.md,.markdown" />
+        </div>
+        <label class="modal-field">
+          上传到知识库
+          <select id="uploadKbSelect"></select>
+        </label>
+        <div class="upload-list" id="uploadList"></div>
+      </div>
+    </div>
+
+    <div class="modal-backdrop" id="kbModal" aria-hidden="true">
+      <div class="modal small" role="dialog" aria-modal="true" aria-labelledby="kbTitle">
+        <div class="modal-head">
+          <h2 id="kbTitle">新建知识库</h2>
+          <button class="icon-btn" data-close-modal="kbModal" title="关闭">×</button>
+        </div>
+        <form class="stack-form" id="kbForm">
+          <label>
+            名称
+            <input id="kbNameInput" required maxlength="50" placeholder="例如：大模型应用开发" />
+          </label>
+          <label>
+            描述
+            <textarea id="kbDescInput" placeholder="这个知识库准备用来沉淀什么资料？"></textarea>
+          </label>
+          <button class="primary-btn" type="submit">创建</button>
+        </form>
+      </div>
+    </div>
+
+    <div class="modal-backdrop" id="taskModal" aria-hidden="true">
+      <div class="modal small" role="dialog" aria-modal="true" aria-labelledby="taskTitle">
+        <div class="modal-head">
+          <h2 id="taskTitle">新增任务</h2>
+          <button class="icon-btn" data-close-modal="taskModal" title="关闭">×</button>
+        </div>
+        <form class="stack-form" id="taskForm">
+          <label>
+            标题
+            <input id="taskTitleInput" required maxlength="100" placeholder="例如：整理今天的学习笔记" />
+          </label>
+          <label>
+            描述
+            <textarea id="taskDescInput" placeholder="补充任务说明"></textarea>
+          </label>
+          <label>
+            优先级
+            <select id="taskPriorityInput">
+              <option value="high">高</option>
+              <option value="medium" selected>中</option>
+              <option value="low">低</option>
+            </select>
+          </label>
+          <button class="primary-btn" type="submit">保存任务</button>
+        </form>
+      </div>
+    </div>
+
+    <div class="modal-backdrop" id="generatedTaskModal" aria-hidden="true">
+      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="generatedTaskTitle">
+        <div class="modal-head">
+          <h2 id="generatedTaskTitle">确认保存 AI 生成任务</h2>
+          <button class="icon-btn" data-close-modal="generatedTaskModal" title="关闭">×</button>
+        </div>
+        <div class="upload-list" id="generatedTaskList"></div>
+        <button class="primary-btn full" id="saveGeneratedTasksBtn">保存这些任务</button>
+      </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+    <script src="./app.js"></script>
+  </body>
+</html>

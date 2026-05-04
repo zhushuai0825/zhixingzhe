@@ -1,0 +1,95 @@
+{
+  "抓取时间": "2026-05-02 16:36:34 CST",
+  "数据": [
+    {
+      "仓库": "TauricResearch/TradingAgents",
+      "链接": "https://github.com/TauricResearch/TradingAgents",
+      "简介": "TradingAgents: Multi-Agents LLM Financial Trading Framework",
+      "语言": "Python",
+      "星标数": 60485,
+      "Fork 数": 11660,
+      "今日新增星标": "2,112 stars today",
+      "中文说明": "多智能体金融交易框架，用大模型代理协作完成市场分析、决策和交易研究。"
+    },
+    {
+      "仓库": "soxoj/maigret",
+      "链接": "https://github.com/soxoj/maigret",
+      "简介": "🕵️‍♂️ Collect a dossier on a person by username from 3000+ sites",
+      "语言": "Python",
+      "星标数": 21977,
+      "Fork 数": 1549,
+      "今日新增星标": "535 stars today",
+      "中文说明": "根据用户名在大量网站中检索公开账号信息，适合做开源情报和身份线索整理。"
+    },
+    {
+      "仓库": "warpdotdev/warp",
+      "链接": "https://github.com/warpdotdev/warp",
+      "简介": "Warp is an agentic development environment, born out of the terminal.",
+      "语言": "Rust",
+      "星标数": 51981,
+      "Fork 数": 3527,
+      "今日新增星标": "3,401 stars today",
+      "中文说明": "GitHub 当前趋势项目，建议打开链接查看源码、文档和使用方式。"
+    },
+    {
+      "仓库": "1jehuang/jcode",
+      "链接": "https://github.com/1jehuang/jcode",
+      "简介": "Coding Agent Harness",
+      "语言": "Rust",
+      "星标数": 2504,
+      "Fork 数": 224,
+      "今日新增星标": "403 stars today",
+      "中文说明": "GitHub 当前趋势项目，建议打开链接查看源码、文档和使用方式。"
+    },
+    {
+      "仓库": "mattpocock/skills",
+      "链接": "https://github.com/mattpocock/skills",
+      "简介": "Skills for Real Engineers. Straight from my .claude directory.",
+      "语言": "Shell",
+      "星标数": 53436,
+      "Fork 数": 4497,
+      "今日新增星标": "3,645 stars today",
+      "中文说明": "和 AI、大模型或模型应用开发相关的热门项目。"
+    },
+    {
+      "仓库": "browserbase/skills",
+      "链接": "https://github.com/browserbase/skills",
+      "简介": "Claude Agent SDK with a web browsing tool",
+      "语言": "JavaScript",
+      "星标数": 1276,
+      "Fork 数": 90,
+      "今日新增星标": "334 stars today",
+      "中文说明": "GitHub 当前趋势项目，建议打开链接查看源码、文档和使用方式。"
+    },
+    {
+      "仓库": "simstudioai/sim",
+      "链接": "https://github.com/simstudioai/sim",
+      "简介": "Build, deploy, and orchestrate AI agents. Sim is the central intelligence layer for your AI workforce.",
+      "语言": "TypeScript",
+      "星标数": 28243,
+      "Fork 数": 3562,
+      "今日新增星标": "56 stars today",
+      "中文说明": "和 AI、大模型或模型应用开发相关的热门项目。"
+    },
+    {
+      "仓库": "obra/superpowers",
+      "链接": "https://github.com/obra/superpowers",
+      "简介": "An agentic skills framework & software development methodology that works.",
+      "语言": "Shell",
+      "星标数": 175989,
+      "Fork 数": 15565,
+      "今日新增星标": "1,096 stars today",
+      "中文说明": "GitHub 当前趋势项目，建议打开链接查看源码、文档和使用方式。"
+    },
+    {
+      "仓库": "Flowseal/zapret-discord-youtube",
+      "链接": "https://github.com/Flowseal/zapret-discord-youtube",
+      "简介": "",
+      "语言": "Batchfile",
+      "星标数": 27005,
+      "Fork 数": 2109,
+      "今日新增星标": "145 stars today",
+      "中文说明": "GitHub 当前趋势项目，建议打开链接查看源码、文档和使用方式。"
+    }
+  ]
+}
