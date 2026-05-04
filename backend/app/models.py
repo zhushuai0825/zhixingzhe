@@ -19,6 +19,10 @@ class KnowledgeBaseUpdate(AppBaseModel):
     description: Optional[str] = Field(default=None, max_length=500)
 
 
+class KnowledgeBaseDeleteRequest(AppBaseModel):
+    delete_documents: bool = True
+
+
 class KnowledgeBaseOut(AppBaseModel):
     id: str
     name: str

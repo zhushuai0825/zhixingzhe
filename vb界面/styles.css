@@ -24,6 +24,8 @@
 body {
   margin: 0;
   min-width: 320px;
+  height: 100vh;
+  overflow: hidden;
   color: var(--text);
   background:
     linear-gradient(120deg, rgba(31, 122, 140, 0.08), transparent 32%),
@@ -44,7 +46,8 @@ button {
 .app-shell {
   display: grid;
   grid-template-columns: 260px minmax(0, 1fr);
-  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
 }
 
 .sidebar {
@@ -155,6 +158,10 @@ button {
 
 .main {
   min-width: 0;
+  height: 100vh;
+  overflow: hidden;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
 }
 
 .topbar {
@@ -203,6 +210,8 @@ button {
 .view {
   display: none;
   padding: 28px;
+  min-height: 0;
+  overflow: auto;
 }
 
 .view.is-active {
@@ -670,7 +679,7 @@ textarea {
 
 .document-layout {
   display: grid;
-  grid-template-columns: minmax(280px, 0.75fr) minmax(0, 1.25fr);
+  grid-template-columns: minmax(360px, 0.92fr) minmax(0, 1.08fr);
   gap: 18px;
 }
 
@@ -686,9 +695,10 @@ textarea {
 }
 
 .document-item {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 14px;
   padding: 12px;
   border-radius: var(--radius);
   background: var(--panel-soft);
@@ -706,15 +716,17 @@ textarea {
 }
 
 .document-item strong {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  line-height: 1.5;
+  white-space: normal;
+  word-break: break-word;
 }
 
 .document-item span {
   margin-top: 4px;
   color: var(--muted);
   font-size: 13px;
+  line-height: 1.5;
+  word-break: break-word;
 }
 
 .document-detail {
@@ -805,8 +817,9 @@ textarea {
   display: grid;
   grid-template-columns: 220px 4px minmax(360px, 1fr) 4px 280px;
   gap: 0;
-  height: calc(100vh - 120px);
+  height: calc(100vh - 164px);
   min-height: 560px;
+  min-width: 0;
 }
 
 .chat-resizer {
@@ -851,6 +864,7 @@ textarea {
 .citation-panel {
   padding: 10px;
   overflow: auto;
+  min-height: 0;
 }
 
 .session-item {
@@ -931,9 +945,12 @@ textarea {
 }
 
 .message {
-  max-width: 82%;
+  max-width: min(88%, 100%);
   padding: 12px;
   line-height: 1.65;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  white-space: normal;
 }
 
 .message.user {
@@ -984,6 +1001,8 @@ textarea {
 .chat-input textarea {
   min-height: 48px;
   max-height: 130px;
+  resize: vertical;
+  overflow: auto;
 }
 
 .citation-item {
@@ -1329,6 +1348,308 @@ textarea {
 .toast.is-visible {
   transform: translateY(0);
   opacity: 1;
+}
+
+/* 2026-05 refresh: 更偏赛博知识中枢的视觉层 */
+:root {
+  --bg: #07111f;
+  --panel: rgba(8, 23, 41, 0.9);
+  --panel-soft: rgba(13, 35, 60, 0.94);
+  --text: #e8f4ff;
+  --muted: #8caac4;
+  --line: rgba(95, 183, 255, 0.18);
+  --brand: #35d0ff;
+  --brand-dark: #0b88d0;
+  --accent: #ffb347;
+  --ok: #53f2a3;
+  --danger: #ff6d8a;
+  --shadow: 0 24px 60px rgba(0, 0, 0, 0.34);
+  --radius: 14px;
+}
+
+body {
+  color: var(--text);
+  background:
+    radial-gradient(circle at 18% 16%, rgba(53, 208, 255, 0.16), transparent 24%),
+    radial-gradient(circle at 82% 14%, rgba(255, 179, 71, 0.14), transparent 22%),
+    linear-gradient(135deg, rgba(8, 31, 59, 0.72), transparent 40%),
+    linear-gradient(180deg, #07111f, #081a2d 46%, #050d18);
+  background-attachment: fixed;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(90, 180, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(90, 180, 255, 0.05) 1px, transparent 1px);
+  background-size: 52px 52px;
+  mask-image: radial-gradient(circle at center, black 35%, transparent 88%);
+  opacity: 0.45;
+}
+
+.sidebar {
+  background: linear-gradient(180deg, rgba(3, 14, 28, 0.98), rgba(7, 24, 43, 0.98));
+}
+
+.brand-mark {
+  background: linear-gradient(135deg, #35d0ff, #ffd166);
+  color: #091522;
+  box-shadow: 0 0 28px rgba(53, 208, 255, 0.36);
+}
+
+.nav-item:hover,
+.nav-item.is-active {
+  background: linear-gradient(90deg, rgba(53, 208, 255, 0.18), rgba(53, 208, 255, 0.06));
+  box-shadow: inset 0 0 0 1px rgba(53, 208, 255, 0.22), 0 0 24px rgba(53, 208, 255, 0.14);
+}
+
+.sidebar-panel,
+.metric-card,
+.panel,
+.kb-card,
+.task-card,
+.message,
+.goal-card,
+.chat-sessions,
+.citation-panel,
+.chat-panel,
+.modal {
+  background: linear-gradient(180deg, rgba(8, 23, 41, 0.94), rgba(7, 18, 31, 0.96));
+  box-shadow: var(--shadow), inset 0 0 0 1px rgba(53, 208, 255, 0.05);
+}
+
+.topbar {
+  background: rgba(4, 17, 31, 0.72);
+  border-bottom-color: rgba(95, 183, 255, 0.15);
+}
+
+.topbar-brandline {
+  display: grid;
+  gap: 4px;
+}
+
+.topbar-brandline strong {
+  font-size: 20px;
+  letter-spacing: 0.04em;
+}
+
+.primary-btn {
+  color: #03131f;
+  background: linear-gradient(135deg, var(--brand), #79f0ff);
+  box-shadow: 0 10px 24px rgba(53, 208, 255, 0.3);
+}
+
+.primary-btn:hover {
+  background: linear-gradient(135deg, #4de7ff, #9cf5ff);
+}
+
+.secondary-btn {
+  color: var(--text);
+  background: rgba(12, 37, 63, 0.92);
+  border: 1px solid rgba(95, 183, 255, 0.15);
+}
+
+.secondary-btn:hover {
+  background: rgba(17, 45, 75, 0.96);
+}
+
+.icon-btn,
+.mini-btn,
+.mini-icon-btn {
+  background: rgba(9, 29, 49, 0.96);
+  color: var(--brand);
+}
+
+.page-head h1,
+.metric-card strong {
+  text-shadow: 0 0 20px rgba(53, 208, 255, 0.12);
+}
+
+.chat-layout {
+  grid-template-columns: 200px 4px minmax(560px, 1.6fr) 4px 320px;
+}
+
+.message.user {
+  color: #04121d;
+  background: linear-gradient(135deg, var(--brand), #8de6ff);
+}
+
+.message.assistant {
+  border-radius: 14px;
+  border: 1px solid rgba(95, 183, 255, 0.14);
+  background: rgba(12, 31, 53, 0.82);
+}
+
+.document-item-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-width: 116px;
+}
+
+.cockpit-home-link {
+  padding: 0;
+  border: 0;
+  color: inherit;
+  background: transparent;
+  font: inherit;
+  letter-spacing: 0.12em;
+}
+
+.modal-tip {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.choice-card {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(9, 29, 49, 0.88);
+  color: var(--text);
+}
+
+.danger-choice {
+  border-color: rgba(255, 109, 138, 0.28);
+}
+
+.danger-btn {
+  background: linear-gradient(135deg, #ff7a90, #ffb36d);
+}
+
+#visualization .cockpit-center {
+  position: relative;
+  overflow: hidden;
+  border-radius: 24px;
+  border: 1px solid rgba(95, 183, 255, 0.15);
+  background:
+    radial-gradient(circle at center, rgba(53, 208, 255, 0.22), transparent 28%),
+    linear-gradient(180deg, rgba(8, 31, 59, 0.82), rgba(5, 15, 28, 0.92));
+}
+
+#visualization .cockpit-center::before,
+#visualization .cockpit-center::after {
+  content: "";
+  position: absolute;
+  inset: 8% 18%;
+  border-radius: 50%;
+  border: 1px solid rgba(83, 191, 255, 0.14);
+  pointer-events: none;
+}
+
+#visualization .cockpit-center::after {
+  inset: 18% 28%;
+  border-color: rgba(255, 179, 71, 0.12);
+}
+
+#visualization .data-orbit {
+  min-height: 340px;
+}
+
+#visualization .orbit-core {
+  box-shadow:
+    0 0 0 10px rgba(53, 208, 255, 0.06),
+    0 0 48px rgba(53, 208, 255, 0.22);
+}
+
+#chat .chat-panel {
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+#chat .chat-messages {
+  padding: 10px 18px 18px;
+  min-width: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+#chat .chat-messages .message {
+  overflow: visible;
+}
+
+#chat .message.user {
+  margin-top: -6px;
+}
+
+#chat .chat-messages > .message:first-child,
+#chat .chat-messages > .notice:first-child {
+  margin-top: 0;
+}
+
+#chat .citation-panel {
+  padding: 14px;
+}
+
+#chat .chat-input {
+  grid-template-columns: 1fr auto;
+  align-items: end;
+  gap: 14px;
+}
+
+#chat .chat-input textarea {
+  min-height: 88px;
+  border-radius: 16px;
+}
+
+#chat.view.is-active {
+  height: calc(100vh - 76px);
+  min-height: 0;
+  overflow: hidden;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+#chat .page-head {
+  margin-bottom: 14px;
+  min-height: 0;
+}
+
+#chat .head-actions {
+  flex-wrap: nowrap;
+}
+
+#chat .head-actions select {
+  min-width: 0;
+}
+
+#chat .chat-sessions,
+#chat .chat-panel,
+#chat .citation-panel {
+  height: 100%;
+}
+
+#chat .chat-layout {
+  height: 100%;
+  min-height: 0;
+}
+
+.kb-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.kb-card::after {
+  content: "";
+  position: absolute;
+  inset: auto -18% -55% 42%;
+  height: 220px;
+  background: radial-gradient(circle, rgba(53, 208, 255, 0.2), transparent 58%);
+  pointer-events: none;
+}
+
+.document-item {
+  justify-content: space-between;
 }
 
 @media (max-width: 1180px) {
@@ -2940,6 +3261,8 @@ body.screen-mode .cockpit-top {
   width: 1920px;
   height: 86px;
   display: block;
+  z-index: 6;
+  pointer-events: none;
 }
 
 body.screen-mode .cockpit-title {
@@ -2950,6 +3273,7 @@ body.screen-mode .cockpit-title {
   height: 76px;
   min-height: 0;
   font-size: 38px;
+  pointer-events: auto;
 }
 
 body.screen-mode .cockpit-clock {
@@ -2960,6 +3284,7 @@ body.screen-mode .cockpit-clock {
   height: 70px;
   min-height: 0;
   justify-content: center;
+  pointer-events: auto;
 }
 
 body.screen-mode .cockpit-clock strong {
@@ -3000,6 +3325,7 @@ body.screen-mode .cockpit-body {
   display: block;
   min-height: 0;
   margin: 0;
+  z-index: 1;
 }
 
 body.screen-mode .cockpit-side,
@@ -3095,6 +3421,10 @@ body.screen-mode .cockpit-center {
   width: 700px;
   height: 650px;
   min-height: 0;
+  overflow: visible;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
 }
 
 body.screen-mode .data-orbit {
@@ -3104,6 +3434,7 @@ body.screen-mode .data-orbit {
   width: 610px;
   height: 610px;
   transform: translateX(-50%);
+  overflow: visible;
 }
 
 body.screen-mode .data-orbit::after {
@@ -3263,4 +3594,68 @@ body.screen-mode .cockpit-list-row p {
   background: rgba(0, 168, 255, 0.12);
   border: 1px solid rgba(0, 238, 255, 0.28);
   border-radius: 8px;
+}
+
+.mini-inline-danger {
+  min-height: 28px;
+  padding: 0 10px;
+  border: 1px solid rgba(255, 109, 138, 0.32);
+  border-radius: 999px;
+  background: rgba(76, 18, 30, 0.82);
+  color: #ffd6de;
+  font-weight: 700;
+}
+
+.mini-inline-danger:hover {
+  background: rgba(104, 24, 41, 0.92);
+}
+
+.cockpit-home-link {
+  cursor: pointer;
+  position: relative;
+  z-index: 4;
+}
+
+.cockpit-home-link:hover {
+  color: #8cecff;
+  text-shadow: 0 0 16px rgba(53, 208, 255, 0.42);
+}
+
+#visualization .cockpit-center::before,
+#visualization .cockpit-center::after {
+  animation: orbitPulse 8s linear infinite;
+}
+
+#visualization .cockpit-center::after {
+  animation-duration: 11s;
+  animation-direction: reverse;
+}
+
+#visualization .data-orbit {
+  animation: floatCore 5.5s ease-in-out infinite;
+}
+
+@keyframes orbitPulse {
+  0% {
+    transform: rotate(0deg) scale(1);
+    opacity: 0.45;
+  }
+  50% {
+    transform: rotate(180deg) scale(1.035);
+    opacity: 0.9;
+  }
+  100% {
+    transform: rotate(360deg) scale(1);
+    opacity: 0.45;
+  }
+}
+
+@keyframes floatCore {
+  0%,
+  100% {
+    transform: translateX(-50%) translateY(0px);
+  }
+  50% {
+    transform: translateX(-50%) translateY(-8px);
+  }
 }

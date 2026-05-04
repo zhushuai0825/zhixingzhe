@@ -68,9 +68,9 @@
 
       <main class="main">
         <header class="topbar">
-          <div class="search-wrap">
-            <span>⌕</span>
-            <input id="globalSearch" type="search" placeholder="搜索知识库、文档、任务..." />
+          <div class="topbar-brandline">
+            <span class="eyebrow">AI Knowledge OS</span>
+            <strong>知行者工作台</strong>
           </div>
           <div class="topbar-actions">
             <button class="icon-btn" id="quickUpload" title="上传文档">⇧</button>
@@ -155,7 +155,7 @@
           <div class="cockpit-scale-wrap">
           <div class="cockpit" id="cockpitCanvas">
             <header class="cockpit-top">
-              <div class="cockpit-title">知行者数据资产分析大屏</div>
+              <button class="cockpit-title cockpit-home-link" id="cockpitHomeBtn" type="button" onclick="switchView('dashboard')">知行者数据资产分析大屏</button>
               <div class="cockpit-clock">
                 <strong id="screenTemperature">AI</strong>
                 <span id="screenClock">--</span>
@@ -599,6 +599,27 @@
         </div>
         <div class="upload-list" id="generatedTaskList"></div>
         <button class="primary-btn full" id="saveGeneratedTasksBtn">保存这些任务</button>
+      </div>
+    </div>
+
+    <div class="modal-backdrop" id="kbDeleteModal" aria-hidden="true">
+      <div class="modal small" role="dialog" aria-modal="true" aria-labelledby="kbDeleteTitle">
+        <div class="modal-head">
+          <h2 id="kbDeleteTitle">删除知识库</h2>
+          <button class="icon-btn" data-close-modal="kbDeleteModal" title="关闭">×</button>
+        </div>
+        <div class="stack-form">
+          <p class="modal-tip" id="kbDeleteText">删除后可选择是否同时删除关联文档。</p>
+          <label class="choice-card">
+            <input type="radio" name="kbDeleteMode" value="detach" checked />
+            <span>只删除知识库，文档转移到“未分组文档”</span>
+          </label>
+          <label class="choice-card danger-choice">
+            <input type="radio" name="kbDeleteMode" value="cascade" />
+            <span>删除知识库和关联文档</span>
+          </label>
+          <button class="primary-btn danger-btn" type="button" id="confirmKbDeleteBtn">确认删除</button>
+        </div>
       </div>
     </div>
 

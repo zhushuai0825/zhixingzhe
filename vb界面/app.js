@@ -27,6 +27,7 @@ const state = {
   hfTrendFilter: "hf_papers",
   trendExplainUrl: null,
   trendExplainSource: "",
+  pendingDeleteKbId: null,
 };
 
 const $ = (selector) => document.querySelector(selector);
@@ -281,6 +282,7 @@ function renderKnowledgeBases() {
               <div class="card-actions">
                 <button class="mini-btn" data-open-kb-docs="${kb.id}">数据</button>
                 <button class="mini-btn" data-ask-kb="${kb.id}">问答</button>
+                <button class="mini-icon-btn danger" data-delete-kb="${kb.id}" title="删除知识库">🗑</button>
               </div>
             </div>
           </article>
@@ -297,6 +299,9 @@ function renderKnowledgeBases() {
   });
   $$("[data-open-kb-docs]").forEach((button) => {
     button.addEventListener("click", () => openDocumentsForKb(button.dataset.openKbDocs));
+  });
+  $$("[data-delete-kb]").forEach((button) => {
+    button.addEventListener("click", () => openKnowledgeBaseDeleteModal(button.dataset.deleteKb));
   });
 }
 
@@ -690,7 +695,10 @@ function renderDocuments() {
               <strong>${escapeHtml(doc.file_name)}</strong>
               <span>${escapeHtml(doc.knowledge_base_name || kbName(doc.knowledge_base_id))} · ${statusText(doc.status)} · ${formatDate(doc.updated_at)}</span>
             </div>
-            <span class="badge ${doc.status === "ready" ? "ok" : "warn"}">${doc.file_type}</span>
+            <div class="document-item-actions">
+              <span class="badge ${doc.status === "ready" ? "ok" : "warn"}">${doc.file_type}</span>
+              <button class="mini-inline-danger" type="button" data-delete-document-inline="${doc.id}" title="删除文档">🗑 删除</button>
+            </div>
           </article>
         `,
       )
@@ -698,6 +706,13 @@ function renderDocuments() {
 
   $$("[data-document-id]").forEach((item) => {
     item.addEventListener("click", () => openDocumentDetail(item.dataset.documentId));
+  });
+  $$("[data-delete-document-inline]").forEach((button) => {
+    button.addEventListener("click", async (event) => {
+      event.stopPropagation();
+      state.activeDocumentId = button.dataset.deleteDocumentInline;
+      await deleteDocument();
+    });
   });
 
   renderDocumentDetail();
@@ -777,8 +792,8 @@ function renderChat() {
               <span>${formatDate(session.updated_at)}</span>
             </button>
             <div class="session-actions">
-              <button class="mini-icon-btn" data-rename-session="${session.id}" title="重命名">改</button>
-              <button class="mini-icon-btn danger" data-delete-session="${session.id}" title="删除">删</button>
+              <button class="mini-icon-btn" data-rename-session="${session.id}" title="重命名">✎</button>
+              <button class="mini-icon-btn danger" data-delete-session="${session.id}" title="删除">🗑</button>
             </div>
           </article>
         `,
@@ -897,12 +912,12 @@ function renderTasks() {
 function renderTaskCard(task) {
   const action =
     task.status === "done"
-      ? `<button class="mini-btn" data-edit-task="${task.id}">编辑</button>
-         <button class="mini-btn" data-delete-task="${task.id}">删除</button>`
-      : `<button class="mini-btn" data-start-task="${task.id}">开始</button>
-         <button class="mini-btn" data-complete-task="${task.id}">完成</button>
-         <button class="mini-btn" data-edit-task="${task.id}">编辑</button>
-         <button class="mini-btn" data-delete-task="${task.id}">删除</button>`;
+      ? `<button class="mini-btn" data-edit-task="${task.id}">✎ 编辑</button>
+         <button class="mini-inline-danger" data-delete-task="${task.id}">🗑 删除</button>`
+      : `<button class="mini-btn" data-start-task="${task.id}">▶ 开始</button>
+         <button class="mini-btn" data-complete-task="${task.id}">✓ 完成</button>
+         <button class="mini-btn" data-edit-task="${task.id}">✎ 编辑</button>
+         <button class="mini-inline-danger" data-delete-task="${task.id}">🗑 删除</button>`;
   return `
     <article class="task-card">
       <h3>${escapeHtml(task.title)}</h3>
@@ -976,7 +991,9 @@ function bindGlobalEvents() {
   $("#createKbBtn2").addEventListener("click", () => openModal("kbModal"));
   $("#quickUpload").addEventListener("click", () => openModal("uploadModal"));
   $("#quickAsk").addEventListener("click", () => switchView("chat"));
+  $("#cockpitHomeBtn").addEventListener("click", () => switchView("dashboard"));
   $("#addTaskBtn").addEventListener("click", () => openModal("taskModal"));
+  $("#confirmKbDeleteBtn").addEventListener("click", confirmDeleteKnowledgeBase);
 
   $("#kbSort").addEventListener("change", renderKnowledgeBases);
   $("#documentKbFilter").addEventListener("change", async (event) => {
@@ -1343,6 +1360,42 @@ async function deleteDocument() {
     await loadAll();
     showToast("文档已删除");
     switchView("documents");
+  } catch (error) {
+    showToast(`删除失败：${error.message}`);
+  }
+}
+
+function openKnowledgeBaseDeleteModal(kbId) {
+  state.pendingDeleteKbId = kbId;
+  const kb = state.knowledgeBases.find((item) => item.id === kbId);
+  const docCount = kb ? kb.document_count : 0;
+  $("#kbDeleteText").textContent = `将删除知识库“${kb?.name || ""}”，当前关联 ${docCount} 个文档。`;
+  const defaultChoice = document.querySelector('input[name="kbDeleteMode"][value="detach"]');
+  if (defaultChoice) defaultChoice.checked = true;
+  openModal("kbDeleteModal");
+}
+
+async function confirmDeleteKnowledgeBase() {
+  if (!state.pendingDeleteKbId) return;
+  const mode = document.querySelector('input[name="kbDeleteMode"]:checked')?.value || "detach";
+  try {
+    await api(`/api/knowledge-bases/${state.pendingDeleteKbId}`, {
+      method: "DELETE",
+      body: JSON.stringify({
+        delete_documents: mode === "cascade",
+      }),
+    });
+    if (state.activeKnowledgeBaseId === state.pendingDeleteKbId) {
+      state.activeKnowledgeBaseId = null;
+      state.activeSessionId = null;
+      state.messages = [];
+      state.citations = [];
+      state.activeAnswer = "";
+    }
+    state.pendingDeleteKbId = null;
+    closeModal("kbDeleteModal");
+    await loadAll();
+    showToast(mode === "cascade" ? "知识库和关联文档已删除" : "知识库已删除，文档已转移到未分组文档");
   } catch (error) {
     showToast(`删除失败：${error.message}`);
   }

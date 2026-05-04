@@ -15,6 +15,7 @@ from .models import (
     ChatSessionUpdate,
     DocumentUpdate,
     KnowledgeBaseCreate,
+    KnowledgeBaseDeleteRequest,
     KnowledgeBaseOut,
     KnowledgeBaseUpdate,
     LiveTrendExplanationBatch,
@@ -141,9 +142,75 @@ def update_knowledge_base(knowledge_base_id: str, payload: KnowledgeBaseUpdate):
 
 
 @app.delete("/api/knowledge-bases/{knowledge_base_id}")
-def delete_knowledge_base(knowledge_base_id: str):
+def delete_knowledge_base(knowledge_base_id: str, payload: Optional[KnowledgeBaseDeleteRequest] = None):
+    payload = payload or KnowledgeBaseDeleteRequest()
+    now = now_iso()
     with connect() as conn:
-        conn.execute("DELETE FROM knowledge_bases WHERE id = ?", (knowledge_base_id,))
+        row = conn.execute("SELECT * FROM knowledge_bases WHERE id = ?", (knowledge_base_id,)).fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="知识库不存在")
+        if payload.delete_documents:
+            doc_rows = conn.execute(
+                "SELECT file_path FROM documents WHERE knowledge_base_id = ?",
+                (knowledge_base_id,),
+            ).fetchall()
+            conn.execute("DELETE FROM knowledge_bases WHERE id = ?", (knowledge_base_id,))
+        else:
+            fallback_name = "未分组文档"
+            fallback = conn.execute(
+                "SELECT id FROM knowledge_bases WHERE lower(name) = lower(?)",
+                (fallback_name,),
+            ).fetchone()
+            fallback_id = fallback["id"] if fallback else new_id("kb")
+            if not fallback:
+                conn.execute(
+                    """
+                    INSERT INTO knowledge_bases (id, name, description, document_count, created_at, updated_at)
+                    VALUES (?, ?, ?, 0, ?, ?)
+                    """,
+                    (fallback_id, fallback_name, "删除知识库后自动承接保留文档。", now, now),
+                )
+            conn.execute(
+                """
+                UPDATE documents
+                SET knowledge_base_id = ?, updated_at = ?
+                WHERE knowledge_base_id = ?
+                """,
+                (fallback_id, now, knowledge_base_id),
+            )
+            conn.execute(
+                """
+                UPDATE document_chunks
+                SET knowledge_base_id = ?
+                WHERE knowledge_base_id = ?
+                """,
+                (fallback_id, knowledge_base_id),
+            )
+            conn.execute(
+                """
+                UPDATE knowledge_bases
+                SET document_count = (
+                    SELECT COUNT(*) FROM documents WHERE knowledge_base_id = ?
+                ), updated_at = ?
+                WHERE id = ?
+                """,
+                (fallback_id, now, fallback_id),
+            )
+            conn.execute("DELETE FROM knowledge_bases WHERE id = ?", (knowledge_base_id,))
+            doc_rows = []
+        conn.execute(
+            """
+            UPDATE knowledge_bases
+            SET document_count = (
+                SELECT COUNT(*) FROM documents WHERE knowledge_base_id = knowledge_bases.id
+            ), updated_at = ?
+            """,
+            (now,),
+        )
+    for doc_row in doc_rows:
+        path = Path(doc_row["file_path"])
+        if path.exists():
+            path.unlink()
     return {"ok": True}
 
 
