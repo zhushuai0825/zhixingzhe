@@ -3,6 +3,7 @@ node_modules/
 .venv/
 __pycache__/
 *.pyc
-data/*.db
-data/uploads/
-.gitnexus/cache/
+.gitnexus/
+.claude/
+.tools/
+backend/data/
