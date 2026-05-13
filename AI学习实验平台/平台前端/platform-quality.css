@@ -1,0 +1,131 @@
+:root {
+  --readable-line: 1.75;
+}
+
+.project-menu {
+  max-height: min(560px, calc(100vh - 140px));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.project-menu button {
+  min-height: auto;
+}
+
+.project-menu strong,
+.project-menu span {
+  overflow-wrap: anywhere;
+}
+
+.beginner-guide {
+  margin-bottom: 16px;
+  padding: 16px;
+  border: 1px solid var(--line, #dfe7e2);
+  border-left: 5px solid var(--brand, #16707a);
+  border-radius: var(--radius, 8px);
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 10px 28px rgba(30, 45, 40, 0.07);
+}
+
+.beginner-guide strong {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--text, #202827);
+  font-size: 16px;
+  line-height: 1.45;
+}
+
+.beginner-guide p {
+  margin: 0;
+  color: var(--muted, #687573);
+  line-height: var(--readable-line);
+}
+
+.beginner-guide .guide-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.beginner-guide .guide-steps span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  color: var(--brand-dark, #173539);
+  background: var(--soft, #eef4f2);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.panel p,
+.plain-card p,
+.result-card p,
+.doc-card p,
+.lesson-card p,
+.explain-card p,
+.flow-card p,
+.metric-card p,
+.chunk-card p,
+.empty-card p {
+  line-height: var(--readable-line);
+}
+
+.plain-card,
+.result-card,
+.doc-card,
+.lesson-card,
+.explain-card,
+.metric-card,
+.chunk-card,
+.empty-card {
+  overflow-wrap: anywhere;
+}
+
+.space-stage,
+.canvas-shell,
+.match-stage,
+.chunk-stage,
+.vector-space-stage {
+  max-width: 100%;
+}
+
+.space-stage canvas,
+.canvas-shell canvas,
+.match-stage canvas,
+.chunk-stage canvas,
+.vector-space-stage canvas {
+  max-width: 100%;
+}
+
+.canvas-tooltip,
+.tooltip {
+  max-width: min(340px, calc(100% - 24px));
+}
+
+.canvas-tooltip strong,
+.canvas-tooltip span,
+.tooltip strong,
+.tooltip span {
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 1100px) {
+  .project-menu {
+    max-height: min(480px, calc(100vh - 120px));
+  }
+}
+
+@media (max-width: 680px) {
+  .beginner-guide {
+    margin: 0 0 14px;
+    padding: 14px;
+  }
+
+  .beginner-guide .guide-steps {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+}

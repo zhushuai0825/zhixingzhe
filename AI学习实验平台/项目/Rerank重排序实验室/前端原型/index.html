@@ -6,6 +6,7 @@
     <title>Rerank 重排序实验室</title>
     <link rel="icon" href="data:," />
     <link rel="stylesheet" href="./styles.css?v=20260512-rerank-v2" />
+    <link rel="stylesheet" href="../../../平台前端/platform-quality.css?v=20260513-quality-v1" />
   </head>
   <body>
     <div class="app-shell">
@@ -246,6 +247,10 @@
                 <p>小圆点会从左侧初筛名次移动到右侧重排名次，表示同一个 chunk 的名次变化。</p>
               </div>
               <div class="plain-card">
+                <strong>为什么不是 3D</strong>
+                <p>Rerank 重点不是看向量空间位置，而是看同一批候选在“召回分”和“能否回答问题”两种标准下如何换位，所以用排序流向图更直观。</p>
+              </div>
+              <div class="plain-card">
                 <strong>上升</strong>
                 <p>如果 chunk 在右侧位置更靠上，说明 reranker 认为它更能回答问题。</p>
               </div>
@@ -288,5 +293,7 @@
     </div>
 
     <script src="./app.js?v=20260512-rerank-v2"></script>
+    <script src="../../../平台前端/platform-quality.js?v=20260513-quality-v1"></script>
+
   </body>
 </html>

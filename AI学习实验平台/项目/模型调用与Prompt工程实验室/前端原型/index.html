@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>模型调用与 Prompt 工程实验室</title>
     <link rel="stylesheet" href="./styles.css?v=20260512-modelprompt-v1" />
+    <link rel="stylesheet" href="../../../平台前端/platform-quality.css?v=20260513-quality-v1" />
   </head>
   <body>
     <div class="app-shell">
@@ -211,8 +212,10 @@
                 </div>
               </div>
               <div class="plain-card"><strong>Prompt</strong><p>决定模型知道什么、不能做什么、输出什么格式。</p></div>
+              <div class="plain-card"><strong>Context</strong><p>Context 是你塞给模型的资料，比如 RAG 命中的 chunk。资料不准，Prompt 写得再漂亮也可能答歪。</p></div>
               <div class="plain-card"><strong>Validation</strong><p>模型输出不是天然可靠，必须检查 JSON、字段和引用。</p></div>
               <div class="plain-card"><strong>Retry</strong><p>重试不是重复发同一个请求，而是带着失败原因修正请求。</p></div>
+              <div class="plain-card"><strong>成本</strong><p>输入越长、输出越长、模型越强、重试越多，成本和延迟就越高。工程里必须记录 token、耗时和失败原因。</p></div>
             </section>
           </div>
         </section>
@@ -243,5 +246,7 @@
       </main>
     </div>
     <script src="./app.js?v=20260512-modelprompt-v1"></script>
+    <script src="../../../平台前端/platform-quality.js?v=20260513-quality-v1"></script>
+
   </body>
 </html>

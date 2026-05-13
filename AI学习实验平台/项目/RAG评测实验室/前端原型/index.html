@@ -6,6 +6,7 @@
     <title>RAG 评测实验室</title>
     <link rel="icon" href="data:," />
     <link rel="stylesheet" href="./styles.css?v=20260512-rageval-v2" />
+    <link rel="stylesheet" href="../../../平台前端/platform-quality.css?v=20260513-quality-v1" />
   </head>
   <body>
     <div class="app-shell">
@@ -206,6 +207,8 @@
               </div>
               <div class="plain-card"><strong>检索差</strong><p>先调 chunk、embedding、向量库、Hybrid、Top K。</p></div>
               <div class="plain-card"><strong>引用差</strong><p>检查 metadata、引用来源、证据拼接和 prompt 约束。</p></div>
+              <div class="plain-card"><strong>MRR 怎么看</strong><p>标准证据排第 1 名得 1 分，排第 2 名得 0.5 分，排第 3 名得 0.33 分。它专门看“好证据是不是靠前”。</p></div>
+              <div class="plain-card"><strong>Recall 和 MRR 的区别</strong><p>Recall 只问“有没有找回来”，MRR 继续问“找回来以后排第几”。RAG 通常两个都要看。</p></div>
               <div class="plain-card"><strong>忠实度差</strong><p>说明模型没有严格基于证据回答，需要改 prompt、加证据门或拒答。</p></div>
               <div class="plain-card"><strong>图形越饱满越好</strong><p>雷达图凹进去的方向就是短板。比如 MRR 凹进去，说明标准证据虽然可能被找回，但排得不够靠前。</p></div>
             </section>
@@ -238,5 +241,7 @@
       </main>
     </div>
     <script src="./app.js?v=20260512-rageval-v2"></script>
+    <script src="../../../平台前端/platform-quality.js?v=20260513-quality-v1"></script>
+
   </body>
 </html>
