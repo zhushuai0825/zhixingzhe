@@ -342,42 +342,54 @@ function rankShift(item) {
   return state.recallResults.findIndex((entry) => entry.id === item.id) - state.rerankResults.findIndex((entry) => entry.id === item.id);
 }
 
+function projectRankPoint(point, width, height) {
+  const depth = 1 / (1 + point.z / 760);
+  return {
+    x: width / 2 + point.x * depth,
+    y: height * 0.58 + point.y * depth - point.z * 0.16,
+    depth,
+  };
+}
+
+function drawRankGrid(ctx, width, height) {
+  ctx.fillStyle = "#f8fbfb";
+  ctx.fillRect(0, 0, width, height);
+  ctx.fillStyle = "#173539";
+  ctx.font = "900 14px sans-serif";
+  ctx.fillText("3D Rerank 排序轨道：左后方是向量召回，右前方是重排结果", 24, 32);
+  ctx.fillStyle = "#687573";
+  ctx.font = "800 12px sans-serif";
+  ctx.fillText("绿线表示上升，红线表示下降，棕色表示当前选中证据", 24, 54);
+  ctx.strokeStyle = "rgba(22,112,122,0.12)";
+  for (let x = -380; x <= 380; x += 76) {
+    const a = projectRankPoint({ x, y: 128, z: 60 }, width, height);
+    const b = projectRankPoint({ x, y: 128, z: 540 }, width, height);
+    ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+  }
+  for (let z = 60; z <= 540; z += 80) {
+    const a = projectRankPoint({ x: -390, y: 128, z }, width, height);
+    const b = projectRankPoint({ x: 390, y: 128, z }, width, height);
+    ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+  }
+}
+
 function drawRankCanvas() {
   const canvas = $("#rankCanvas");
   if (!canvas) return;
   const { ctx, width, height } = canvasContext(canvas);
   const progress = easeInOut(state.animationProgress ?? 1);
   ctx.clearRect(0, 0, width, height);
-  ctx.fillStyle = "#f8fbfb";
-  ctx.fillRect(0, 0, width, height);
-  ctx.strokeStyle = "rgba(22,112,122,0.08)";
-  ctx.lineWidth = 1;
-  for (let x = 36; x < width; x += 34) {
-    ctx.beginPath();
-    ctx.moveTo(x, 50);
-    ctx.lineTo(x + 14, height - 30);
-    ctx.stroke();
-  }
-  ctx.fillStyle = "#173539";
-  ctx.font = "900 14px sans-serif";
-  ctx.fillText("向量召回顺序", 42, 34);
-  ctx.fillText("Rerank 后顺序", width - 180, 34);
-
-  const leftX = 58;
-  const rightX = width - 250;
-  const cardW = Math.min(230, width * 0.28);
-  const cardH = 46;
-  const top = 68;
-  const gap = Math.min(66, Math.max(52, (height - 120) / Math.max(1, state.recallResults.length)));
+  drawRankGrid(ctx, width, height);
+  const gap = Math.min(54, Math.max(38, 300 / Math.max(1, state.recallResults.length)));
   const leftMap = new Map();
   const rightMap = new Map();
   state.canvasNodes = [];
 
   state.recallResults.forEach((item, index) => {
-    leftMap.set(item.id, { x: leftX, y: top + index * gap });
+    leftMap.set(item.id, projectRankPoint({ x: -260, y: -112 + index * gap, z: 130 }, width, height));
   });
   state.rerankResults.forEach((item, index) => {
-    rightMap.set(item.id, { x: rightX, y: top + index * gap });
+    rightMap.set(item.id, projectRankPoint({ x: 260, y: -112 + index * gap, z: 430 }, width, height));
   });
 
   state.recallResults.forEach((item) => {
@@ -389,28 +401,36 @@ function drawRankCanvas() {
     ctx.strokeStyle = selected ? "rgba(179,92,46,0.82)" : shift > 0 ? "rgba(34,118,80,0.32)" : shift < 0 ? "rgba(163,61,52,0.24)" : "rgba(22,112,122,0.18)";
     ctx.lineWidth = selected ? 4 : 1.5;
     ctx.beginPath();
-    ctx.moveTo(from.x + cardW, from.y + cardH / 2);
-    ctx.bezierCurveTo(width * 0.42, from.y, width * 0.58, to.y, to.x, to.y + cardH / 2);
+    ctx.moveTo(from.x, from.y);
+    ctx.bezierCurveTo(width * 0.42, from.y - 120, width * 0.58, to.y - 120, to.x, to.y);
     ctx.stroke();
   });
 
   function drawCard(item, point, index, mode) {
     const selected = item.id === state.selectedId;
+    const cardW = 150 * point.depth;
+    const cardH = 48 * point.depth;
+    const x = point.x - cardW / 2;
+    const y = point.y - cardH / 2;
+    ctx.fillStyle = "rgba(23,53,57,0.14)";
+    ctx.beginPath();
+    ctx.ellipse(point.x, point.y + cardH * 0.7, cardW * 0.45, 9 * point.depth, 0, 0, Math.PI * 2);
+    ctx.fill();
     ctx.fillStyle = selected ? "#fff1e8" : "#ffffff";
     ctx.strokeStyle = selected ? "#b35c2e" : "rgba(22,112,122,0.22)";
     ctx.lineWidth = selected ? 2 : 1;
-    drawRoundRect(ctx, point.x, point.y, cardW, cardH, 8);
+    drawRoundRect(ctx, x, y, cardW, cardH, 8);
     ctx.fill();
     ctx.stroke();
     ctx.fillStyle = selected ? "#b35c2e" : "#16707a";
-    ctx.font = "900 12px sans-serif";
-    ctx.fillText(`${mode} ${index + 1}`, point.x + 10, point.y + 9);
+    ctx.font = `900 ${Math.max(10, 12 * point.depth)}px sans-serif`;
+    ctx.fillText(`${mode} ${index + 1}`, x + 10, y + 15 * point.depth);
     ctx.fillStyle = "#202827";
-    ctx.font = "900 13px sans-serif";
-    ctx.fillText(item.title.slice(0, 13), point.x + 10, point.y + 27);
+    ctx.font = `900 ${Math.max(10, 13 * point.depth)}px sans-serif`;
+    ctx.fillText(item.title.slice(0, 12), x + 10, y + 34 * point.depth);
     state.canvasNodes.push({
-      x: point.x,
-      y: point.y,
+      x,
+      y,
       width: cardW,
       height: cardH,
       id: item.id,
@@ -427,8 +447,8 @@ function drawRankCanvas() {
     const to = rightMap.get(item.id);
     if (!from || !to) return;
     const selected = item.id === state.selectedId;
-    const x = (from.x + cardW) + ((to.x - from.x) * progress);
-    const y = (from.y + cardH / 2) + ((to.y + cardH / 2 - from.y - cardH / 2) * progress);
+    const x = from.x + ((to.x - from.x) * progress);
+    const y = from.y + ((to.y - from.y) * progress) - Math.sin(progress * Math.PI) * 64;
     const shift = rankShift(item);
     ctx.beginPath();
     ctx.fillStyle = selected ? "#b35c2e" : shift > 0 ? "#227650" : shift < 0 ? "#a33d34" : "#16707a";
@@ -445,7 +465,7 @@ function drawRankCanvas() {
 
   ctx.fillStyle = "#687573";
   ctx.font = "800 12px sans-serif";
-  ctx.fillText("绿点上升，红点下降，棕色为当前选中证据。图形由当前 query、Top K、策略实时计算。", 42, height - 18);
+  ctx.fillText("图形由当前 query、Top K、策略实时计算。Rerank 的重点是候选在 3D 排序轨道上的换位。", 24, height - 18);
 }
 
 function startRankAnimation() {

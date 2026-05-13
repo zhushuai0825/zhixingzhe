@@ -335,39 +335,118 @@ function canvasContext(canvas) {
   return { ctx, width: rect.width, height: rect.height };
 }
 
+function projectTracePoint(point, width, height) {
+  const depth = 1 / (1 + point.z / 720);
+  return {
+    x: width / 2 + point.x * depth,
+    y: height * 0.58 + point.y * depth - point.z * 0.18,
+    depth,
+  };
+}
+
+function drawTraceGrid(ctx, width, height) {
+  ctx.fillStyle = "#f8fbfb";
+  ctx.fillRect(0, 0, width, height);
+  ctx.fillStyle = "#173539";
+  ctx.font = "900 14px sans-serif";
+  ctx.fillText("3D Agent 执行空间：目标从左后方进入，工具调用沿深度向前推进", 24, 32);
+  ctx.fillStyle = "#687573";
+  ctx.font = "800 12px sans-serif";
+  ctx.fillText("悬停看输入输出 · 点击节点看详情 · 节点越靠前表示越接近最终结果", 24, 54);
+
+  ctx.strokeStyle = "rgba(22,112,122,0.12)";
+  ctx.lineWidth = 1;
+  for (let x = -360; x <= 360; x += 72) {
+    const a = projectTracePoint({ x, y: 120, z: 40 }, width, height);
+    const b = projectTracePoint({ x, y: 120, z: 520 }, width, height);
+    ctx.beginPath();
+    ctx.moveTo(a.x, a.y);
+    ctx.lineTo(b.x, b.y);
+    ctx.stroke();
+  }
+  for (let z = 40; z <= 520; z += 80) {
+    const a = projectTracePoint({ x: -390, y: 120, z }, width, height);
+    const b = projectTracePoint({ x: 390, y: 120, z }, width, height);
+    ctx.beginPath();
+    ctx.moveTo(a.x, a.y);
+    ctx.lineTo(b.x, b.y);
+    ctx.stroke();
+  }
+}
+
+function drawTraceNode(ctx, node, step, selected) {
+  const cardW = 104 * node.depth;
+  const cardH = 70 * node.depth;
+  const lift = (26 + step.score * 34) * node.depth;
+  const x = node.x - cardW / 2;
+  const y = node.y - lift - cardH;
+  const color = step.type === "Tool" ? "#16707a" : step.type === "Evaluate" ? "#b35c2e" : step.type === "Reflect" ? "#173539" : "#227650";
+
+  ctx.fillStyle = "rgba(23,53,57,0.16)";
+  ctx.beginPath();
+  ctx.ellipse(node.x, node.y + 10, cardW * 0.52, 12 * node.depth, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = "rgba(23,53,57,0.18)";
+  ctx.beginPath();
+  ctx.moveTo(x + 8, y + cardH);
+  ctx.lineTo(x + 22, y + cardH + 14 * node.depth);
+  ctx.lineTo(x + cardW + 14 * node.depth, y + cardH + 14 * node.depth);
+  ctx.lineTo(x + cardW, y + cardH);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.fillStyle = color;
+  ctx.strokeStyle = selected ? "#ffffff" : "rgba(255,255,255,0.72)";
+  ctx.lineWidth = selected ? 4 : 2;
+  ctx.beginPath();
+  ctx.roundRect(x, y, cardW, cardH, 10 * node.depth);
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.fillStyle = "#ffffff";
+  ctx.textAlign = "center";
+  ctx.font = `900 ${Math.max(10, 13 * node.depth)}px sans-serif`;
+  ctx.fillText(step.type, node.x, y + 24 * node.depth);
+  ctx.font = `800 ${Math.max(9, 11 * node.depth)}px sans-serif`;
+  ctx.fillText(step.name.slice(0, 12), node.x, y + 46 * node.depth);
+
+  return { x, y, width: cardW, height: cardH, index: step.index };
+}
+
 function drawTrace() {
   const canvas = $("#traceCanvas");
   if (!canvas || !state.trace.length) return;
   const { ctx, width, height } = canvasContext(canvas);
   ctx.clearRect(0, 0, width, height);
-  ctx.fillStyle = "#f8fbfb";
-  ctx.fillRect(0, 0, width, height);
+  drawTraceGrid(ctx, width, height);
   state.canvasNodes = [];
-  const gap = Math.max(118, (width - 100) / Math.max(1, state.trace.length - 1));
-  const y = height / 2;
-  state.trace.forEach((step, index) => {
-    const x = 50 + index * gap;
+  const count = Math.max(1, state.trace.length - 1);
+  const points = state.trace.map((step, index) => {
+    const x = -330 + (660 * index) / count;
+    const z = 80 + index * 58;
+    const y = 95 - (step.score || 0) * 58 + (index % 2) * 24;
+    return { ...projectTracePoint({ x, y, z }, width, height), step: { ...step, index } };
+  });
+
+  points.forEach((point, index) => {
     if (index > 0) {
-      ctx.strokeStyle = "#9db8b3";
-      ctx.lineWidth = 3;
+      const previous = points[index - 1];
+      ctx.strokeStyle = point.step.type === "Evaluate" ? "rgba(179,92,46,0.46)" : "rgba(22,112,122,0.38)";
+      ctx.lineWidth = 3 * point.depth;
       ctx.beginPath();
-      ctx.moveTo(x - gap + 42, y);
-      ctx.lineTo(x - 42, y);
+      ctx.moveTo(previous.x, previous.y - 42 * previous.depth);
+      ctx.bezierCurveTo(previous.x + 46, previous.y - 120, point.x - 46, point.y - 120, point.x, point.y - 42 * point.depth);
       ctx.stroke();
     }
-    const color = step.type === "Tool" ? "#16707a" : step.type === "Evaluate" ? "#b35c2e" : step.type === "Reflect" ? "#173539" : "#227650";
-    ctx.fillStyle = color;
-    ctx.beginPath();
-    ctx.roundRect(x - 42, y - 34, 84, 68, 8);
-    ctx.fill();
-    ctx.fillStyle = "#ffffff";
-    ctx.font = "900 12px sans-serif";
-    ctx.textAlign = "center";
-    ctx.fillText(step.type, x, y - 6);
-    ctx.font = "800 11px sans-serif";
-    ctx.fillText(step.name.slice(0, 12), x, y + 14);
-    state.canvasNodes.push({ x: x - 46, y: y - 38, width: 92, height: 76, index });
   });
+  points
+    .sort((a, b) => b.depth - a.depth)
+    .forEach((point) => {
+      const hit = drawTraceNode(ctx, point, point.step, point.step.index === state.selectedStep);
+      state.canvasNodes.push(hit);
+    });
+  ctx.textAlign = "left";
 }
 
 function bindCanvasTooltip() {

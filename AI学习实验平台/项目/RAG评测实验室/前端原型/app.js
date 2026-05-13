@@ -299,6 +299,52 @@ function easeOutCubic(t) {
   return 1 - ((1 - t) ** 3);
 }
 
+function projectMetricPoint(point, width, height) {
+  const depth = 1 / (1 + point.z / 760);
+  return {
+    x: width / 2 + point.x * depth,
+    y: height * 0.66 + point.y * depth - point.z * 0.18,
+    depth,
+  };
+}
+
+function drawMetricBlock(ctx, base, value, label, color) {
+  const barW = 54 * base.depth;
+  const barD = 30 * base.depth;
+  const barH = (42 + 210 * value) * base.depth;
+  const x = base.x - barW / 2;
+  const y = base.y - barH;
+  ctx.fillStyle = "rgba(23,53,57,0.12)";
+  ctx.beginPath();
+  ctx.ellipse(base.x, base.y + 10, barW * 0.78, 10 * base.depth, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = color;
+  ctx.fillRect(x, y, barW, barH);
+  ctx.fillStyle = "rgba(255,255,255,0.28)";
+  ctx.beginPath();
+  ctx.moveTo(x, y);
+  ctx.lineTo(x + barD, y - barD * 0.48);
+  ctx.lineTo(x + barW + barD, y - barD * 0.48);
+  ctx.lineTo(x + barW, y);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle = "rgba(23,53,57,0.2)";
+  ctx.beginPath();
+  ctx.moveTo(x + barW, y);
+  ctx.lineTo(x + barW + barD, y - barD * 0.48);
+  ctx.lineTo(x + barW + barD, y + barH - barD * 0.48);
+  ctx.lineTo(x + barW, y + barH);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle = "#202827";
+  ctx.textAlign = "center";
+  ctx.font = `900 ${Math.max(10, 12 * base.depth)}px sans-serif`;
+  ctx.fillText(label, base.x, base.y + 30 * base.depth);
+  ctx.fillStyle = color;
+  ctx.fillText(value.toFixed(2), base.x, y - 12 * base.depth);
+  return { x: x - 8, y: y - 20, width: barW + barD + 16, height: barH + 52 };
+}
+
 function drawMetrics() {
   const canvas = $("#metricCanvas");
   if (!canvas || !state.result) return;
@@ -308,88 +354,39 @@ function drawMetrics() {
   ctx.clearRect(0, 0, width, height);
   ctx.fillStyle = "#f8fbfb";
   ctx.fillRect(0, 0, width, height);
-  ctx.strokeStyle = "rgba(22,112,122,0.08)";
+  ctx.strokeStyle = "rgba(22,112,122,0.12)";
   ctx.lineWidth = 1;
-  for (let x = 30; x < width; x += 32) {
-    ctx.beginPath();
-    ctx.moveTo(x, 54);
-    ctx.lineTo(x + 18, height - 26);
-    ctx.stroke();
+  for (let x = -420; x <= 420; x += 70) {
+    const a = projectMetricPoint({ x, y: 78, z: 40 }, width, height);
+    const b = projectMetricPoint({ x, y: 78, z: 520 }, width, height);
+    ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+  }
+  for (let z = 40; z <= 520; z += 80) {
+    const a = projectMetricPoint({ x: -430, y: 78, z }, width, height);
+    const b = projectMetricPoint({ x: 430, y: 78, z }, width, height);
+    ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
   }
   ctx.fillStyle = "#173539";
   ctx.font = "900 14px sans-serif";
-  ctx.fillText("RAG 评测指标：雷达形状 + 分数条", 24, 32);
-
-  const radarSize = Math.min(250, Math.max(180, width * 0.3), Math.max(180, height - 130));
-  const cx = Math.min(width * 0.24, 180);
-  const cy = 78 + radarSize / 2;
-  const radius = radarSize / 2 - 18;
-  const radarEntries = entries.filter(([key]) => key !== "overall");
-  ctx.strokeStyle = "rgba(22,112,122,0.16)";
-  ctx.fillStyle = "#687573";
-  ctx.font = "800 11px sans-serif";
-  for (let ring = 1; ring <= 4; ring += 1) {
-    ctx.beginPath();
-    radarEntries.forEach(([, value], index) => {
-      const angle = -Math.PI / 2 + (index / radarEntries.length) * Math.PI * 2;
-      const x = cx + Math.cos(angle) * radius * (ring / 4);
-      const y = cy + Math.sin(angle) * radius * (ring / 4);
-      if (index === 0) ctx.moveTo(x, y);
-      else ctx.lineTo(x, y);
-    });
-    ctx.closePath();
-    ctx.stroke();
-  }
-  ctx.beginPath();
-  radarEntries.forEach(([key, rawValue], index) => {
-    const value = rawValue * progress;
-    const angle = -Math.PI / 2 + (index / radarEntries.length) * Math.PI * 2;
-    const x = cx + Math.cos(angle) * radius * value;
-    const y = cy + Math.sin(angle) * radius * value;
-    if (index === 0) ctx.moveTo(x, y);
-    else ctx.lineTo(x, y);
-  });
-  ctx.closePath();
-  ctx.fillStyle = "rgba(22,112,122,0.2)";
-  ctx.fill();
-  ctx.strokeStyle = "#16707a";
-  ctx.lineWidth = 2;
-  ctx.stroke();
-  radarEntries.forEach(([key, value], index) => {
-    const angle = -Math.PI / 2 + (index / radarEntries.length) * Math.PI * 2;
-    const x = cx + Math.cos(angle) * (radius + 17);
-    const y = cy + Math.sin(angle) * (radius + 17);
-    ctx.fillStyle = value >= 0.8 ? "#16707a" : value >= 0.5 ? "#b35c2e" : "#a33d34";
-    ctx.beginPath();
-    ctx.arc(cx + Math.cos(angle) * radius * value * progress, cy + Math.sin(angle) * radius * value * progress, 4, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = "#202827";
-    ctx.textAlign = x < cx - 8 ? "right" : x > cx + 8 ? "left" : "center";
-    ctx.fillText(metricLabel(key).replace("@K", ""), x, y);
-  });
-  ctx.textAlign = "start";
-
-  const left = Math.max(330, width * 0.42);
-  const top = 74;
-  const barW = Math.max(130, width - left - 92);
-  const gap = Math.min(62, (height - 120) / entries.length);
-  state.metricNodes = [];
-  entries.forEach(([key, value], index) => {
-    const y = top + index * gap;
-    ctx.fillStyle = "#202827";
-    ctx.font = "900 13px sans-serif";
-    ctx.fillText(metricLabel(key), left, y);
-    ctx.fillStyle = "#eef4f2";
-    ctx.fillRect(left + 112, y - 14, barW, 18);
-    ctx.fillStyle = key === "overall" ? "#173539" : value >= 0.8 ? "#16707a" : value >= 0.5 ? "#b35c2e" : "#a33d34";
-    ctx.fillRect(left + 112, y - 14, barW * value * progress, 18);
-    ctx.fillStyle = "#173539";
-    ctx.fillText(value.toFixed(3), left + 124 + barW, y);
-    state.metricNodes.push({ x: left, y: y - 22, width: barW + 190, height: 34, key, value });
-  });
+  ctx.fillText("3D RAG 评测指标台：柱子越高，说明这一项越健康", 24, 32);
   ctx.fillStyle = "#687573";
   ctx.font = "800 12px sans-serif";
-  ctx.fillText("图形由当前评测问题、Top K 和系统版本实时计算。凹进去的方向就是短板。", 24, height - 18);
+  ctx.fillText("悬停柱子看指标解释。低柱就是下一步要优化的短板。", 24, 54);
+
+  state.metricNodes = [];
+  entries.forEach(([key, rawValue], index) => {
+    const row = Math.floor(index / 4);
+    const col = index % 4;
+    const value = rawValue * progress;
+    const base = projectMetricPoint({ x: -270 + col * 180, y: 92, z: 120 + row * 220 }, width, height);
+    const color = key === "overall" ? "#173539" : rawValue >= 0.8 ? "#16707a" : rawValue >= 0.5 ? "#b35c2e" : "#a33d34";
+    const hit = drawMetricBlock(ctx, base, value, metricLabel(key).replace("@K", ""), color);
+    state.metricNodes.push({ ...hit, key, value: rawValue });
+  });
+  ctx.textAlign = "left";
+  ctx.fillStyle = "#687573";
+  ctx.font = "800 12px sans-serif";
+  ctx.fillText("图形由当前评测问题、Top K 和系统版本实时计算。短柱优先优化。", 24, height - 18);
 }
 
 function startMetricAnimation() {

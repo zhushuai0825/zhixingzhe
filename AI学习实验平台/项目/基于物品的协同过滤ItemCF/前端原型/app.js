@@ -745,21 +745,19 @@ function renderMatchCanvas() {
 
   drawCanvasFrame(ctx, rect.width, rect.height);
 
-  const margin = 28;
-  const userWidth = Math.min(152, Math.max(118, rect.width * 0.2));
-  const cardWidth = Math.min(190, Math.max(130, rect.width * 0.24));
-  const gap = Math.max(14, (rect.width - margin * 2 - userWidth - cardWidth * 2) / 2);
-  const userX = margin;
-  const likedX = userX + userWidth + gap;
-  const recX = likedX + cardWidth + gap;
+  const userWidth = Math.min(150, Math.max(112, rect.width * 0.18));
+  const cardWidth = Math.min(180, Math.max(126, rect.width * 0.22));
+  const userX = rect.width * 0.1;
+  const likedX = rect.width * 0.43;
+  const recX = rect.width * 0.76;
 
   drawLaneLabel(ctx, "当前用户", userX, 30);
   drawLaneLabel(ctx, "已喜欢物品", likedX, 30);
   drawLaneLabel(ctx, "候选推荐", recX, 30);
 
   const userNode = {
-    x: userX,
-    y: Math.max(76, rect.height / 2 - 42),
+    x: userX - userWidth / 2,
+    y: Math.max(92, rect.height / 2 - 42),
     width: userWidth,
     height: 84,
     label: user.name,
@@ -838,22 +836,27 @@ function layoutNodeColumn(itemsToLayout, x, startY, width, height, canvasHeight)
 }
 
 function drawCanvasFrame(ctx, width, height) {
-  ctx.fillStyle = "rgba(255, 255, 255, 0.7)";
-  [0.02, 0.34, 0.67].forEach((left) => {
-    drawRoundRect(ctx, width * left, 52, width * 0.28, height - 92, 14);
-    ctx.fill();
-  });
-
-  ctx.strokeStyle = "rgba(35, 111, 83, 0.16)";
-  ctx.lineWidth = 1;
-  [0.32, 0.65].forEach((left) => {
+  ctx.fillStyle = "#fbfdfb";
+  ctx.fillRect(0, 0, width, height);
+  ctx.fillStyle = "#174a38";
+  ctx.font = "900 13px sans-serif";
+  ctx.fillText("3D ItemCF 匹配空间：用户 -> 已喜欢物品 -> 候选推荐", 22, 30);
+  ctx.fillStyle = "#6b756f";
+  ctx.font = "800 12px sans-serif";
+  ctx.fillText("线越粗表示贡献越大，靠前的候选表示推荐分更高", 22, 52);
+  ctx.strokeStyle = "rgba(35, 111, 83, 0.12)";
+  for (let x = 40; x < width; x += 72) {
     ctx.beginPath();
-    ctx.setLineDash([6, 8]);
-    ctx.moveTo(width * left, 58);
-    ctx.lineTo(width * left, height - 36);
+    ctx.moveTo(x, 74);
+    ctx.lineTo(x + 46, height - 36);
     ctx.stroke();
-  });
-  ctx.setLineDash([]);
+  }
+  for (let y = 96; y < height; y += 58) {
+    ctx.beginPath();
+    ctx.moveTo(32, y);
+    ctx.lineTo(width - 34, y - 30);
+    ctx.stroke();
+  }
 }
 
 function drawLaneLabel(ctx, label, x, y) {
@@ -883,7 +886,7 @@ function drawPipelineLink(ctx, from, to, color, alpha, width) {
   ctx.lineWidth = width;
   ctx.beginPath();
   ctx.moveTo(startX, startY);
-  ctx.bezierCurveTo(startX + middle, startY, endX - middle, endY, endX, endY);
+  ctx.bezierCurveTo(startX + middle, startY - 92, endX - middle, endY - 92, endX, endY);
   ctx.stroke();
 
   ctx.fillStyle = colorWithAlpha(color, Math.min(0.95, alpha + 0.2));
@@ -897,10 +900,28 @@ function drawPipelineLink(ctx, from, to, color, alpha, width) {
 
 function drawNodeCard(ctx, node, highlight = false) {
   const isUser = node.type === "user";
+  const depth = node.type === "candidate" ? 0.92 : node.type === "liked" ? 1 : 1.08;
+  const lift = node.type === "candidate" ? 22 : node.type === "liked" ? 12 : 0;
+  const x = node.x;
+  const y = node.y - lift;
+  const w = node.width * depth;
+  const h = node.height * depth;
+  ctx.fillStyle = "rgba(31,39,35,0.14)";
+  ctx.beginPath();
+  ctx.ellipse(x + w / 2, y + h + 8, w * 0.45, 10, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = "rgba(31,39,35,0.16)";
+  ctx.beginPath();
+  ctx.moveTo(x + w, y);
+  ctx.lineTo(x + w + 14, y - 10);
+  ctx.lineTo(x + w + 14, y + h - 10);
+  ctx.lineTo(x + w, y + h);
+  ctx.closePath();
+  ctx.fill();
   ctx.fillStyle = isUser ? "#174a38" : highlight ? "#fff0e6" : "#ffffff";
   ctx.strokeStyle = isUser ? "#174a38" : highlight ? "#b65f2a" : "rgba(35, 111, 83, 0.22)";
   ctx.lineWidth = highlight ? 2 : 1;
-  drawRoundRect(ctx, node.x, node.y, node.width, node.height, 10);
+  drawRoundRect(ctx, x, y, w, h, 10);
   ctx.fill();
   ctx.stroke();
 
@@ -908,15 +929,15 @@ function drawNodeCard(ctx, node, highlight = false) {
   ctx.font = "900 11px sans-serif";
   ctx.textAlign = "left";
   ctx.textBaseline = "top";
-  ctx.fillText(node.title, node.x + 12, node.y + 10);
+  ctx.fillText(node.title, x + 12, y + 10);
 
   ctx.fillStyle = isUser ? "#ffffff" : "#1f2723";
   ctx.font = "900 14px sans-serif";
-  ctx.fillText(truncateCanvasText(node.label, node.type === "candidate" ? 11 : 12), node.x + 12, node.y + 29);
+  ctx.fillText(truncateCanvasText(node.label, node.type === "candidate" ? 11 : 12), x + 12, y + 29);
 
   ctx.fillStyle = isUser ? "#c4ddd2" : "#6b756f";
   ctx.font = "800 11px sans-serif";
-  ctx.fillText(truncateCanvasText(node.meta || "", 16), node.x + 12, node.y + node.height - 18);
+  ctx.fillText(truncateCanvasText(node.meta || "", 16), x + 12, y + h - 18);
 }
 
 function drawRoundRect(ctx, x, y, width, height, radius) {

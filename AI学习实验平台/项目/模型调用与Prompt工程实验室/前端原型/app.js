@@ -218,6 +218,46 @@ function canvasContext(canvas) {
   return { ctx, width: rect.width, height: rect.height };
 }
 
+function projectCallPoint(point, width, height) {
+  const depth = 1 / (1 + point.z / 740);
+  return {
+    x: width / 2 + point.x * depth,
+    y: height * 0.6 + point.y * depth - point.z * 0.17,
+    depth,
+  };
+}
+
+function drawCallBox(ctx, point, step) {
+  const w = 112 * point.depth;
+  const h = 72 * point.depth;
+  const x = point.x - w / 2;
+  const y = point.y - h;
+  const color = step.ok ? (step.type === "Validate" ? "#227650" : "#16707a") : "#b35c2e";
+  ctx.fillStyle = "rgba(23,53,57,0.14)";
+  ctx.beginPath();
+  ctx.ellipse(point.x, point.y + 8, w * 0.5, 10 * point.depth, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = "rgba(23,53,57,0.16)";
+  ctx.beginPath();
+  ctx.moveTo(x + w, y);
+  ctx.lineTo(x + w + 18 * point.depth, y - 14 * point.depth);
+  ctx.lineTo(x + w + 18 * point.depth, y + h - 14 * point.depth);
+  ctx.lineTo(x + w, y + h);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.roundRect(x, y, w, h, 9 * point.depth);
+  ctx.fill();
+  ctx.fillStyle = "#ffffff";
+  ctx.textAlign = "center";
+  ctx.font = `900 ${Math.max(10, 12 * point.depth)}px sans-serif`;
+  ctx.fillText(step.type, point.x, y + 25 * point.depth);
+  ctx.font = `800 ${Math.max(9, 11 * point.depth)}px sans-serif`;
+  ctx.fillText(step.title.slice(0, 9), point.x, y + 48 * point.depth);
+  return { x, y, width: w + 18 * point.depth, height: h, step };
+}
+
 function drawCallFlow() {
   const canvas = $("#callCanvas");
   if (!canvas || !state.steps.length) return;
@@ -226,30 +266,46 @@ function drawCallFlow() {
   ctx.fillStyle = "#f8fbfb";
   ctx.fillRect(0, 0, width, height);
   state.canvasNodes = [];
-  const gap = Math.max(120, (width - 110) / Math.max(1, state.steps.length - 1));
-  const y = height / 2;
-  state.steps.forEach((step, index) => {
-    const x = 55 + index * gap;
+  ctx.fillStyle = "#173539";
+  ctx.font = "900 14px sans-serif";
+  ctx.fillText("3D 模型调用通道：消息进入模型，校验失败会走重试支路", 24, 32);
+  ctx.fillStyle = "#687573";
+  ctx.font = "800 12px sans-serif";
+  ctx.fillText("绿色代表通过，橙色代表风险或失败。悬停看每一步细节。", 24, 54);
+  ctx.strokeStyle = "rgba(22,112,122,0.12)";
+  for (let x = -380; x <= 380; x += 76) {
+    const a = projectCallPoint({ x, y: 112, z: 60 }, width, height);
+    const b = projectCallPoint({ x, y: 112, z: 520 }, width, height);
+    ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+  }
+  for (let z = 60; z <= 520; z += 80) {
+    const a = projectCallPoint({ x: -400, y: 112, z }, width, height);
+    const b = projectCallPoint({ x: 400, y: 112, z }, width, height);
+    ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+  }
+  const count = Math.max(1, state.steps.length - 1);
+  const points = state.steps.map((step, index) => {
+    const retryOffset = step.type === "Retry" ? -86 : 0;
+    return {
+      ...projectCallPoint({ x: -330 + (660 * index) / count, y: 68 + retryOffset, z: 90 + index * 62 }, width, height),
+      step,
+    };
+  });
+  points.forEach((point, index) => {
     if (index > 0) {
-      ctx.strokeStyle = "#9db8b3";
-      ctx.lineWidth = 3;
+      const previous = points[index - 1];
+      ctx.strokeStyle = point.step.ok ? "rgba(22,112,122,0.38)" : "rgba(179,92,46,0.48)";
+      ctx.lineWidth = 3 * point.depth;
       ctx.beginPath();
-      ctx.moveTo(x - gap + 42, y);
-      ctx.lineTo(x - 42, y);
+      ctx.moveTo(previous.x, previous.y - 48 * previous.depth);
+      ctx.bezierCurveTo(previous.x + 52, previous.y - 120, point.x - 52, point.y - 120, point.x, point.y - 48 * point.depth);
       ctx.stroke();
     }
-    ctx.fillStyle = step.ok ? (step.type === "Validate" ? "#227650" : "#16707a") : "#b35c2e";
-    ctx.beginPath();
-    ctx.roundRect(x - 42, y - 34, 84, 68, 8);
-    ctx.fill();
-    ctx.fillStyle = "#ffffff";
-    ctx.font = "900 12px sans-serif";
-    ctx.textAlign = "center";
-    ctx.fillText(step.type, x, y - 6);
-    ctx.font = "800 11px sans-serif";
-    ctx.fillText(step.title.slice(0, 8), x, y + 14);
-    state.canvasNodes.push({ x: x - 46, y: y - 38, width: 92, height: 76, step });
   });
+  points.sort((a, b) => b.depth - a.depth).forEach((point) => {
+    state.canvasNodes.push(drawCallBox(ctx, point, point.step));
+  });
+  ctx.textAlign = "left";
 }
 
 function bindCanvasTooltip() {

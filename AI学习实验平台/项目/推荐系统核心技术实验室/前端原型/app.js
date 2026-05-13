@@ -176,6 +176,14 @@ function canvasContext(canvas) {
 }
 
 function drawNode(ctx, x, y, r, color, text) {
+  ctx.fillStyle = "rgba(23,56,32,0.14)";
+  ctx.beginPath();
+  ctx.ellipse(x, y + r * 0.95, r * 1.25, r * 0.42, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = "rgba(23,56,32,0.2)";
+  ctx.beginPath();
+  ctx.arc(x + r * 0.32, y - r * 0.28, r, 0, Math.PI * 2);
+  ctx.fill();
   ctx.fillStyle = color;
   ctx.beginPath();
   ctx.arc(x, y, r, 0, Math.PI * 2);
@@ -196,7 +204,14 @@ function drawCanvas(entries) {
   ctx.fillRect(0, 0, w, h);
   ctx.fillStyle = "#173820";
   ctx.font = "900 13px sans-serif";
-  ctx.fillText("推荐链路：左侧是当前用户历史，右侧是候选推荐，线越粗贡献越强", 18, 28);
+  ctx.fillText("3D 推荐链路空间：左侧历史行为，中间算法贡献，右侧候选推荐", 18, 28);
+  ctx.strokeStyle = "rgba(47,111,72,0.12)";
+  for (let x = 34; x < w; x += 72) {
+    ctx.beginPath(); ctx.moveTo(x, 56); ctx.lineTo(x + 42, h - 36); ctx.stroke();
+  }
+  for (let y = 72; y < h; y += 58) {
+    ctx.beginPath(); ctx.moveTo(28, y); ctx.lineTo(w - 26, y - 28); ctx.stroke();
+  }
 
   const liked = likedItemIds(state.userId).map((id) => byId(items, id));
   const leftX = 88;
@@ -226,7 +241,7 @@ function drawCanvas(entries) {
       ctx.lineWidth = lineWidth;
       ctx.beginPath();
       ctx.moveTo(leftX + 24, sourceY);
-      ctx.bezierCurveTo(w * 0.38, sourceY, w * 0.62, y, rightX - 24, y);
+      ctx.bezierCurveTo(w * 0.38, sourceY - 88, w * 0.62, y - 88, rightX - 24, y);
       ctx.stroke();
     });
     drawNode(ctx, rightX, y, index === 0 ? 21 : 17, index === 0 ? "#b45f2a" : "#1f6f84", String(index + 1));
