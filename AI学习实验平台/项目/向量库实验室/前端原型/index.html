@@ -1,0 +1,291 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>向量库实验室</title>
+    <link rel="stylesheet" href="./styles.css?v=20260511-vectordb-v1" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="project-switcher">
+          <button class="brand project-trigger" id="projectTrigger" aria-expanded="false">
+            <div class="brand-mark">库</div>
+            <div>
+              <strong>向量库实验室</strong>
+              <span>Collection + Query</span>
+            </div>
+            <i>切换</i>
+          </button>
+          <div class="project-menu" id="projectMenu">
+            <button data-project="chunking">
+              <strong>01 文本切分实验室</strong>
+              <span>先把长文档拆成 chunk</span>
+            </button>
+            <button data-project="embedding">
+              <strong>02 Embedding 与相似度</strong>
+              <span>把文本变向量并计算相似度</span>
+            </button>
+            <button class="is-active" data-project="vectordb">
+              <strong>03 向量库实验室</strong>
+              <span>保存向量并查询 Top K</span>
+            </button>
+            <button data-project="rerank">
+              <strong>04 Rerank 重排序实验室</strong>
+              <span>把初筛证据重新排序</span>
+            </button>
+            <button data-project="rageval">
+              <strong>05 RAG 评测实验室</strong>
+              <span>评估检索、引用和回答质量</span>
+            </button>
+            <button data-project="graphrag">
+              <strong>06 Graph RAG 图谱实验室</strong>
+              <span>实体关系和多跳推理</span>
+            </button>
+            <button data-project="agent">
+              <strong>07 Agent 工程实验室</strong>
+              <span>目标如何变成工具调用</span>
+            </button>
+            <button data-project="modelprompt">
+              <strong>08 模型调用与 Prompt 工程</strong>
+              <span>真实模型接入前必学</span>
+            </button>
+            <button data-project="zhixingzhe">
+              <strong>09 知行者 AI 实验室</strong>
+              <span>完整 RAG、Agent、大模型应用</span>
+            </button>
+            <button data-project="itemcf">
+              <strong>10 ItemCF 实验室</strong>
+              <span>物品共现如何推荐</span>
+            </button>
+            <button data-project="tagrec">
+              <strong>11 标签推荐实验室</strong>
+              <span>标签画像如何推荐</span>
+            </button>
+            <button data-project="usercf">
+              <strong>12 UserCF 实验室</strong>
+              <span>相似用户如何贡献推荐</span>
+            </button>
+            <button data-project="svd">
+              <strong>13 SVD 矩阵分解实验室</strong>
+              <span>隐向量如何预测喜欢</span>
+            </button>
+            <button data-project="recsys">
+              <strong>14 推荐系统总览</strong>
+              <span>四类推荐算法对比</span>
+            </button>
+          </div>
+        </div>
+
+        <nav class="nav">
+          <button class="nav-item is-active" data-view="overview">
+            <span>01</span>
+            <b>项目总览</b>
+          </button>
+          <button class="nav-item" data-view="lab">
+            <span>02</span>
+            <b>向量库实验台</b>
+          </button>
+          <button class="nav-item" data-view="visual">
+            <span>03</span>
+            <b>命中可视化</b>
+          </button>
+          <button class="nav-item" data-view="roadmap">
+            <span>04</span>
+            <b>学习路线</b>
+          </button>
+        </nav>
+
+        <div class="side-note">
+          <span>当前阶段</span>
+          <strong>内存教学向量库</strong>
+          <p>先看懂 collection、upsert、query、metadata、delete。当前后端重启会恢复示例数据，后续再换 Chroma/FAISS/pgvector。</p>
+        </div>
+      </aside>
+
+      <main class="main">
+        <header class="topbar">
+          <div>
+            <span class="eyebrow">Vector DB Lab</span>
+            <h1 id="pageTitle">项目总览</h1>
+          </div>
+          <div class="top-actions">
+            <span class="status-pill" id="backendStatus">正在连接后端</span>
+            <button class="primary-btn" data-view-link="lab">开始实验</button>
+          </div>
+        </header>
+
+        <section class="view is-active" id="overview">
+          <div class="hero-panel">
+            <div>
+              <span class="eyebrow">chunk embedding 存在哪里</span>
+              <h2>把向量库的增、查、删过程做成可观察实验。</h2>
+              <p>
+                向量库不是大模型，它负责保存每个 chunk 的 embedding、原文和 metadata。查询时，系统把问题也变成向量，再在 collection 里找 Top K 相似记录。
+              </p>
+              <div class="hero-actions">
+                <button class="primary-btn" data-view-link="lab">打开实验台</button>
+                <button class="secondary-btn" data-view-link="visual">看命中空间</button>
+              </div>
+            </div>
+            <div class="flow-card">
+              <div><span>01</span><strong>Chunk</strong><p>文档切分后的文本片段。</p></div>
+              <div><span>02</span><strong>Embedding</strong><p>每个 chunk 变成向量。</p></div>
+              <div><span>03</span><strong>Collection</strong><p>保存向量、原文和 metadata。</p></div>
+              <div><span>04</span><strong>Query</strong><p>按相似度返回 Top K。</p></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="view" id="lab">
+          <div class="lab-grid">
+            <section class="panel controls-panel">
+              <div class="panel-head">
+                <div>
+                  <h2>入库操作</h2>
+                  <p>Upsert 会写入或覆盖一条向量记录。</p>
+                </div>
+              </div>
+              <label class="field">
+                文档 ID
+                <input id="docIdInput" value="chunk-new" />
+              </label>
+              <label class="field">
+                Chunk 文本
+                <textarea id="docTextInput" rows="6">向量库会保存 chunk 的 embedding、原文和 metadata，查询时根据相似度返回 Top K。</textarea>
+              </label>
+              <div class="control-pair">
+                <label class="field">
+                  source
+                  <input id="sourceInput" value="custom.md" />
+                </label>
+                <label class="field">
+                  section
+                  <input id="sectionInput" value="自定义" />
+                </label>
+              </div>
+              <button class="primary-btn" id="upsertBtn">Upsert 入库</button>
+              <button class="secondary-btn" id="resetBtn">重置示例数据</button>
+            </section>
+
+            <section class="panel query-panel">
+              <div class="panel-head">
+                <div>
+                  <h2>查询向量库</h2>
+                  <p>查询文本会先 embedding，再和 collection 里的向量比较。</p>
+                </div>
+              </div>
+              <label class="field">
+                查询文本
+                <textarea id="queryInput" rows="4">embedding 和向量数据库是什么关系？</textarea>
+              </label>
+              <div class="control-pair">
+                <label class="field">
+                  Top K
+                  <select id="topKSelect">
+                    <option>2</option>
+                    <option selected>3</option>
+                    <option>5</option>
+                  </select>
+                </label>
+                <label class="field">
+                  source 过滤
+                  <input id="filterSourceInput" placeholder="例如 vector_db.md" />
+                </label>
+              </div>
+              <button class="primary-btn" id="queryBtn">查询 Top K</button>
+              <div class="plain-card" id="queryExplain"></div>
+            </section>
+
+            <section class="panel results-panel">
+              <div class="panel-head">
+                <div>
+                  <h2>命中结果</h2>
+                  <p>结果来自 collection，不是临时假数据。</p>
+                </div>
+              </div>
+              <div class="result-list" id="resultList"></div>
+            </section>
+          </div>
+
+          <div class="grid two">
+            <section class="panel collection-panel">
+              <div class="panel-head">
+                <div>
+                  <h2>Collection 数据</h2>
+                  <p>这里就是当前向量库里存的记录。</p>
+                </div>
+                <span class="status-pill" id="collectionStatus">0 条</span>
+              </div>
+              <div class="doc-list" id="docList"></div>
+            </section>
+
+            <section class="panel vector-panel">
+              <div class="panel-head">
+                <div>
+                  <h2>选中记录向量</h2>
+                  <p>看一条记录在各语义维度上的权重。</p>
+                </div>
+              </div>
+              <div class="vector-bars" id="vectorBars"></div>
+            </section>
+          </div>
+        </section>
+
+        <section class="view" id="visual">
+          <div class="visual-grid">
+            <section class="panel visual-main">
+              <div class="panel-head">
+                <div>
+                  <h2>3D 命中空间</h2>
+                  <p>中心是查询向量，collection 记录越靠近中心越相似。</p>
+                </div>
+              </div>
+              <div class="space-stage">
+                <canvas id="spaceCanvas" width="980" height="520"></canvas>
+                <div class="canvas-tooltip" id="canvasTooltip"></div>
+              </div>
+            </section>
+
+            <section class="panel explain-panel">
+              <div class="panel-head">
+                <div>
+                  <h2>向量库做什么</h2>
+                  <p>它不是回答问题，而是负责找证据。</p>
+                </div>
+              </div>
+              <div class="plain-card">
+                <strong>Collection</strong>
+                <p>一组向量记录的集合，类似一张专门用于向量检索的表。</p>
+              </div>
+              <div class="plain-card">
+                <strong>Metadata</strong>
+                <p>记录来源文件、页码、标题等信息，方便过滤、引用和删除。</p>
+              </div>
+              <div class="plain-card">
+                <strong>Query</strong>
+                <p>把问题变成向量，在 collection 里按相似度找 Top K。</p>
+              </div>
+            </section>
+          </div>
+        </section>
+
+        <section class="view" id="roadmap">
+          <section class="panel">
+            <div class="panel-head">
+              <div>
+                <h2>学习路线</h2>
+                <p>向量库学完后，下一步就是 Rerank。</p>
+              </div>
+            </div>
+            <div class="roadmap-list" id="roadmapList"></div>
+          </section>
+        </section>
+      </main>
+    </div>
+
+    <div class="toast" id="toast"></div>
+    <script src="./app.js?v=20260511-vectordb-v1"></script>
+  </body>
+</html>

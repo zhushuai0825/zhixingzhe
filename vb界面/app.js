@@ -18,6 +18,13 @@ const state = {
   sessions: [],
   messages: [],
   citations: [],
+  ragEvaluation: null,
+  ragLabResult: null,
+  ragLabRuns: [],
+  agentLabResult: null,
+  agentLabRuns: [],
+  ragEvalCases: [],
+  ragEvalBatch: null,
   modelConfigs: [],
   generatedTasks: [],
   chatWarning: null,
@@ -28,7 +35,96 @@ const state = {
   trendExplainUrl: null,
   trendExplainSource: "",
   pendingDeleteKbId: null,
+  activeRagModule: "advanced",
+  vectorPreviewMode: "top",
 };
+
+const ragLearningModules = [
+  {
+    id: "naive",
+    name: "Naive RAG",
+    title: "基础 / 标准 RAG",
+    level: "第一阶段：必须跑通",
+    summary: "分块 -> 向量化 -> 向量检索 -> 拼接上下文 -> 生成回答。",
+    suitable: "FAQ、简单文档问答、学习 RAG 主链路。",
+    weakness: "检索不准时容易答偏；没有查询改写、重排序、压缩和评测时，幻觉风险更高。",
+    system: "知行者的上传文档、切片、Embedding、FAISS 检索、AI 问答就是 Naive RAG 的主链路。",
+    practice: "用默认参数跑 RAG 实验室，先确认能命中文档片段，再看引用是否真的回答问题。",
+    includes: ["文档解析", "文本切片", "Embedding", "向量数据库", "向量检索", "Prompt 拼接", "引用来源"],
+    preset: {
+      question: "RAG 的核心流程是什么？",
+      chunkSize: 600,
+      overlap: 120,
+      topK: 5,
+      hybrid: false,
+      rerank: false,
+      note: "观察纯向量检索能不能命中核心流程。重点看引用片段是否完整覆盖“解析、切片、向量化、检索、生成”。",
+    },
+  },
+  {
+    id: "advanced",
+    name: "Advanced RAG",
+    title: "进阶 / 企业级 RAG",
+    level: "第二阶段：当前重点",
+    summary: "在 Naive RAG 上优化检索前、检索中、检索后三个环节。",
+    suitable: "企业知识库、产品助手、测试知识库、智能客服等需要较高准确率的场景。",
+    weakness: "链路更长，参数更多，需要评测集来防止越改越差。",
+    system: "知行者已经有 Hybrid 检索、BM25、Rerank、无依据拒答、RAG 实验室和自动评测集，正在向 Advanced RAG 演进。",
+    practice: "同一个问题只改一个参数：先对比 Hybrid 开关，再对比 Rerank 开关，最后用自动评测集验证通过率。",
+    includes: ["查询重写", "意图识别", "Hybrid 检索", "多路召回", "Rerank", "上下文压缩", "去冗余", "自动评测"],
+    preset: {
+      question: "Embedding 在 RAG 里起什么作用？",
+      chunkSize: 600,
+      overlap: 120,
+      topK: 5,
+      hybrid: true,
+      rerank: true,
+      note: "观察 Hybrid 和 Rerank 打开后，向量分、BM25 分、融合分、重排序分是否让证据更靠前。",
+    },
+  },
+  {
+    id: "agentic",
+    name: "Agentic RAG",
+    title: "智能体 RAG",
+    level: "第三阶段：做成系统能力",
+    summary: "让大模型像智能体一样动态决定是否检索、检索几次、调用什么工具、是否反思修正。",
+    suitable: "复杂多跳问题、长任务、自动分析报告、测试风险分析、需要工具调用的工作流。",
+    weakness: "更难测试，容易出现循环、工具误用、成本失控，需要清晰的步骤日志和停止条件。",
+    system: "知行者未来可以让 AI 自动拆解问题、检索知识库、生成任务、复盘结果，形成行动助手。",
+    practice: "先设计流程：问题 -> 判断是否需要检索 -> 检索 -> 反思证据是否够 -> 不够再检索 -> 生成任务。",
+    includes: ["工具调用", "动态检索", "反思修正", "多轮计划", "步骤日志", "停止条件", "成本控制"],
+    preset: {
+      question: "如果我要把知行者升级成行动助手，下一步应该先做什么？",
+      chunkSize: 900,
+      overlap: 160,
+      topK: 8,
+      hybrid: true,
+      rerank: true,
+      note: "这类问题更像任务规划。先观察一次检索是否够用，再思考 Agent 是否需要二次检索、生成任务或追问用户。",
+    },
+  },
+  {
+    id: "graph",
+    name: "Graph RAG",
+    title: "图谱 RAG",
+    level: "第四阶段：后期专项",
+    summary: "把文档抽取成实体和关系，形成知识图谱，再支持多跳关联推理。",
+    suitable: "法律条文推理、金融风控、医疗知识关联、组织关系、复杂依赖分析。",
+    weakness: "需要实体抽取、关系抽取、图数据库和图查询，学习成本高，不适合作为第一主线。",
+    system: "知行者后期可以把文档里的概念、项目、模型、论文、人物、公司抽成图谱，再回答多跳问题。",
+    practice: "先不用实现。现在只要能画出实体-关系图，例如：论文 -> 提出方法 -> 解决问题 -> 适用场景。",
+    includes: ["实体抽取", "关系抽取", "知识图谱", "图数据库", "多跳推理", "路径解释"],
+    preset: {
+      question: "RAG、Embedding、BM25 和 Rerank 之间是什么关系？",
+      chunkSize: 1000,
+      overlap: 180,
+      topK: 8,
+      hybrid: true,
+      rerank: true,
+      note: "Graph RAG 关注实体和关系。先从命中片段里手动画出：RAG 包含什么，Embedding/BM25/Rerank 分别负责什么。",
+    },
+  },
+];
 
 const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => Array.from(document.querySelectorAll(selector));
@@ -108,6 +204,9 @@ async function loadAll() {
     await loadDocumentsForVisibleKbs();
     await loadDocuments();
     await loadAnalytics();
+    await loadRagLabRuns();
+    await loadAgentLabRuns();
+    await loadRagEvalCases();
     renderAll();
   } catch (error) {
     renderBackendOffline(error.message);
@@ -134,6 +233,41 @@ async function loadAnalytics() {
     state.analytics = await api("/api/analytics/overview");
   } catch {
     state.analytics = null;
+  }
+}
+
+async function loadRagLabRuns() {
+  const params = new URLSearchParams();
+  const kbId = $("#ragLabKbSelect")?.value || state.activeKnowledgeBaseId;
+  if (kbId) params.set("knowledge_base_id", kbId);
+  params.set("limit", "10");
+  try {
+    state.ragLabRuns = await api(`/api/rag/lab/runs?${params.toString()}`);
+  } catch {
+    state.ragLabRuns = [];
+  }
+}
+
+async function loadAgentLabRuns() {
+  const params = new URLSearchParams();
+  const kbId = $("#agentLabKbSelect")?.value || state.activeKnowledgeBaseId;
+  if (kbId) params.set("knowledge_base_id", kbId);
+  params.set("limit", "10");
+  try {
+    state.agentLabRuns = await api(`/api/agent/lab/runs?${params.toString()}`);
+  } catch {
+    state.agentLabRuns = [];
+  }
+}
+
+async function loadRagEvalCases() {
+  const params = new URLSearchParams();
+  const kbId = $("#ragLabKbSelect")?.value || state.activeKnowledgeBaseId;
+  if (kbId) params.set("knowledge_base_id", kbId);
+  try {
+    state.ragEvalCases = await api(`/api/rag/eval-cases?${params.toString()}`);
+  } catch {
+    state.ragEvalCases = [];
   }
 }
 
@@ -769,9 +903,13 @@ function renderChat() {
     .join("");
   $("#chatKbSelect").innerHTML = kbOptions || `<option value="">请先创建知识库</option>`;
   $("#uploadKbSelect").innerHTML = kbOptions || `<option value="">请先创建知识库</option>`;
+  $("#ragLabKbSelect").innerHTML = kbOptions || `<option value="">请先创建知识库</option>`;
+  $("#agentLabKbSelect").innerHTML = kbOptions || `<option value="">请先创建知识库</option>`;
   if (state.activeKnowledgeBaseId) {
     $("#chatKbSelect").value = state.activeKnowledgeBaseId;
     $("#uploadKbSelect").value = state.activeKnowledgeBaseId;
+    $("#ragLabKbSelect").value = state.activeKnowledgeBaseId;
+    $("#agentLabKbSelect").value = state.activeKnowledgeBaseId;
   }
 
   $("#modelSelect").innerHTML =
@@ -812,6 +950,841 @@ function renderChat() {
   bindSessionActions();
 }
 
+function renderRagLab() {
+  renderRagLearningModules();
+  renderRagVisualization();
+  const result = state.ragLabResult;
+  $("#saveRagLabRunBtn").disabled = !result;
+  if (!result) {
+    $("#ragLabSummary").textContent = "运行后会展示切片数量、相似度和命中片段";
+    $("#ragLabResult").innerHTML = `<p class="empty-text">先选择知识库并输入问题，然后运行一次实验。</p>`;
+    $("#ragLabNotes").innerHTML = `<p class="empty-text">建议先用默认参数跑一遍，再只改一个参数做对比。</p>`;
+    renderRagLabHistory();
+    renderRagEvalCases();
+    renderRagEvalResult();
+    return;
+  }
+  const evaluation = result.evaluation || {};
+  $("#ragLabSummary").textContent = `临时切片 ${result.chunk_count} 个 · 命中 ${result.retrieved_chunks.length} 条 · 最高相关度 ${Number(evaluation.top_score || 0).toFixed(2)}`;
+  $("#ragLabResult").innerHTML =
+    `
+      <article class="rag-lab-eval">
+        <strong>${escapeHtml(ragVerdictText(evaluation.verdict))}</strong>
+        <span>${escapeHtml(evaluation.suggestion || "")}</span>
+        <span>问题覆盖率 ${Number(evaluation.coverage_ratio || 0).toFixed(2)} · 阈值 ${Number(evaluation.min_coverage || 0).toFixed(2)}</span>
+        <small>参数：chunk_size=${result.params.chunk_size}，overlap=${result.params.overlap}，top_k=${result.params.top_k}，hybrid=${result.params.hybrid === false ? "关" : "开"}，rerank=${result.params.rerank ? "开" : "关"}</small>
+      </article>
+    ` +
+    (result.retrieved_chunks || [])
+      .map(
+        (chunk) => `
+          <article class="rag-lab-hit">
+            <div>
+              <strong>${escapeHtml(chunk.document_name)}</strong>
+              <span>片段 ${Number(chunk.chunk_index || 0) + 1} · 相关度 ${Number(chunk.score || 0).toFixed(4)}${renderRerankScores(chunk)}</span>
+            </div>
+            <p>${escapeHtml(chunk.content || chunk.snippet || "")}</p>
+          </article>
+        `,
+      )
+      .join("") || `<p class="empty-text">这组参数没有检索到片段。</p>`;
+  $("#ragLabNotes").innerHTML = (result.learning_notes || [])
+    .map((note) => `<article class="learning-note">${escapeHtml(note)}</article>`)
+    .join("");
+  renderRagLabHistory();
+  renderRagEvalCases();
+  renderRagEvalResult();
+}
+
+function renderAgentLab() {
+  const result = state.agentLabResult;
+  if (!result) {
+    $("#agentLabSummary").textContent = "运行后会展示每一步思考、工具输入和工具输出";
+    $("#agentLabTrace").innerHTML = `<p class="empty-text">先选择知识库并输入一个目标。</p>`;
+    $("#agentLabTasks").innerHTML = `<p class="empty-text">运行后会出现候选任务。</p>`;
+    renderAgentLabRuns();
+    return;
+  }
+  $("#agentLabSummary").textContent = result.summary || "Agent 运行完成";
+  $("#agentLabTrace").innerHTML = (result.steps || []).map(renderAgentStep).join("");
+  $("#agentLabTasks").innerHTML =
+    (result.suggested_tasks || [])
+      .map(
+        (task, index) => `
+          <article class="agent-task-card">
+            <span>${index + 1}</span>
+            <div>
+              <strong>${escapeHtml(task.title)}</strong>
+              <p>${escapeHtml(task.description || task.ai_reason || "")}</p>
+              <small>${escapeHtml(task.ai_reason || "")}</small>
+            </div>
+          </article>
+        `,
+      )
+      .join("") || `<p class="empty-text">这次没有生成候选任务。</p>`;
+  if (result.created_task_ids?.length) {
+    $("#agentLabTasks").innerHTML += `<div class="notice">已保存 ${result.created_task_ids.length} 个任务到任务中心。</div>`;
+  }
+  renderAgentLabRuns();
+}
+
+function renderAgentStep(step) {
+  return `
+    <article class="agent-step-card">
+      <div class="agent-step-index">${Number(step.step_index || 0)}</div>
+      <div class="agent-step-main">
+        <div class="agent-step-head">
+          <strong>${escapeHtml(agentPhaseText(step.phase))}</strong>
+          ${step.tool_name ? `<span class="agent-tool-chip">${escapeHtml(step.tool_name)}</span>` : ""}
+        </div>
+        <p>${escapeHtml(step.thought || "")}</p>
+        <div class="agent-io-grid">
+          <div>
+            <span>工具输入</span>
+            <pre>${escapeHtml(JSON.stringify(step.tool_input || {}, null, 2))}</pre>
+          </div>
+          <div>
+            <span>工具输出</span>
+            <pre>${escapeHtml(JSON.stringify(step.tool_output || {}, null, 2))}</pre>
+          </div>
+        </div>
+      </div>
+    </article>
+  `;
+}
+
+function renderAgentLabRuns() {
+  $("#agentLabRuns").innerHTML =
+    state.agentLabRuns
+      .map(
+        (run) => `
+          <article class="agent-run-item">
+            <strong>${escapeHtml(run.goal)}</strong>
+            <span>${formatDate(run.created_at)} · ${escapeHtml(agentModeText(run.mode))} · ${run.steps?.length || 0} 步</span>
+            <small>${escapeHtml(run.summary || "")}</small>
+          </article>
+        `,
+      )
+      .join("") || `<p class="empty-text">还没有 Agent 运行记录。</p>`;
+}
+
+function renderRagLearningModules() {
+  const cards = $("#ragModuleCards");
+  const detail = $("#ragModuleDetail");
+  if (!cards || !detail) return;
+  const active = ragLearningModules.find((item) => item.id === state.activeRagModule) || ragLearningModules[0];
+  cards.innerHTML = ragLearningModules
+    .map(
+      (item) => `
+        <button class="rag-module-card ${item.id === active.id ? "is-active" : ""}" type="button" data-rag-module="${item.id}">
+          <span>${escapeHtml(item.level)}</span>
+          <strong>${escapeHtml(item.name)}</strong>
+          <small>${escapeHtml(item.title)}</small>
+        </button>
+      `,
+    )
+    .join("");
+  detail.innerHTML = `
+    <article class="rag-module-detail-card">
+      <div>
+        <span class="eyebrow">${escapeHtml(active.level)}</span>
+        <h3>${escapeHtml(active.name)} · ${escapeHtml(active.title)}</h3>
+        <p>${escapeHtml(active.summary)}</p>
+      </div>
+      <div class="rag-module-points">
+        <div><strong>适用场景</strong><span>${escapeHtml(active.suitable)}</span></div>
+        <div><strong>主要缺点</strong><span>${escapeHtml(active.weakness)}</span></div>
+        <div><strong>知行者对应</strong><span>${escapeHtml(active.system)}</span></div>
+        <div><strong>你现在怎么练</strong><span>${escapeHtml(active.practice)}</span></div>
+      </div>
+      <div class="rag-module-tags">
+        ${active.includes.map((item) => `<span>${escapeHtml(item)}</span>`).join("")}
+      </div>
+      <div class="rag-module-preset">
+        <strong>推荐实验</strong>
+        <span>${escapeHtml(active.preset.question)}</span>
+        <small>chunk_size=${active.preset.chunkSize}，overlap=${active.preset.overlap}，top_k=${active.preset.topK}，hybrid=${active.preset.hybrid ? "开" : "关"}，rerank=${active.preset.rerank ? "开" : "关"}</small>
+        <button class="secondary-btn" type="button" id="applyRagModulePreset">套用到实验参数</button>
+      </div>
+    </article>
+  `;
+  $("#applyRagModulePreset")?.addEventListener("click", () => applyRagModulePreset(active));
+  $$("[data-rag-module]").forEach((button) => {
+    button.addEventListener("click", () => {
+      state.activeRagModule = button.dataset.ragModule;
+      renderRagLearningModules();
+      renderRagVisualization();
+    });
+  });
+}
+
+function applyRagModulePreset(module) {
+  const preset = module.preset;
+  if (!preset) return;
+  $("#ragLabQuestion").value = preset.question;
+  $("#ragLabChunkSize").value = preset.chunkSize;
+  $("#ragLabOverlap").value = preset.overlap;
+  $("#ragLabTopK").value = preset.topK;
+  $("#ragLabHybrid").checked = preset.hybrid;
+  $("#ragLabRerank").checked = preset.rerank;
+  syncRagLabRangeLabels();
+  state.ragLabResult = null;
+  $("#ragLabSummary").textContent = `${module.name} 推荐实验已套用，点击“运行实验”查看检索结果`;
+  $("#ragLabResult").innerHTML = `<p class="empty-text">${escapeHtml(preset.note)}</p>`;
+  $("#ragLabNotes").innerHTML = `
+    <article class="learning-note">${escapeHtml(preset.note)}</article>
+    <article class="learning-note">运行后重点检查：命中片段是否能支撑问题、分数是否合理、是否需要调整参数。</article>
+  `;
+  $("#saveRagLabRunBtn").disabled = true;
+  showToast(`${module.name} 推荐实验已套用`);
+}
+
+function renderRagVisualization() {
+  const container = $("#ragVisual");
+  const summary = $("#ragVisualSummary");
+  if (!container) return;
+  const module = ragLearningModules.find((item) => item.id === state.activeRagModule) || ragLearningModules[0];
+  const result = state.ragLabResult;
+  const chunks = result ? (result.retrieved_chunks || []).slice(0, 4) : demoRagChunks(module.id);
+  if (summary) {
+    summary.textContent = `${module.name}：${visualSummary(module.id)}`;
+  }
+  container.innerHTML = `
+    <div class="rag-visual-flow">
+      ${visualFlowSteps(module.id).map((step, index) => `
+        <article class="rag-visual-step ${result ? "is-live" : ""}">
+          <b>${index + 1}</b>
+          <strong>${escapeHtml(step.title)}</strong>
+          <span>${escapeHtml(step.text)}</span>
+        </article>
+      `).join("")}
+    </div>
+    ${renderVectorTraceVisual(result?.vector_trace)}
+    ${renderRagVisualDashboard(result, chunks, module)}
+    <div class="rag-visual-grid">
+      <article class="rag-visual-box">
+        <h3>${module.id === "graph" ? "实体关系图" : module.id === "agentic" ? "智能体决策轨迹" : "文档切片与匹配"}</h3>
+        ${module.id === "graph" ? renderGraphVisual() : module.id === "agentic" ? renderAgenticVisual() : renderChunkMatchVisual(chunks)}
+      </article>
+      <article class="rag-visual-box">
+        <h3>数据怎么存</h3>
+        ${renderStorageVisual(module.id)}
+      </article>
+    </div>
+  `;
+}
+
+function renderVectorTraceVisual(trace) {
+  if (!trace) {
+    return `
+      <article class="vector-trace-panel">
+        <div class="rag-visual-card-head">
+          <strong>数据库向量透视</strong>
+          <span>运行实验后显示真实表记录</span>
+        </div>
+        <div class="vector-trace-empty">
+          <span>等待一次检索</span>
+          <p>这里会显示：query 向量、命中 chunk 在 documents / document_chunks / chunk_vectors 里的位置，以及向量检索、BM25、融合分、Rerank 的排序过程。</p>
+        </div>
+      </article>
+    `;
+  }
+  const query = trace.query || {};
+  const chunks = trace.chunks || [];
+  return `
+    <article class="vector-trace-panel">
+      <div class="rag-visual-card-head">
+        <strong>数据库向量透视</strong>
+        <span>${escapeHtml(query.provider || "embedding")} · ${escapeHtml(query.model_name || "")}</span>
+      </div>
+      ${renderVectorModeTabs()}
+      <div class="vector-query-card">
+        <div>
+          <span class="vector-label">检索词 query</span>
+          <strong>${escapeHtml(query.text || "")}</strong>
+          <small>${escapeHtml(query.storage || "实时计算")}</small>
+        </div>
+        ${renderVectorPreview(query.vector)}
+      </div>
+      <div class="vector-flow-map">
+        ${(trace.tables || []).map((item, index) => `
+          <div>
+            <b>${index + 1}</b>
+            <span>${escapeHtml(item)}</span>
+          </div>
+        `).join("")}
+      </div>
+      <div class="vector-chunk-grid">
+        ${chunks.map(renderStoredChunkTrace).join("") || `<p class="empty-text">数据库检索没有命中已入库 chunk。</p>`}
+      </div>
+    </article>
+  `;
+}
+
+function renderStoredChunkTrace(chunk) {
+  const storage = chunk.storage || {};
+  const isTemporary = typeof storage === "string";
+  return `
+    <section class="stored-chunk-card">
+      <div class="stored-chunk-head">
+        <b>#${chunk.rank}</b>
+        <div>
+          <strong>${escapeHtml(chunk.document_name || chunk.chunk_id || "未命名片段")}</strong>
+          <span>${isTemporary ? escapeHtml(storage) : `chunk_index=${chunk.chunk_index} · token_count=${chunk.token_count || 0}`}</span>
+        </div>
+      </div>
+      ${isTemporary ? "" : renderStoragePath(storage)}
+      ${renderVectorPreview(chunk.vector)}
+      ${renderSharedDimensions(chunk.shared_dimensions || [])}
+      ${renderTraceScores(chunk.scores || {})}
+      ${chunk.content_preview ? `<p>${escapeHtml(chunk.content_preview)}</p>` : ""}
+    </section>
+  `;
+}
+
+function renderStoragePath(storage) {
+  const documents = storage.documents || {};
+  const chunks = storage.document_chunks || {};
+  const vectors = storage.chunk_vectors || {};
+  return `
+    <div class="storage-path">
+      <div>
+        <span>documents</span>
+        <strong>${escapeHtml(documents.id || "-")}</strong>
+        <small>${escapeHtml(documents.file_name || "")}</small>
+      </div>
+      <i></i>
+      <div>
+        <span>document_chunks</span>
+        <strong>${escapeHtml(chunks.id || "-")}</strong>
+        <small>document_id=${escapeHtml(chunks.document_id || "-")}</small>
+      </div>
+      <i></i>
+      <div>
+        <span>chunk_vectors</span>
+        <strong>${escapeHtml(vectors.chunk_id || "-")}</strong>
+        <small>${escapeHtml(vectors.dimensions || "-")} 维 · ${escapeHtml(vectors.provider || "")}</small>
+      </div>
+    </div>
+  `;
+}
+
+function renderVectorModeTabs() {
+  const modes = [
+    ["top", "Top 维度"],
+    ["nonZero", "非零维"],
+    ["first", "前 12 维"],
+  ];
+  return `
+    <div class="vector-mode-tabs">
+      ${modes.map(([mode, label]) => `
+        <button type="button" class="${state.vectorPreviewMode === mode ? "is-active" : ""}" data-vector-mode="${mode}">${escapeHtml(label)}</button>
+      `).join("")}
+    </div>
+  `;
+}
+
+function renderVectorPreview(vector = {}) {
+  const entries = vectorEntriesForMode(vector);
+  return `
+    <div class="vector-preview">
+      <div class="vector-preview-head">
+        <span>${escapeHtml(vectorModeLabel())}</span>
+        <b>${Number(vector.dimensions || 0)} 维</b>
+        <small>非零 ${Number(vector.non_zero || 0)}</small>
+      </div>
+      <div class="vector-bars">
+        ${entries.map((entry) => {
+          const numeric = Number(entry.value);
+          const height = Math.max(6, Math.round(Math.min(1, Math.abs(numeric)) * 44));
+          return `<span class="${numeric < 0 ? "is-negative" : ""}" style="height:${height}px" title="dim ${entry.index}: ${numeric.toFixed(4)}"><small>${entry.index}</small></span>`;
+        }).join("") || `<em>暂无向量</em>`}
+      </div>
+      <code>${entries.map((entry) => `${entry.index}:${Number(entry.value).toFixed(4)}`).join("  ")}</code>
+    </div>
+  `;
+}
+
+function vectorEntriesForMode(vector = {}) {
+  if (state.vectorPreviewMode === "first") {
+    return vector.first_dimensions || (vector.first_values || []).map((value, index) => ({ index, value }));
+  }
+  if (state.vectorPreviewMode === "nonZero") {
+    return vector.non_zero_values || [];
+  }
+  return vector.top_values || vector.first_dimensions || (vector.first_values || []).map((value, index) => ({ index, value }));
+}
+
+function vectorModeLabel() {
+  return {
+    first: "前 12 维",
+    nonZero: "非零维预览",
+    top: "绝对值最大维",
+  }[state.vectorPreviewMode] || "向量预览";
+}
+
+function renderSharedDimensions(dimensions) {
+  return `
+    <div class="shared-dimensions">
+      <strong>共同贡献维度</strong>
+      <div>
+        ${dimensions.map((item) => `
+          <span title="query ${Number(item.query || 0).toFixed(4)} × chunk ${Number(item.chunk || 0).toFixed(4)}">
+            dim ${item.index}<b>${Number(item.contribution || 0).toFixed(4)}</b>
+          </span>
+        `).join("") || `<small>没有明显共同贡献维度。</small>`}
+      </div>
+    </div>
+  `;
+}
+
+function renderTraceScores(scores) {
+  const rows = [
+    ["向量", scores.vector, "query 向量和 chunk 向量的内积相似度"],
+    ["BM25", scores.bm25, "关键词命中后的归一化分数"],
+    ["融合", scores.hybrid, "vector * 0.65 + BM25 * 0.35"],
+    ["Rerank", scores.rerank, "base * 0.65 + 覆盖 * 0.25 + 完整度 * 0.10"],
+  ];
+  return `
+    <div class="trace-score-grid">
+      ${rows.map(([label, value, title]) => {
+        const hasValue = value != null && Number.isFinite(Number(value));
+        const percent = hasValue ? ragScorePercent(value) : 0;
+        return `
+          <div title="${escapeAttr(title)}">
+            <span>${escapeHtml(label)} <b>${hasValue ? formatRagScore(value) : "-"}</b></span>
+            <i><em style="width:${Math.max(hasValue ? 4 : 0, percent)}%"></em></i>
+          </div>
+        `;
+      }).join("")}
+    </div>
+  `;
+}
+
+function renderRagVisualDashboard(result, chunks, module) {
+  const hitCount = result ? (result.retrieved_chunks || []).length : chunks.length;
+  return `
+    <div class="rag-visual-dashboard">
+      ${renderRagPipelineVisual(result, chunks, module, hitCount)}
+      ${renderRagEvidenceGauge(result?.evaluation, chunks, Boolean(result), hitCount)}
+      ${renderRagScoreBoardVisual(chunks)}
+      ${renderRagChunkTimeline(chunks)}
+    </div>
+  `;
+}
+
+function renderRagPipelineVisual(result, chunks, module, hitCount) {
+  const params = result?.params || {
+    top_k: module.preset?.topK,
+    hybrid: module.preset?.hybrid,
+    rerank: module.preset?.rerank,
+  };
+  const evaluation = result?.evaluation || {};
+  const hasResult = Boolean(result);
+  const steps = [
+    {
+      title: "切片",
+      metric: hasResult ? `${result.chunk_count || 0} 个 chunk` : `${module.name} 预览`,
+      status: hasResult ? "pass" : "idle",
+    },
+    {
+      title: "召回",
+      metric: hasResult ? `命中 ${hitCount} / Top ${params.top_k || hitCount}` : "示例片段排序",
+      status: hitCount ? "pass" : hasResult ? "fail" : "idle",
+    },
+    {
+      title: "Hybrid",
+      metric: params.hybrid === false ? "仅向量检索" : "BM25 + 向量",
+      status: params.hybrid === false ? "idle" : "pass",
+    },
+    {
+      title: "Rerank",
+      metric: params.rerank ? "已重排序" : "未启用",
+      status: params.rerank ? "pass" : "idle",
+    },
+    {
+      title: "质量",
+      metric: hasResult ? ragVerdictText(evaluation.verdict) : "等待实验",
+      status: hasResult ? ragVerdictTone(evaluation.verdict) : "idle",
+    },
+  ];
+  return `
+    <article class="rag-pipeline-card">
+      <div class="rag-visual-card-head">
+        <strong>实验链路</strong>
+        <span>${hasResult ? "实时结果" : "学习预览"}</span>
+      </div>
+      <div class="rag-pipeline">
+        ${steps.map((step, index) => `
+          <div class="rag-pipeline-step is-${step.status}">
+            <b>${index + 1}</b>
+            <strong>${escapeHtml(step.title)}</strong>
+            <span>${escapeHtml(step.metric)}</span>
+          </div>
+        `).join("")}
+      </div>
+    </article>
+  `;
+}
+
+function renderRagEvidenceGauge(evaluation = {}, chunks = [], hasResult = false, hitCount = chunks.length) {
+  const topScore = Number(evaluation.top_score ?? chunks[0]?.score ?? 0);
+  const coverage = Number(evaluation.coverage_ratio ?? chunks[0]?.token_coverage ?? 0);
+  const gaugeValue = ragScorePercent(hasResult ? Math.max(topScore, coverage) : topScore);
+  const tone = hasResult ? ragVerdictTone(evaluation.verdict) : "idle";
+  return `
+    <article class="rag-evidence-card">
+      <div class="rag-visual-card-head">
+        <strong>证据强度</strong>
+        <span>${hasResult ? ragVerdictText(evaluation.verdict) : "示例分布"}</span>
+      </div>
+      <div class="rag-evidence-body">
+        <div class="rag-evidence-gauge is-${tone}" style="--value:${gaugeValue}%">
+          <div>
+            <strong>${gaugeValue}%</strong>
+            <span>综合</span>
+          </div>
+        </div>
+        <div class="rag-evidence-stats">
+          <span>最高相关度 <b>${formatRagScore(topScore)}</b></span>
+          <span>问题覆盖率 <b>${formatRagScore(coverage)}</b></span>
+          <span>命中片段 <b>${hitCount}</b></span>
+        </div>
+      </div>
+    </article>
+  `;
+}
+
+function renderRagScoreBoardVisual(chunks) {
+  const visibleChunks = chunks.slice(0, 3);
+  return `
+    <article class="rag-score-card">
+      <div class="rag-visual-card-head">
+        <strong>分数对比</strong>
+        <span>向量 / BM25 / 融合 / Rerank</span>
+      </div>
+      <div class="rag-score-board">
+        ${visibleChunks.map((chunk, index) => `
+          <div class="rag-score-row">
+            <div class="rag-score-title">
+              <strong>片段 ${Number(chunk.chunk_index ?? index) + 1}</strong>
+              <span>${escapeHtml(chunk.document_name || "示例文档")}</span>
+            </div>
+            ${renderRagScoreMeter("向量", chunk.vector_score ?? chunk.score)}
+            ${renderRagScoreMeter("BM25", chunk.bm25_score)}
+            ${renderRagScoreMeter("融合", chunk.hybrid_score)}
+            ${renderRagScoreMeter("Rerank", chunk.rerank_score)}
+          </div>
+        `).join("") || `<p class="empty-text">暂无命中片段。</p>`}
+      </div>
+    </article>
+  `;
+}
+
+function renderRagScoreMeter(label, value) {
+  const hasValue = value != null && Number.isFinite(Number(value));
+  const percent = hasValue ? ragScorePercent(value) : 0;
+  return `
+    <div class="rag-score-meter ${hasValue ? "" : "is-empty"}">
+      <span>${escapeHtml(label)} <b>${hasValue ? formatRagScore(value) : "未启用"}</b></span>
+      <div><i style="width:${Math.max(hasValue ? 4 : 0, percent)}%"></i></div>
+    </div>
+  `;
+}
+
+function renderRagChunkTimeline(chunks) {
+  return `
+    <article class="rag-timeline-card">
+      <div class="rag-visual-card-head">
+        <strong>命中热度</strong>
+        <span>Top K 片段排序</span>
+      </div>
+      <div class="rag-chunk-timeline">
+        ${chunks.map((chunk, index) => {
+          const score = Number(chunk.rerank_score ?? chunk.hybrid_score ?? chunk.score ?? 0);
+          const coverage = chunk.token_coverage == null ? null : Number(chunk.token_coverage);
+          return `
+            <div class="rag-timeline-item">
+              <span>${index + 1}</span>
+              <div>
+                <strong>${escapeHtml(chunk.document_name || "示例文档")}</strong>
+                <div class="rag-timeline-track"><i style="width:${Math.max(6, ragScorePercent(score))}%"></i></div>
+              </div>
+              <small>${formatRagScore(score)}${coverage == null ? "" : ` · 覆盖 ${formatRagScore(coverage)}`}</small>
+            </div>
+          `;
+        }).join("") || `<p class="empty-text">暂无命中片段。</p>`}
+      </div>
+    </article>
+  `;
+}
+
+function visualSummary(moduleId) {
+  return {
+    naive: "看清楚文档如何切片、问题如何匹配片段、片段如何进入上下文。",
+    advanced: "看清楚向量分、关键词分、融合分、重排序如何共同影响证据顺序。",
+    agentic: "看清楚 Agent 如何判断是否检索、是否继续检索、是否生成任务。",
+    graph: "看清楚文档如何被抽成实体和关系，再通过关系路径找答案。",
+  }[moduleId] || "查看 RAG 内部链路。";
+}
+
+function visualFlowSteps(moduleId) {
+  const common = {
+    naive: [
+      ["切片", "长文档被拆成多个 chunk。"],
+      ["向量化", "每个 chunk 变成向量。"],
+      ["匹配", "问题向量和 chunk 向量做相似度计算。"],
+      ["生成", "命中片段拼进 Prompt 后回答。"],
+    ],
+    advanced: [
+      ["理解问题", "识别问题意图，必要时改写查询。"],
+      ["混合召回", "向量检索找语义，BM25 找关键词。"],
+      ["重排序", "Rerank 让更完整、更覆盖问题的片段靠前。"],
+      ["评测", "用引用、覆盖率和无依据规则判断质量。"],
+    ],
+    agentic: [
+      ["计划", "判断问题需要哪些资料和工具。"],
+      ["检索", "选择知识库并发起一次或多次检索。"],
+      ["反思", "检查证据是否足够，不足则继续检索或追问。"],
+      ["行动", "生成回答、任务或复盘动作。"],
+    ],
+    graph: [
+      ["抽实体", "从文档里识别 RAG、Embedding、BM25 等实体。"],
+      ["抽关系", "识别包含、用于、优化、依赖等关系。"],
+      ["走路径", "沿实体关系做多跳查找。"],
+      ["解释", "用关系路径解释答案来源。"],
+    ],
+  }[moduleId] || [];
+  return common.map(([title, text]) => ({ title, text }));
+}
+
+function demoRagChunks(moduleId) {
+  const base = [
+    { document_name: "rag_demo.md", chunk_index: 0, score: 0.82, vector_score: 0.82, bm25_score: 0.63, hybrid_score: 0.75, rerank_score: 0.79, content: "RAG 包含文档解析、文本切片、向量化、检索和生成回答。引用来源可以帮助用户判断回答是否可信。" },
+    { document_name: "rag_demo.md", chunk_index: 1, score: 0.64, vector_score: 0.64, bm25_score: 0.72, hybrid_score: 0.67, rerank_score: 0.70, content: "Embedding 模型把文本片段转换成向量，向量数据库根据用户问题找到最相关的文档片段。" },
+    { document_name: "AI前沿资料包.md", chunk_index: 2, score: 0.46, vector_score: 0.46, bm25_score: 0.38, hybrid_score: 0.43, rerank_score: 0.44, content: "企业 RAG 系统需要混合检索、重排序、无依据拒答和自动评测，才能稳定进入真实业务。" },
+  ];
+  if (moduleId === "graph") return base.slice(0, 2);
+  if (moduleId === "agentic") return base.slice(0, 3);
+  return base;
+}
+
+function renderChunkMatchVisual(chunks) {
+  return `
+    <div class="chunk-match-list">
+      ${chunks.map((chunk, index) => {
+        const score = Number(chunk.rerank_score ?? chunk.hybrid_score ?? chunk.score ?? 0);
+        const width = Math.max(6, Math.min(100, Math.round(score * 100)));
+        return `
+          <div class="chunk-match-item">
+            <div>
+              <strong>片段 ${Number(chunk.chunk_index ?? index) + 1}</strong>
+              <span>${escapeHtml(chunk.document_name || "示例文档")} · 匹配度 ${score.toFixed(2)}</span>
+            </div>
+            <div class="match-bar"><span style="width:${width}%"></span></div>
+            <p>${escapeHtml(chunk.content || chunk.snippet || "")}</p>
+          </div>
+        `;
+      }).join("")}
+    </div>
+  `;
+}
+
+function renderAgenticVisual() {
+  const steps = [
+    ["理解问题", "用户想升级知行者，需要先判断这是问答、规划还是任务生成。", "done"],
+    ["选择工具", "先检索知识库，再决定是否需要生成任务。", "done"],
+    ["检查证据", "如果检索片段不足，要继续检索或让用户补文档。", "active"],
+    ["输出行动", "证据足够后，生成下一步计划和任务清单。", "next"],
+  ];
+  return `
+    <div class="agent-trace">
+      ${steps.map(([title, text, status], index) => `
+        <article class="agent-step is-${status}">
+          <b>${index + 1}</b>
+          <div><strong>${escapeHtml(title)}</strong><span>${escapeHtml(text)}</span></div>
+        </article>
+      `).join("")}
+    </div>
+  `;
+}
+
+function renderGraphVisual() {
+  const nodes = ["RAG", "Embedding", "BM25", "Rerank", "检索", "回答"];
+  const edges = [
+    ["RAG", "包含", "Embedding"],
+    ["RAG", "包含", "检索"],
+    ["BM25", "增强", "检索"],
+    ["Rerank", "优化", "检索"],
+    ["检索", "提供依据", "回答"],
+  ];
+  return `
+    <div class="graph-board">
+      <div class="graph-nodes">
+        ${nodes.map((node) => `<span>${escapeHtml(node)}</span>`).join("")}
+      </div>
+      <div class="graph-edges">
+        ${edges.map(([from, relation, to]) => `
+          <div><strong>${escapeHtml(from)}</strong><span>${escapeHtml(relation)}</span><strong>${escapeHtml(to)}</strong></div>
+        `).join("")}
+      </div>
+    </div>
+  `;
+}
+
+function renderStorageVisual(moduleId) {
+  const rows = [
+    ["documents", "原始文档记录", "文件名、类型、状态、所属知识库"],
+    ["document_chunks", "切片文本", "chunk_index、content、token_count"],
+    ["chunk_vectors", "向量数据", "vector_json、model_name、dimensions"],
+  ];
+  if (moduleId === "advanced") {
+    rows.push(["rag_eval_cases", "评测用例", "问题、预期 verdict、关键词"]);
+    rows.push(["rag_eval_results", "评测结果", "实际 verdict、是否通过、失败原因"]);
+  }
+  if (moduleId === "agentic") {
+    rows.push(["chat_messages", "步骤上下文", "用户问题、回答、引用"]);
+    rows.push(["tasks", "行动结果", "AI 生成任务、状态、优先级"]);
+  }
+  if (moduleId === "graph") {
+    rows.push(["graph_nodes", "未来扩展", "实体：RAG、Embedding、论文、项目"]);
+    rows.push(["graph_edges", "未来扩展", "关系：包含、用于、提出、依赖"]);
+  }
+  return `
+    <div class="storage-table">
+      ${rows.map(([table, purpose, fields]) => `
+        <div>
+          <strong>${escapeHtml(table)}</strong>
+          <span>${escapeHtml(purpose)}</span>
+          <small>${escapeHtml(fields)}</small>
+        </div>
+      `).join("")}
+    </div>
+  `;
+}
+
+function renderRagLabHistory() {
+  $("#ragLabHistory").innerHTML =
+    state.ragLabRuns
+      .map((run) => {
+        const evaluation = run.evaluation || {};
+        const params = run.params || {};
+        return `
+          <article class="rag-lab-history-item">
+            <strong>${escapeHtml(run.question)}</strong>
+            <span>${formatDate(run.created_at)} · ${escapeHtml(ragVerdictText(evaluation.verdict))} · 最高相关度 ${Number(evaluation.top_score || 0).toFixed(2)}</span>
+            <small>chunk_size=${params.chunk_size}，overlap=${params.overlap}，top_k=${params.top_k}，hybrid=${params.hybrid === false ? "关" : "开"}，rerank=${params.rerank ? "开" : "关"} · 命中 ${run.retrieved_chunks?.length || 0} 条</small>
+          </article>
+        `;
+      })
+      .join("") || `<p class="empty-text">还没有保存过实验。</p>`;
+}
+
+function renderRagEvalCases() {
+  $("#ragEvalCaseList").innerHTML =
+    state.ragEvalCases
+      .map(
+        (item) => `
+          <article class="rag-lab-history-item">
+            <strong>${escapeHtml(item.question)}</strong>
+            <span>预期：${escapeHtml(ragVerdictText(item.expected_verdict))}${item.expected_terms?.length ? ` · 关键词 ${escapeHtml(item.expected_terms.join("、"))}` : ""}</span>
+            <small>${escapeHtml(item.note || "无备注")}</small>
+            <button class="mini-btn" data-delete-rag-eval-case="${escapeHtml(item.id)}">删除</button>
+          </article>
+        `,
+      )
+      .join("") || `<p class="empty-text">还没有评测用例。</p>`;
+  $$("[data-delete-rag-eval-case]").forEach((button) => {
+    button.addEventListener("click", () => deleteRagEvalCase(button.dataset.deleteRagEvalCase));
+  });
+}
+
+function renderRagEvalResult() {
+  const batch = state.ragEvalBatch;
+  if (!batch) {
+    $("#ragEvalSummary").textContent = "运行后展示通过率和失败原因";
+    $("#ragEvalResult").innerHTML = `<p class="empty-text">添加用例后，用当前实验参数运行评测。</p>`;
+    return;
+  }
+  $("#ragEvalSummary").textContent = `通过 ${batch.passed_count}/${batch.total_count} · 通过率 ${(Number(batch.pass_rate || 0) * 100).toFixed(0)}%`;
+  $("#ragEvalResult").innerHTML =
+    renderRagEvalOverview(batch) +
+    batch.results
+      .map(
+        (item) => `
+          <article class="rag-eval-case ${item.passed ? "is-pass" : "is-fail"}">
+            <div>
+              <strong>${item.passed ? "通过" : "失败"} · ${escapeHtml(item.question)}</strong>
+              <span>预期 ${escapeHtml(ragVerdictText(item.expected_verdict))} · 实际 ${escapeHtml(ragVerdictText(item.actual_verdict))}</span>
+            </div>
+            <p>${escapeHtml(item.reason)}</p>
+          </article>
+        `,
+      )
+      .join("");
+}
+
+function renderRagEvalOverview(batch) {
+  const results = batch.results || [];
+  const failed = results.filter((item) => !item.passed);
+  const passRate = Math.round(Number(batch.pass_rate || 0) * 100);
+  const verdictCounts = results.reduce((acc, item) => {
+    const key = item.actual_verdict || "unknown";
+    acc[key] = (acc[key] || 0) + 1;
+    return acc;
+  }, {});
+  const verdictRows = ["grounded", "weak_evidence", "no_evidence"].map((key) => [ragVerdictText(key), verdictCounts[key] || 0]);
+  return `
+    <div class="rag-eval-overview">
+      <article class="rag-eval-pass-card">
+        <div class="rag-eval-ring ${passRate >= 90 ? "is-pass" : passRate >= 70 ? "is-warn" : "is-fail"}" style="--value:${passRate}%">
+          <strong>${passRate}%</strong>
+          <span>通过率</span>
+        </div>
+        <div>
+          <strong>${batch.passed_count}/${batch.total_count} 通过</strong>
+          <span>失败 ${batch.failed_count || failed.length} 个 · 参数 Top K ${batch.params?.top_k || "-"} · ${batch.params?.hybrid === false ? "Hybrid 关" : "Hybrid 开"} · ${batch.params?.rerank ? "Rerank 开" : "Rerank 关"}</span>
+        </div>
+      </article>
+      <article class="rag-eval-matrix-card">
+        <strong>用例矩阵</strong>
+        <div class="rag-eval-matrix">
+          ${results.map((item, index) => `
+            <span class="${item.passed ? "is-pass" : "is-fail"}" title="${escapeAttr(item.question)}">${index + 1}</span>
+          `).join("")}
+        </div>
+      </article>
+      <article class="rag-eval-verdict-card">
+        <strong>实际判断分布</strong>
+        ${verdictRows.map(([label, count]) => `
+          <div class="rag-verdict-row">
+            <span>${escapeHtml(label)}</span>
+            <div><i style="width:${Math.max(count ? 6 : 0, Math.round((count / Math.max(results.length, 1)) * 100))}%"></i></div>
+            <b>${count}</b>
+          </div>
+        `).join("")}
+      </article>
+      <article class="rag-eval-fail-card">
+        <strong>失败洞察</strong>
+        ${failed.length ? failed.slice(0, 3).map((item) => `
+          <span>${escapeHtml(item.question)}</span>
+          <small>${escapeHtml(item.reason)}</small>
+        `).join("") : `<span>当前评测集全部通过。</span>`}
+      </article>
+    </div>
+  `;
+}
+
+function renderRerankScores(chunk) {
+  if (chunk.rerank_score == null && chunk.vector_score == null && chunk.bm25_score == null && chunk.hybrid_score == null) return "";
+  const vector = chunk.vector_score == null ? "" : ` · 向量 ${Number(chunk.vector_score).toFixed(4)}`;
+  const bm25 = chunk.bm25_score == null ? "" : ` · BM25 ${Number(chunk.bm25_score).toFixed(4)}`;
+  const hybrid = chunk.hybrid_score == null ? "" : ` · 融合 ${Number(chunk.hybrid_score).toFixed(4)}`;
+  const rerank = chunk.rerank_score == null ? "" : ` · rerank ${Number(chunk.rerank_score).toFixed(4)}`;
+  const coverage = chunk.token_coverage == null ? "" : ` · 覆盖 ${Number(chunk.token_coverage).toFixed(2)}`;
+  return `${vector}${bm25}${hybrid}${rerank}${coverage}`;
+}
+
 function renderMessage(message) {
   const content = escapeHtml(message.content).replaceAll("\n", "<br />");
   if (message.role === "user") return `<article class="message user">${content}</article>`;
@@ -827,17 +1800,37 @@ function renderMessage(message) {
 }
 
 function renderCitations() {
+  const citationsHtml = state.citations
+    .map(
+      (item) => `
+        <article class="citation-item">
+          <strong>${escapeHtml(item.document_name)}</strong>
+          <span>片段 ${Number(item.chunk_index || 0) + 1} · 相关度 ${Number(item.score || 0).toFixed(2)}</span>
+          <span>${escapeHtml(item.snippet)}</span>
+        </article>
+      `,
+    )
+    .join("");
   $("#citationList").innerHTML =
-    state.citations
-      .map(
-        (item) => `
-          <article class="citation-item">
-            <strong>${escapeHtml(item.document_name)}</strong>
-            <span>${escapeHtml(item.snippet)}</span>
-          </article>
-        `,
-      )
-      .join("") || `<p class="empty-text">暂无引用。</p>`;
+    `${state.ragEvaluation ? renderRagEvaluation(state.ragEvaluation) : ""}${citationsHtml}` ||
+    `<p class="empty-text">暂无引用。</p>`;
+}
+
+function renderRagEvaluation(evaluation) {
+  const labels = {
+    grounded: "依据充分",
+    weak_evidence: "依据偏弱",
+    no_evidence: "没有依据",
+  };
+  const label = labels[evaluation.verdict] || evaluation.verdict || "未评估";
+  return `
+    <article class="citation-item rag-eval-card">
+      <strong>RAG 质量检查 · ${escapeHtml(label)}</strong>
+      <span>引用 ${evaluation.retrieved_count || 0} 条 · 最高相关度 ${Number(evaluation.top_score || 0).toFixed(2)}</span>
+      <span>问题覆盖率 ${Number(evaluation.coverage_ratio || 0).toFixed(2)} · 阈值 ${Number(evaluation.min_coverage || 0).toFixed(2)}</span>
+      <span>${escapeHtml(evaluation.suggestion || "")}</span>
+    </article>
+  `;
 }
 
 function bindMessageActions() {
@@ -860,6 +1853,7 @@ function bindSessionActions() {
       const lastAssistant = [...state.messages].reverse().find((item) => item.role === "assistant");
       state.activeAnswer = lastAssistant?.content || "";
       state.citations = lastAssistant?.citations ? JSON.parse(lastAssistant.citations) : [];
+      state.ragEvaluation = null;
       renderChat();
     });
   });
@@ -1024,7 +2018,30 @@ function bindGlobalEvents() {
     state.activeSessionId = null;
     state.messages = [];
     state.citations = [];
+    state.ragEvaluation = null;
     renderChat();
+  });
+  $("#ragLabKbSelect").addEventListener("change", (event) => {
+    state.activeKnowledgeBaseId = event.target.value;
+    state.ragLabResult = null;
+    state.ragEvalBatch = null;
+    Promise.all([loadRagLabRuns(), loadRagEvalCases()]).then(() => {
+      renderChat();
+      renderRagLab();
+    });
+  });
+  $("#agentLabKbSelect").addEventListener("change", async (event) => {
+    state.activeKnowledgeBaseId = event.target.value;
+    state.agentLabResult = null;
+    await loadAgentLabRuns();
+    renderChat();
+    renderAgentLab();
+  });
+  $("#ragVisual").addEventListener("click", (event) => {
+    const button = event.target.closest("[data-vector-mode]");
+    if (!button) return;
+    state.vectorPreviewMode = button.dataset.vectorMode;
+    renderRagVisualization();
   });
 
   $("#taskFilter").addEventListener("click", (event) => {
@@ -1039,10 +2056,16 @@ function bindGlobalEvents() {
   $("#taskForm").addEventListener("submit", createManualTask);
   $("#fileInput").addEventListener("change", (event) => handleFiles(event.target.files));
   $("#chatForm").addEventListener("submit", submitQuestion);
+  $("#ragLabForm").addEventListener("submit", runRagLab);
+  $("#agentLabForm").addEventListener("submit", runAgentLab);
+  $("#saveRagLabRunBtn").addEventListener("click", saveRagLabRun);
+  $("#ragEvalCaseForm").addEventListener("submit", createRagEvalCase);
+  $("#runRagEvalBtn").addEventListener("click", runRagEvalBatch);
   $("#newSessionBtn").addEventListener("click", () => {
     state.activeSessionId = null;
     state.messages = [];
     state.citations = [];
+    state.ragEvaluation = null;
     state.activeAnswer = "";
     state.chatWarning = null;
     renderChat();
@@ -1077,6 +2100,7 @@ function bindGlobalEvents() {
   $("#trendExplainRetryBtn").addEventListener("click", () => regenerateTrendExplanation());
 
   initKbParamRanges();
+  initRagLabRanges();
 
   $("#planForm").addEventListener("submit", (event) => {
     event.preventDefault();
@@ -1390,6 +2414,7 @@ async function confirmDeleteKnowledgeBase() {
       state.activeSessionId = null;
       state.messages = [];
       state.citations = [];
+      state.ragEvaluation = null;
       state.activeAnswer = "";
     }
     state.pendingDeleteKbId = null;
@@ -1436,6 +2461,7 @@ async function submitQuestion(event) {
     state.activeSessionId = response.session_id;
     state.activeAnswer = response.answer;
     state.citations = response.citations;
+    state.ragEvaluation = response.rag_evaluation || null;
     state.chatWarning = response.warning || null;
     state.messages = await api(`/api/chat/sessions/${response.session_id}/messages`);
     state.sessions = await api("/api/chat/sessions");
@@ -1446,6 +2472,221 @@ async function submitQuestion(event) {
     state.messages.pop();
     state.messages.push({ role: "assistant", content: `问答失败：${error.message}` });
     renderChat();
+  }
+}
+
+async function runRagLab(event) {
+  event.preventDefault();
+  const question = $("#ragLabQuestion").value.trim();
+  const knowledgeBaseId = $("#ragLabKbSelect").value || state.activeKnowledgeBaseId;
+  const chunkSize = Number($("#ragLabChunkSize").value);
+  const overlap = Number($("#ragLabOverlap").value);
+  const topK = Number($("#ragLabTopK").value);
+  const rerank = $("#ragLabRerank").checked;
+  const hybrid = $("#ragLabHybrid").checked;
+  if (!question || !knowledgeBaseId) {
+    showToast("请先选择知识库并输入问题");
+    return;
+  }
+  if (overlap >= chunkSize) {
+    showToast("重叠长度必须小于切片长度");
+    return;
+  }
+  const button = event.submitter || $("#ragLabForm button[type='submit']");
+  const original = button.textContent;
+  button.disabled = true;
+  button.textContent = "实验中...";
+  $("#ragLabResult").innerHTML = `<p class="empty-text">正在按当前参数重新切片、生成向量并检索...</p>`;
+  try {
+    state.ragLabResult = await api("/api/rag/lab", {
+      method: "POST",
+      body: JSON.stringify({
+        knowledge_base_id: knowledgeBaseId,
+        question,
+        chunk_size: chunkSize,
+        overlap,
+        top_k: topK,
+        rerank,
+        hybrid,
+      }),
+    });
+    await loadRagLabRuns();
+    renderRagLab();
+    showToast("RAG 实验完成");
+  } catch (error) {
+    $("#ragLabResult").innerHTML = `<p class="empty-text">实验失败：${escapeHtml(error.message)}</p>`;
+    showToast(`实验失败：${error.message}`);
+  } finally {
+    button.disabled = false;
+    button.textContent = original;
+  }
+}
+
+async function saveRagLabRun() {
+  if (!state.ragLabResult) {
+    showToast("请先运行一次实验");
+    return;
+  }
+  const knowledgeBaseId = $("#ragLabKbSelect").value || state.activeKnowledgeBaseId;
+  if (!knowledgeBaseId) {
+    showToast("请先选择知识库");
+    return;
+  }
+  const button = $("#saveRagLabRunBtn");
+  const original = button.textContent;
+  button.disabled = true;
+  button.textContent = "保存中...";
+  try {
+    await api("/api/rag/lab/runs", {
+      method: "POST",
+      body: JSON.stringify({
+        knowledge_base_id: knowledgeBaseId,
+        ...state.ragLabResult,
+      }),
+    });
+    await loadRagLabRuns();
+    renderRagLab();
+    showToast("实验记录已保存");
+  } catch (error) {
+    showToast(`保存实验失败：${error.message}`);
+  } finally {
+    button.disabled = !state.ragLabResult;
+    button.textContent = original;
+  }
+}
+
+async function runAgentLab(event) {
+  event.preventDefault();
+  const knowledgeBaseId = $("#agentLabKbSelect").value || state.activeKnowledgeBaseId;
+  const goal = $("#agentLabGoal").value.trim();
+  const mode = $("#agentLabMode").value;
+  const maxSteps = Number($("#agentLabMaxSteps").value);
+  const createTasks = $("#agentLabCreateTasks").checked;
+  if (!knowledgeBaseId || !goal) {
+    showToast("请先选择知识库并输入目标");
+    return;
+  }
+  const button = event.submitter || $("#agentLabForm button[type='submit']");
+  const original = button.textContent;
+  button.disabled = true;
+  button.textContent = "运行中...";
+  $("#agentLabTrace").innerHTML = `<p class="empty-text">Agent 正在规划、检索和生成行动...</p>`;
+  try {
+    state.agentLabResult = await api("/api/agent/lab/run", {
+      method: "POST",
+      body: JSON.stringify({
+        knowledge_base_id: knowledgeBaseId,
+        goal,
+        mode,
+        max_steps: maxSteps,
+        create_tasks: createTasks,
+      }),
+    });
+    await loadAgentLabRuns();
+    if (createTasks) {
+      state.tasks = await api("/api/tasks");
+      await loadAnalytics();
+    }
+    renderAgentLab();
+    renderTasks();
+    renderDashboard();
+    showToast(createTasks ? "Agent 已运行并保存任务" : "Agent 运行完成");
+  } catch (error) {
+    $("#agentLabTrace").innerHTML = `<p class="empty-text">Agent 运行失败：${escapeHtml(error.message)}</p>`;
+    showToast(`Agent 运行失败：${error.message}`);
+  } finally {
+    button.disabled = false;
+    button.textContent = original;
+  }
+}
+
+async function createRagEvalCase(event) {
+  event.preventDefault();
+  const knowledgeBaseId = $("#ragLabKbSelect").value || state.activeKnowledgeBaseId;
+  const question = $("#ragEvalQuestion").value.trim();
+  const expectedVerdict = $("#ragEvalExpectedVerdict").value;
+  const expectedTerms = $("#ragEvalExpectedTerms").value
+    .split(/[,，、]/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+  const note = $("#ragEvalNote").value.trim();
+  if (!knowledgeBaseId || !question) {
+    showToast("请先选择知识库并填写评测问题");
+    return;
+  }
+  try {
+    await api("/api/rag/eval-cases", {
+      method: "POST",
+      body: JSON.stringify({
+        knowledge_base_id: knowledgeBaseId,
+        question,
+        expected_verdict: expectedVerdict,
+        expected_terms: expectedTerms,
+        note,
+      }),
+    });
+    $("#ragEvalQuestion").value = "";
+    $("#ragEvalExpectedTerms").value = "";
+    $("#ragEvalNote").value = "";
+    await loadRagEvalCases();
+    renderRagEvalCases();
+    showToast("评测用例已添加");
+  } catch (error) {
+    showToast(error.message);
+  }
+}
+
+async function deleteRagEvalCase(caseId) {
+  try {
+    await api(`/api/rag/eval-cases/${caseId}`, { method: "DELETE" });
+    await loadRagEvalCases();
+    renderRagEvalCases();
+    showToast("评测用例已删除");
+  } catch (error) {
+    showToast(error.message);
+  }
+}
+
+async function runRagEvalBatch() {
+  const knowledgeBaseId = $("#ragLabKbSelect").value || state.activeKnowledgeBaseId;
+  const chunkSize = Number($("#ragLabChunkSize").value);
+  const overlap = Number($("#ragLabOverlap").value);
+  const topK = Number($("#ragLabTopK").value);
+  const rerank = $("#ragLabRerank").checked;
+  const hybrid = $("#ragLabHybrid").checked;
+  if (!knowledgeBaseId) {
+    showToast("请先选择知识库");
+    return;
+  }
+  if (!state.ragEvalCases.length) {
+    showToast("请先添加评测用例");
+    return;
+  }
+  const button = $("#runRagEvalBtn");
+  const original = button.textContent;
+  button.disabled = true;
+  button.textContent = "评测中...";
+  $("#ragEvalResult").innerHTML = `<p class="empty-text">正在用当前参数运行全部评测用例...</p>`;
+  try {
+    state.ragEvalBatch = await api("/api/rag/eval-batches/run", {
+      method: "POST",
+      body: JSON.stringify({
+        knowledge_base_id: knowledgeBaseId,
+        chunk_size: chunkSize,
+        overlap,
+        top_k: topK,
+        rerank,
+        hybrid,
+      }),
+    });
+    renderRagEvalResult();
+    showToast("评测完成");
+  } catch (error) {
+    $("#ragEvalResult").innerHTML = `<p class="empty-text">评测失败：${escapeHtml(error.message)}</p>`;
+    showToast(error.message);
+  } finally {
+    button.disabled = false;
+    button.textContent = original;
   }
 }
 
@@ -1478,6 +2719,7 @@ async function deleteSession(event) {
       state.activeSessionId = null;
       state.messages = [];
       state.citations = [];
+      state.ragEvaluation = null;
       state.activeAnswer = "";
       state.chatWarning = null;
     }
@@ -1661,6 +2903,34 @@ function statusText(status) {
   return { todo: "待办", doing: "进行中", done: "已完成", canceled: "已取消" }[status] || status;
 }
 
+function ragVerdictText(verdict) {
+  return { grounded: "依据充分", weak_evidence: "依据偏弱", no_evidence: "没有依据" }[verdict] || verdict || "未评估";
+}
+
+function ragVerdictTone(verdict) {
+  return { grounded: "pass", weak_evidence: "warn", no_evidence: "fail" }[verdict] || "idle";
+}
+
+function agentModeText(mode) {
+  return { rag_agent: "RAG 助手", test_agent: "测试分析助手", learning_agent: "学习规划助手" }[mode] || mode || "Agent";
+}
+
+function agentPhaseText(phase) {
+  return { plan: "计划", retrieve: "检索", evaluate: "评估", act: "行动" }[phase] || phase || "步骤";
+}
+
+function ragScorePercent(value) {
+  const score = Number(value);
+  if (!Number.isFinite(score)) return 0;
+  return Math.max(0, Math.min(100, Math.round(score * 100)));
+}
+
+function formatRagScore(value) {
+  const score = Number(value);
+  if (!Number.isFinite(score)) return "0.00";
+  return score.toFixed(2);
+}
+
 function sourceText(source) {
   return { manual: "手动", ai_answer: "AI 生成", learning_plan: "学习计划", review: "复盘" }[source] || source || "未知";
 }
@@ -1693,6 +2963,45 @@ function initKbParamRanges() {
   });
 }
 
+function initRagLabRanges() {
+  ragLabRangePairs().forEach(([inputId]) => {
+    const input = document.getElementById(inputId);
+    if (!input) return;
+    input.addEventListener("input", syncRagLabRangeLabels);
+    input.addEventListener("change", syncRagLabRangeLabels);
+  });
+  syncRagLabRangeLabels();
+}
+
+function initAgentLabRanges() {
+  const input = document.getElementById("agentLabMaxSteps");
+  const label = document.getElementById("agentLabMaxStepsVal");
+  if (!input || !label) return;
+  const sync = () => {
+    label.textContent = `${input.value} 步`;
+  };
+  input.addEventListener("input", sync);
+  input.addEventListener("change", sync);
+  sync();
+}
+
+function ragLabRangePairs() {
+  return [
+    ["ragLabChunkSize", "ragLabChunkSizeVal", (v) => `${v} 字符`],
+    ["ragLabOverlap", "ragLabOverlapVal", (v) => `${v} 字符`],
+    ["ragLabTopK", "ragLabTopKVal", (v) => `${v} 条`],
+  ];
+}
+
+function syncRagLabRangeLabels() {
+  ragLabRangePairs().forEach(([inputId, labelId, format]) => {
+    const input = document.getElementById(inputId);
+    const label = document.getElementById(labelId);
+    if (!input || !label) return;
+    label.textContent = format(input.value);
+  });
+}
+
 function debounce(fn, wait = 250) {
   let timer = null;
   return (...args) => {
@@ -1707,12 +3016,15 @@ function renderAll() {
   renderKnowledgeBases();
   renderDocuments();
   renderChat();
+  renderRagLab();
+  renderAgentLab();
   renderTasks();
   renderGoals();
   renderSettings();
 }
 
 bindGlobalEvents();
+initAgentLabRanges();
 loadAll();
 window.setInterval(updateScreenClock, 1000);
 window.addEventListener("resize", resizeScreen);

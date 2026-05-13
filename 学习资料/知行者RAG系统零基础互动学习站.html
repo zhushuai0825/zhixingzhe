@@ -1,0 +1,1506 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>知行者 RAG 系统零基础互动学习站</title>
+  <style>
+    :root {
+      --bg: #f4f7f9;
+      --paper: #ffffff;
+      --ink: #172229;
+      --muted: #61717c;
+      --line: #dce5ea;
+      --deep: #10252c;
+      --brand: #1f7a8c;
+      --brand-2: #f2c078;
+      --accent: #d97706;
+      --good: #16865a;
+      --warn: #b76712;
+      --bad: #bf3f3f;
+      --soft: #eaf2f5;
+      --shadow: 0 18px 50px rgba(16, 37, 44, .12);
+      --radius: 8px;
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      min-width: 320px;
+      color: var(--ink);
+      background:
+        linear-gradient(130deg, rgba(31, 122, 140, .10), transparent 36%),
+        linear-gradient(260deg, rgba(242, 192, 120, .28), transparent 30%),
+        var(--bg);
+    }
+
+    button, input, textarea, select { font: inherit; }
+    button { cursor: pointer; }
+    a { color: inherit; }
+
+    .page {
+      display: grid;
+      grid-template-columns: 280px minmax(0, 1fr);
+      min-height: 100vh;
+    }
+
+    .sidebar {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow: auto;
+      padding: 22px;
+      color: #edf7f9;
+      background: var(--deep);
+      border-right: 1px solid rgba(255, 255, 255, .08);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding-bottom: 18px;
+      border-bottom: 1px solid rgba(255, 255, 255, .12);
+    }
+
+    .brand-mark {
+      width: 44px;
+      height: 44px;
+      display: grid;
+      place-items: center;
+      border-radius: var(--radius);
+      background: var(--brand-2);
+      color: var(--deep);
+      font-weight: 900;
+      letter-spacing: 0;
+    }
+
+    .brand strong, .brand span { display: block; }
+    .brand span {
+      margin-top: 3px;
+      color: #a9c1c7;
+      font-size: 12px;
+    }
+
+    .progress-card {
+      margin: 18px 0;
+      padding: 14px;
+      border: 1px solid rgba(255, 255, 255, .12);
+      border-radius: var(--radius);
+      background: rgba(255, 255, 255, .06);
+    }
+
+    .progress-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      font-size: 13px;
+      color: #c9dbdf;
+    }
+
+    .bar {
+      height: 9px;
+      margin-top: 10px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, .14);
+    }
+
+    .bar span {
+      display: block;
+      width: var(--progress, 0%);
+      height: 100%;
+      background: linear-gradient(90deg, var(--brand-2), #82d2dc);
+      transition: width .25s ease;
+    }
+
+    .nav {
+      display: grid;
+      gap: 6px;
+      margin-top: 18px;
+    }
+
+    .nav a {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-height: 40px;
+      padding: 0 10px;
+      border-radius: var(--radius);
+      color: #bfd2d7;
+      text-decoration: none;
+      font-size: 14px;
+    }
+
+    .nav a:hover, .nav a.is-active {
+      color: #fff;
+      background: rgba(255, 255, 255, .10);
+    }
+
+    .nav small {
+      width: 24px;
+      color: var(--brand-2);
+      font-weight: 800;
+    }
+
+    .mobile-top {
+      display: none;
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      padding: 12px 14px;
+      color: #eff9fb;
+      background: rgba(16, 37, 44, .96);
+      border-bottom: 1px solid rgba(255, 255, 255, .10);
+    }
+
+    .mobile-top button {
+      width: 40px;
+      height: 40px;
+      border: 1px solid rgba(255, 255, 255, .18);
+      border-radius: var(--radius);
+      color: #fff;
+      background: rgba(255, 255, 255, .08);
+    }
+
+    .mobile-top strong { margin-left: 10px; }
+
+    main {
+      min-width: 0;
+      padding: 32px;
+    }
+
+    .hero {
+      min-height: calc(100vh - 64px);
+      display: grid;
+      align-content: center;
+      gap: 26px;
+      padding: 44px;
+      border-radius: var(--radius);
+      color: #eff9fb;
+      background:
+        linear-gradient(110deg, rgba(16, 37, 44, .96), rgba(16, 37, 44, .76)),
+        radial-gradient(circle at 80% 20%, rgba(242, 192, 120, .48), transparent 28%),
+        linear-gradient(135deg, #10252c, #1f7a8c);
+      box-shadow: var(--shadow);
+    }
+
+    .hero-kicker {
+      display: inline-flex;
+      width: fit-content;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 10px;
+      border: 1px solid rgba(255, 255, 255, .18);
+      border-radius: var(--radius);
+      color: #d3e7eb;
+      background: rgba(255, 255, 255, .08);
+      font-size: 13px;
+    }
+
+    h1 {
+      max-width: 980px;
+      margin: 0;
+      font-size: clamp(34px, 7vw, 78px);
+      line-height: 1.04;
+      letter-spacing: 0;
+    }
+
+    .hero p {
+      max-width: 820px;
+      margin: 0;
+      color: #cfe0e4;
+      font-size: 18px;
+      line-height: 1.8;
+    }
+
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 42px;
+      padding: 0 14px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      color: var(--ink);
+      background: var(--paper);
+      text-decoration: none;
+      font-weight: 700;
+    }
+
+    .hero .btn {
+      border-color: rgba(255, 255, 255, .16);
+      color: #fff;
+      background: rgba(255, 255, 255, .10);
+    }
+
+    .hero .btn.primary {
+      color: var(--deep);
+      border-color: transparent;
+      background: var(--brand-2);
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      max-width: 920px;
+    }
+
+    .stat {
+      padding: 14px;
+      border: 1px solid rgba(255, 255, 255, .14);
+      border-radius: var(--radius);
+      background: rgba(255, 255, 255, .08);
+    }
+
+    .stat strong {
+      display: block;
+      font-size: 26px;
+      color: #fff;
+    }
+
+    .stat span {
+      display: block;
+      margin-top: 4px;
+      color: #c3d7dc;
+      font-size: 13px;
+    }
+
+    section {
+      scroll-margin-top: 24px;
+      margin-top: 28px;
+      padding: 30px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: rgba(255, 255, 255, .92);
+      box-shadow: 0 10px 28px rgba(16, 37, 44, .06);
+    }
+
+    .section-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+
+    .section-head h2 {
+      margin: 0;
+      font-size: clamp(24px, 4vw, 38px);
+      letter-spacing: 0;
+    }
+
+    .section-head p {
+      max-width: 760px;
+      margin: 8px 0 0;
+      color: var(--muted);
+      line-height: 1.8;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      min-height: 28px;
+      padding: 0 9px;
+      border: 1px solid rgba(31, 122, 140, .22);
+      border-radius: var(--radius);
+      color: var(--brand);
+      background: #eef8fa;
+      font-size: 12px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .grid.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .grid.four { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+
+    .card {
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #fff;
+    }
+
+    .card h3 {
+      margin: 0 0 10px;
+      font-size: 18px;
+      letter-spacing: 0;
+    }
+
+    .card p, .card li {
+      color: var(--muted);
+      line-height: 1.75;
+    }
+
+    .card p { margin: 0; }
+    .card ul, .card ol { margin: 10px 0 0; padding-left: 20px; }
+
+    .callout {
+      padding: 16px 18px;
+      border-left: 4px solid var(--brand);
+      border-radius: var(--radius);
+      background: #edf7f9;
+      color: #28434b;
+      line-height: 1.8;
+    }
+
+    .callout strong { color: var(--deep); }
+
+    .flow {
+      display: grid;
+      grid-template-columns: repeat(8, minmax(120px, 1fr));
+      gap: 10px;
+      overflow-x: auto;
+      padding: 4px 0 12px;
+    }
+
+    .flow-step {
+      min-height: 142px;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #fff;
+    }
+
+    .flow-step b {
+      display: grid;
+      place-items: center;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      color: #fff;
+      background: var(--brand);
+    }
+
+    .flow-step strong {
+      display: block;
+      margin: 10px 0 6px;
+    }
+
+    .flow-step span {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    details {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #fff;
+    }
+
+    details + details { margin-top: 10px; }
+
+    summary {
+      min-height: 48px;
+      padding: 13px 16px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    details .detail-body {
+      padding: 0 16px 16px;
+      color: var(--muted);
+      line-height: 1.8;
+    }
+
+    .code {
+      overflow-x: auto;
+      padding: 14px;
+      border: 1px solid #d3dde3;
+      border-radius: var(--radius);
+      background: #10252c;
+      color: #eaf8fa;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      font-size: 13px;
+      line-height: 1.65;
+      white-space: pre;
+    }
+
+    .table-wrap { overflow-x: auto; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 760px;
+      background: #fff;
+    }
+
+    th, td {
+      padding: 12px;
+      border: 1px solid var(--line);
+      text-align: left;
+      vertical-align: top;
+      line-height: 1.7;
+    }
+
+    th {
+      color: #28434b;
+      background: #edf4f6;
+    }
+
+    .lab {
+      display: grid;
+      grid-template-columns: minmax(0, 420px) minmax(0, 1fr);
+      gap: 16px;
+    }
+
+    .control {
+      display: grid;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+
+    .control label {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      color: #38505a;
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    input[type="range"] { width: 100%; }
+
+    textarea, input[type="text"] {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 11px 12px;
+      background: #fff;
+      color: var(--ink);
+      line-height: 1.6;
+    }
+
+    textarea { min-height: 142px; resize: vertical; }
+
+    .result {
+      min-height: 260px;
+      padding: 16px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #fff;
+    }
+
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      min-height: 28px;
+      padding: 0 9px;
+      border-radius: 999px;
+      color: #38505a;
+      background: #edf4f6;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .quiz {
+      display: grid;
+      gap: 12px;
+    }
+
+    .quiz-item {
+      padding: 16px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #fff;
+    }
+
+    .quiz-item strong {
+      display: block;
+      margin-bottom: 10px;
+    }
+
+    .quiz-options {
+      display: grid;
+      gap: 8px;
+    }
+
+    .quiz-options button {
+      min-height: 40px;
+      padding: 0 12px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      color: var(--ink);
+      background: #fff;
+      text-align: left;
+    }
+
+    .quiz-options button.is-right {
+      border-color: rgba(22, 134, 90, .45);
+      color: #0d5f3e;
+      background: #eaf7f1;
+    }
+
+    .quiz-options button.is-wrong {
+      border-color: rgba(191, 63, 63, .35);
+      color: #873232;
+      background: #fff0f0;
+    }
+
+    .term-search {
+      margin-bottom: 14px;
+    }
+
+    .term-list {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .term {
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #fff;
+    }
+
+    .term strong { display: block; }
+    .term span {
+      display: block;
+      margin-top: 6px;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+
+    .checklist {
+      display: grid;
+      gap: 8px;
+    }
+
+    .checklist label {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #fff;
+      line-height: 1.65;
+    }
+
+    .footer {
+      padding: 28px 4px 8px;
+      color: var(--muted);
+      text-align: center;
+      line-height: 1.8;
+    }
+
+    @media (max-width: 1080px) {
+      .grid, .grid.four { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .lab { grid-template-columns: 1fr; }
+      .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+
+    @media (max-width: 760px) {
+      .page { display: block; }
+      .mobile-top { display: flex; align-items: center; }
+      .sidebar {
+        position: fixed;
+        z-index: 30;
+        left: 0;
+        top: 0;
+        width: min(86vw, 320px);
+        transform: translateX(-105%);
+        transition: transform .2s ease;
+        box-shadow: var(--shadow);
+      }
+      body.nav-open .sidebar { transform: translateX(0); }
+      main { padding: 14px; }
+      .hero {
+        min-height: calc(100vh - 68px);
+        padding: 26px 18px;
+      }
+      .hero p { font-size: 16px; }
+      section { padding: 18px; }
+      .section-head { display: block; }
+      .grid, .grid.two, .grid.four, .term-list { grid-template-columns: 1fr; }
+      .stats { grid-template-columns: 1fr 1fr; }
+      .card { padding: 15px; }
+      .flow { grid-template-columns: repeat(8, 160px); }
+    }
+  </style>
+</head>
+<body>
+  <div class="mobile-top">
+    <button id="menuBtn" aria-label="打开目录">☰</button>
+    <strong>知行者 RAG 学习站</strong>
+  </div>
+
+  <div class="page">
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">
+        <div class="brand-mark">知</div>
+        <div>
+          <strong>知行者学习站</strong>
+          <span>从 0 学会这个 RAG 系统</span>
+        </div>
+      </div>
+
+      <div class="progress-card">
+        <div class="progress-top">
+          <span>学习进度</span>
+          <strong id="progressText">0%</strong>
+        </div>
+        <div class="bar" aria-hidden="true"><span id="progressBar"></span></div>
+      </div>
+
+      <nav class="nav" id="nav">
+        <a href="#start"><small>00</small> 开始</a>
+        <a href="#map"><small>01</small> 系统全景</a>
+        <a href="#rag"><small>02</small> RAG 原理</a>
+        <a href="#documents"><small>03</small> 文档解析</a>
+        <a href="#chunking"><small>04</small> 文本切片</a>
+        <a href="#embedding"><small>05</small> Embedding</a>
+        <a href="#vector"><small>06</small> 向量数据库</a>
+        <a href="#retrieval"><small>07</small> 检索与排序</a>
+        <a href="#answer"><small>08</small> 生成回答</a>
+        <a href="#evaluation"><small>09</small> 评测与拒答</a>
+        <a href="#product"><small>10</small> 前后端与数据</a>
+        <a href="#security"><small>11</small> 安全与配置</a>
+        <a href="#codewalk"><small>12</small> 代码导读</a>
+        <a href="#api"><small>13</small> 接口地图</a>
+        <a href="#practice"><small>14</small> 动手任务</a>
+        <a href="#lab"><small>15</small> 互动实验</a>
+        <a href="#quiz"><small>16</small> 小测</a>
+        <a href="#roadmap"><small>17</small> 学习路线</a>
+        <a href="#terms"><small>18</small> 术语表</a>
+      </nav>
+    </aside>
+
+    <main>
+      <header class="hero" id="start">
+        <div class="hero-kicker">知行者 AI Knowledge OS · RAG 系统工程课</div>
+        <h1>把 AI 从“会聊天”做成“有依据地回答”。</h1>
+        <p>
+          这个页面写给 0 基础的你。你会从一份文档开始，理解它如何被解析、切片、向量化、存入数据库、被检索、被 rerank、再交给大模型生成有引用的回答。学完后，你不只是知道 RAG 是什么，而是能看懂知行者这个系统为什么这样设计、哪里容易错、如何测试。
+        </p>
+        <div class="hero-actions">
+          <a class="btn primary" href="#map">开始学习</a>
+          <a class="btn" href="#lab">先玩实验</a>
+          <a class="btn" href="#roadmap">看学习路线</a>
+        </div>
+        <div class="stats">
+          <div class="stat"><strong>8</strong><span>核心链路步骤</span></div>
+          <div class="stat"><strong>12+</strong><span>工程模块</span></div>
+          <div class="stat"><strong>35</strong><span>自动评测用例</span></div>
+          <div class="stat"><strong>1</strong><span>完整学习系统</span></div>
+        </div>
+      </header>
+
+      <section id="map">
+        <div class="section-head">
+          <div>
+            <span class="tag">先建立地图</span>
+            <h2>知行者到底是什么系统</h2>
+            <p>知行者不是一个单点 Demo。它是一个个人 AI 知识与行动助手：把你的文档变成知识库，让 AI 基于知识库回答，再把回答转成任务、计划、复盘和学习路线。你现在重点学习的是其中最值钱、最企业化的一段：RAG。</p>
+          </div>
+        </div>
+
+        <div class="grid">
+          <article class="card">
+            <h3>给用户看的能力</h3>
+            <p>创建知识库、上传文档、查看文档、聊天问答、看引用、生成任务、查看趋势资料、运行 RAG 实验室和自动评测。</p>
+          </article>
+          <article class="card">
+            <h3>给工程师看的能力</h3>
+            <p>FastAPI 接口、SQLite 数据表、FAISS 向量检索、本地 Embedding、BM25 混合检索、rerank、质量评估、API Key 加密保存。</p>
+          </article>
+          <article class="card">
+            <h3>给测试工程师看的能力</h3>
+            <p>你可以设计评测集，验证“该答的时候能答、不该答的时候拒答、引用是否命中、参数变化是否让效果变差”。这就是 AI 应用测试。</p>
+          </article>
+        </div>
+
+        <div class="callout" style="margin-top:14px">
+          <strong>一句话：</strong>知行者的学习价值不是“做一个网页”，而是把 AI 应用开发最常见的工程链路完整跑通。你后面做企业知识库、智能客服、测试知识助手、产品问答系统，底层都是这套思路。
+        </div>
+      </section>
+
+      <section id="rag">
+        <div class="section-head">
+          <div>
+            <span class="tag">核心概念</span>
+            <h2>RAG 是怎么工作的</h2>
+            <p>RAG 的英文是 Retrieval-Augmented Generation，中文常叫检索增强生成。它的本质不是训练一个新大模型，而是先检索你的资料，再让大模型基于资料回答。</p>
+          </div>
+        </div>
+
+        <div class="flow">
+          <div class="flow-step"><b>1</b><strong>文档</strong><span>PDF、Word、Markdown、网页、测试文档、产品手册。</span></div>
+          <div class="flow-step"><b>2</b><strong>解析</strong><span>把文件里的内容提取成纯文本，去掉无法处理的格式。</span></div>
+          <div class="flow-step"><b>3</b><strong>清洗</strong><span>去掉多余空行、乱码、页眉页脚、广告导航。</span></div>
+          <div class="flow-step"><b>4</b><strong>切片</strong><span>把长文档切成多个小片段，方便检索和放进 Prompt。</span></div>
+          <div class="flow-step"><b>5</b><strong>向量化</strong><span>用 Embedding 模型把每个片段变成一组数字。</span></div>
+          <div class="flow-step"><b>6</b><strong>检索</strong><span>把问题也变成向量，从向量库找相似片段。</span></div>
+          <div class="flow-step"><b>7</b><strong>生成</strong><span>把命中片段放进 Prompt，让大模型只按依据回答。</span></div>
+          <div class="flow-step"><b>8</b><strong>评估</strong><span>检查有没有引用、证据强不强、是否应该拒答。</span></div>
+        </div>
+
+
+
+        <div class="callout" style="margin-top:14px">
+          <strong>学习收敛：</strong>RAG 名词很多，但你现在只按四条主线学：Naive RAG 跑通基础链路，Advanced RAG 做企业级优化，Agentic RAG 做自主决策，Graph RAG 做复杂关系推理。
+        </div>
+
+        <div class="grid two" style="margin-top:14px">
+          <article class="card">
+            <h3>Naive RAG：基础 / 标准 RAG</h3>
+            <p>流程是分块、向量化、向量检索、拼接上下文、生成回答。它最简单，适合 FAQ 和简单文档问答，是你必须先跑通的地基。缺点是检索不准时容易答偏，也缺少重排序、评测和拒答保护。</p>
+          </article>
+          <article class="card">
+            <h3>Advanced RAG：进阶 / 企业级 RAG</h3>
+            <p>在 Naive 基础上做全流程优化。检索前做查询重写、扩展、意图识别；检索中做混合检索、多路召回；检索后做 Rerank、上下文压缩、去冗余。它是你当前最该重点深入的方向。</p>
+          </article>
+          <article class="card">
+            <h3>Agentic RAG：智能体 RAG</h3>
+            <p>让大模型动态决定是否检索、检索几次、调用什么工具、证据够不够、是否需要反思修正。它适合复杂多跳问题、长任务、测试风险分析和自动生成任务，是知行者后续变成行动助手的关键。</p>
+          </article>
+          <article class="card">
+            <h3>Graph RAG：图谱 RAG</h3>
+            <p>把文档构建成实体和关系组成的知识图谱，支持多跳关联推理。它适合法律、金融、医疗、论文关系分析等复杂场景，但学习成本高，建议作为后期专项。</p>
+          </article>
+        </div>
+
+        <div class="grid two">
+          <article class="card">
+            <h3>普通聊天</h3>
+            <div class="code">用户问题
+  ↓
+大模型直接回答
+  ↓
+可能正确，也可能幻觉</div>
+          </article>
+          <article class="card">
+            <h3>RAG 问答</h3>
+            <div class="code">用户问题
+  ↓
+先检索知识库证据
+  ↓
+把证据交给大模型
+  ↓
+回答 + 引用来源 + 质量检查</div>
+          </article>
+        </div>
+      </section>
+
+      <section id="documents">
+        <div class="section-head">
+          <div>
+            <span class="tag">入口</span>
+            <h2>文档解析：AI 读资料的第一关</h2>
+            <p>RAG 的第一步不是模型，而是把文件变成干净文本。很多 RAG 系统效果差，不是因为模型差，而是因为文档解析阶段已经把内容弄丢了。</p>
+          </div>
+        </div>
+
+        <div class="grid">
+          <article class="card">
+            <h3>txt / md</h3>
+            <p>最容易处理，通常直接读取文本。Markdown 还能保留标题、列表、代码块，这对 RAG 很友好。</p>
+          </article>
+          <article class="card">
+            <h3>PDF</h3>
+            <p>文本型 PDF 可以提取文字；扫描件 PDF 本质是图片，需要 OCR。表格、双栏论文、页眉页脚常常会干扰结果。</p>
+          </article>
+          <article class="card">
+            <h3>Word docx</h3>
+            <p>可以从 XML 里读取段落文本。难点是表格、图片、批注、页眉页脚和复杂排版。</p>
+          </article>
+        </div>
+
+        <details open>
+          <summary>在知行者里对应哪里</summary>
+          <div class="detail-body">
+            上传接口在 <code>backend/app/main.py</code> 的 <code>/api/knowledge-bases/{id}/documents</code>。文件类型检查、PDF 读取、Word 读取、文本清洗在 <code>backend/app/services.py</code>。上传后，文档记录写入 <code>documents</code> 表，切片写入 <code>document_chunks</code> 表。
+          </div>
+        </details>
+        <details>
+          <summary>0 基础要怎么判断解析是否成功</summary>
+          <div class="detail-body">
+            看三个点：第一，文档状态是不是 ready；第二，打开文档详情，正文是不是完整可读；第三，问一个文档里一定有答案的问题，看检索片段是否命中正确段落。如果 PDF 上传后为空，通常是扫描件，需要 OCR。
+          </div>
+        </details>
+      </section>
+
+      <section id="chunking">
+        <div class="section-head">
+          <div>
+            <span class="tag">RAG 基础功</span>
+            <h2>文本切片：把长文档切成可检索的证据</h2>
+            <p>大模型不能每次都吃完整个知识库，所以要把文档切成片段。切片决定了检索的颗粒度，也决定了回答时拿到的上下文是否完整。</p>
+          </div>
+        </div>
+
+        <div class="grid two">
+          <article class="card">
+            <h3>chunk_size 是什么</h3>
+            <p>每个片段大约多长。切得太小，命中更精准，但可能只拿到半句话；切得太大，信息完整，但相似度容易被无关内容稀释。</p>
+          </article>
+          <article class="card">
+            <h3>overlap 是什么</h3>
+            <p>相邻片段之间重复多少内容。它用来避免重要句子刚好被切断。重叠太大也会带来重复片段、更多向量和更高成本。</p>
+          </article>
+        </div>
+
+        <div class="table-wrap" style="margin-top:14px">
+          <table>
+            <thead><tr><th>问题类型</th><th>建议切片</th><th>原因</th><th>你怎么验证</th></tr></thead>
+            <tbody>
+              <tr><td>概念解释</td><td>300 到 600 字符</td><td>问题通常只需要一小段定义。</td><td>看命中片段是否包含完整定义。</td></tr>
+              <tr><td>流程总结</td><td>600 到 1200 字符</td><td>流程需要上下文，太短会断。</td><td>看 1 到 2 个片段能否覆盖完整步骤。</td></tr>
+              <tr><td>制度问答</td><td>500 到 900 字符</td><td>条款通常按段落组织。</td><td>看引用是否落到对应条款。</td></tr>
+              <tr><td>代码/配置</td><td>尽量按代码块切</td><td>代码被切断会失去可运行性。</td><td>看片段是否包含完整函数或配置块。</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="embedding">
+        <div class="section-head">
+          <div>
+            <span class="tag">语义变数字</span>
+            <h2>Embedding：让文本可以被计算</h2>
+            <p>Embedding 是把文字变成数字向量。它不负责回答问题，只负责表达“语义位置”。语义相近的文本，向量距离应该更近。</p>
+          </div>
+        </div>
+
+        <div class="grid">
+          <article class="card">
+            <h3>外部 Embedding API</h3>
+            <p>调用云服务生成向量。优点是效果稳定、接入快；缺点是可能收费、需要联网、文档内容会发给外部。</p>
+          </article>
+          <article class="card">
+            <h3>本地 Embedding 模型</h3>
+            <p>知行者当前可用 <code>BAAI/bge-small-zh-v1.5</code>。优点是数据不出本地，适合学习原理；缺点是首次下载模型，运行会占内存。</p>
+          </article>
+          <article class="card">
+            <h3>local-hash 兜底</h3>
+            <p>这是为了让流程离线跑通的简单向量方法，不等于真正语义模型。它适合教学，不适合追求最终效果。</p>
+          </article>
+        </div>
+
+        <div class="callout" style="margin-top:14px">
+          <strong>必须分清：</strong>Embedding 模型是“把文本变向量”的模型；聊天大模型是“根据上下文生成回答”的模型。RAG 里这两个模型可以不是同一个。
+        </div>
+      </section>
+
+      <section id="vector">
+        <div class="section-head">
+          <div>
+            <span class="tag">存储与搜索</span>
+            <h2>向量数据库：保存证据的语义坐标</h2>
+            <p>向量数据库不是神秘东西。你可以先理解成：每个文档片段都有一串数字，数据库负责保存这些数字，并快速找出和问题最像的片段。</p>
+          </div>
+        </div>
+
+        <div class="grid two">
+          <article class="card">
+            <h3>知行者当前方案</h3>
+            <p><code>SQLite</code> 保存业务数据、文档、切片、向量 JSON 和配置；<code>FAISS</code> 负责向量相似度计算。这个组合适合本地学习和单机项目。</p>
+          </article>
+          <article class="card">
+            <h3>为什么不一开始就上复杂数据库</h3>
+            <p>0 基础阶段最重要的是看懂链路。FAISS + SQLite 足够你学习解析、切片、向量化、检索、评测。等规模变大，再学 Chroma、Milvus、Qdrant、Pinecone。</p>
+          </article>
+        </div>
+
+        <div class="code" style="margin-top:14px">文档片段 content
+  ↓ embed_text()
+向量 [0.12, -0.03, 0.88, ...]
+  ↓ upsert_chunk_vector()
+SQLite chunk_vectors 表
+  ↓ search_similar_chunks()
+FAISS IndexFlatIP 找最相近片段</div>
+      </section>
+
+      <section id="retrieval">
+        <div class="section-head">
+          <div>
+            <span class="tag">找到证据</span>
+            <h2>检索、BM25、Hybrid、Rerank</h2>
+            <p>企业 RAG 不是只做一次向量搜索就结束。真实系统会组合多种信号，让“语义相似”和“关键词命中”互相补位，再重新排序。</p>
+          </div>
+        </div>
+
+        <div class="grid four">
+          <article class="card">
+            <h3>向量检索</h3>
+            <p>擅长语义相近。例如“文本切片”和“chunking”字面不同，但语义接近。</p>
+          </article>
+          <article class="card">
+            <h3>BM25</h3>
+            <p>经典关键词检索。擅长专有名词、版本号、错误码、API 名称。</p>
+          </article>
+          <article class="card">
+            <h3>Hybrid</h3>
+            <p>混合检索。知行者当前用向量分 0.65 + BM25 分 0.35 做融合。</p>
+          </article>
+          <article class="card">
+            <h3>Rerank</h3>
+            <p>对候选片段重新排序。知行者会考虑基础分、问题覆盖率和片段完整度。</p>
+          </article>
+        </div>
+
+        <div class="code" style="margin-top:14px">hybrid_score = vector_score * 0.65 + bm25_score * 0.35
+rerank_score = base_score * 0.65 + token_coverage * 0.25 + completeness * 0.10</div>
+      </section>
+
+      <section id="answer">
+        <div class="section-head">
+          <div>
+            <span class="tag">让模型说人话</span>
+            <h2>生成回答：Prompt、引用和本地兜底</h2>
+            <p>检索到证据后，系统会把问题和证据一起交给大模型。好的 RAG Prompt 会要求模型只基于证据回答，并展示引用来源。</p>
+          </div>
+        </div>
+
+        <div class="grid">
+          <article class="card">
+            <h3>Prompt 里放什么</h3>
+            <p>用户问题、检索片段、引用编号、回答规则。规则里要强调：资料不足时不要编，应该说明没有找到依据。</p>
+          </article>
+          <article class="card">
+            <h3>引用为什么重要</h3>
+            <p>引用让用户能回到原文判断答案是否可信。没有引用的企业问答，很难进入真实业务。</p>
+          </article>
+          <article class="card">
+            <h3>无 Key 也能学习</h3>
+            <p>知行者在没有大模型 API Key 时可以用本地模拟回答，让你先学习 RAG 链路。真正上线时再接 DeepSeek、千问或 OpenAI-compatible API。</p>
+          </article>
+        </div>
+      </section>
+
+      <section id="evaluation">
+        <div class="section-head">
+          <div>
+            <span class="tag">测试工程师优势区</span>
+            <h2>评测与拒答：AI 应用不只看“能不能答”</h2>
+            <p>普通 Demo 只证明“能回答”。真实系统要证明“答得有依据、弱依据会提醒、没依据会拒答”。这正是测试工程师转 AI 应用测试的核心竞争力。</p>
+          </div>
+        </div>
+
+        <div class="grid">
+          <article class="card">
+            <h3>Grounded</h3>
+            <p>依据充分。检索片段覆盖了问题中的关键概念，相似度也达到阈值。</p>
+          </article>
+          <article class="card">
+            <h3>Weak Evidence</h3>
+            <p>有一点依据，但不够强。系统应该提醒用户补文档、换问法、调参数，而不是自信胡说。</p>
+          </article>
+          <article class="card">
+            <h3>No Evidence</h3>
+            <p>没有依据。正确行为是拒答或说明当前知识库没有找到资料。</p>
+          </article>
+        </div>
+
+        <details open>
+          <summary>为什么“有没有给出 Kubernetes YAML？”要严格判断</summary>
+          <div class="detail-body">
+            因为这类问题不是泛泛问“有没有提到 Kubernetes”，而是在问文档里是否真的有 YAML 配置。即使检索片段里出现 Kubernetes，如果没有 <code>apiVersion:</code>、<code>kind:</code> 这种直接证据，也应该判定为没有依据。这叫严格无依据判断。
+          </div>
+        </details>
+
+        <details>
+          <summary>知行者的自动评测集怎么用</summary>
+          <div class="detail-body">
+            你可以添加问题、预期结论和必须命中的关键词。然后用当前 RAG 参数批量运行。现在 Demo 知识库有 35 条用例，检查 RAG 是否稳定。以后你上传公司文档，也应该建立自己的评测集。
+          </div>
+        </details>
+      </section>
+
+      <section id="product">
+        <div class="section-head">
+          <div>
+            <span class="tag">工程全景</span>
+            <h2>前端、后端、数据库分别做什么</h2>
+            <p>0 基础学习系统时，不要一上来钻进代码细节。先看清三层：浏览器负责交互，后端负责业务和 AI 链路，数据库负责持久化。</p>
+          </div>
+        </div>
+
+        <div class="grid">
+          <article class="card">
+            <h3>前端</h3>
+            <p><code>vb界面/index.html</code>、<code>app.js</code>、<code>styles.css</code>。负责页面、按钮、表单、调用接口、展示引用和实验结果。</p>
+          </article>
+          <article class="card">
+            <h3>后端</h3>
+            <p><code>backend/app/main.py</code> 提供 FastAPI 接口；<code>services.py</code> 放业务逻辑；<code>vector_store.py</code> 放向量和检索逻辑。</p>
+          </article>
+          <article class="card">
+            <h3>数据库</h3>
+            <p><code>backend/data/zhixingzhe.db</code>。保存知识库、文档、切片、向量、聊天记录、任务、模型配置、RAG 实验和评测结果。</p>
+          </article>
+        </div>
+
+        <div class="table-wrap" style="margin-top:14px">
+          <table>
+            <thead><tr><th>表名</th><th>保存什么</th><th>为什么需要</th></tr></thead>
+            <tbody>
+              <tr><td>knowledge_bases</td><td>知识库基本信息</td><td>让用户按主题管理资料。</td></tr>
+              <tr><td>documents</td><td>上传文件记录、状态、摘要</td><td>知道每份文件属于哪个知识库，是否解析成功。</td></tr>
+              <tr><td>document_chunks</td><td>文档切片文本</td><td>RAG 检索的最小证据单位。</td></tr>
+              <tr><td>chunk_vectors</td><td>每个切片的向量</td><td>向量检索必须有向量数据。</td></tr>
+              <tr><td>chat_sessions / chat_messages</td><td>聊天会话和消息</td><td>保留用户问答历史。</td></tr>
+              <tr><td>rag_lab_runs</td><td>RAG 实验记录</td><td>对比不同参数效果。</td></tr>
+              <tr><td>rag_eval_cases / batches / results</td><td>评测用例、批次、结果</td><td>把 AI 效果变成可回归验证的指标。</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="security">
+        <div class="section-head">
+          <div>
+            <span class="tag">真实项目意识</span>
+            <h2>安全、配置和上线前要知道的事</h2>
+            <p>AI 应用里最容易被忽视的是安全：API Key 不能泄露，用户文档可能敏感，模型回答不能越过资料边界。</p>
+          </div>
+        </div>
+
+        <div class="grid">
+          <article class="card">
+            <h3>API Key</h3>
+            <p>应该保存在后端，不应该写死在前端。知行者会对模型配置里的 Key 做加密保存和脱敏展示。</p>
+          </article>
+          <article class="card">
+            <h3>数据边界</h3>
+            <p>本地 Embedding 让文档不离开电脑。外部 API 方便，但要知道哪些内容会发出去。</p>
+          </article>
+          <article class="card">
+            <h3>拒答策略</h3>
+            <p>资料不足时拒答不是功能缺陷，而是可信 AI 的必要能力。企业系统宁愿说不知道，也不能编。</p>
+          </article>
+        </div>
+      </section>
+
+
+      <section id="codewalk">
+        <div class="section-head">
+          <div>
+            <span class="tag">代码导读</span>
+            <h2>从 0 看懂知行者代码</h2>
+            <p>你不需要一次读完所有代码。按请求链路读，才不会迷路。下面这张表就是你以后打开项目时的导航图。</p>
+          </div>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>你想理解什么</th><th>先看哪个文件</th><th>重点函数或接口</th><th>读懂标准</th></tr></thead>
+            <tbody>
+              <tr><td>后端如何启动</td><td>backend/app/main.py</td><td>startup(), init_db(), rebuild_all_vectors()</td><td>知道启动时会初始化数据库、迁移密钥、重建向量。</td></tr>
+              <tr><td>文件怎么上传</td><td>backend/app/main.py</td><td>upload_documents()</td><td>知道上传后会保存文件、解析文本、切片、写入向量。</td></tr>
+              <tr><td>PDF/Word 怎么读</td><td>backend/app/services.py</td><td>read_pdf_file(), read_docx_file(), read_text_file()</td><td>知道文本型 PDF 和扫描件 PDF 的区别。</td></tr>
+              <tr><td>切片怎么做</td><td>backend/app/services.py</td><td>split_text()</td><td>知道 chunk_size 和 overlap 如何影响片段数量。</td></tr>
+              <tr><td>向量怎么生成</td><td>backend/app/vector_store.py</td><td>embed_text(), local_model_embedding()</td><td>知道系统会优先按配置使用本地模型、API 或 hash 兜底。</td></tr>
+              <tr><td>向量怎么保存</td><td>backend/app/vector_store.py</td><td>upsert_chunk_vector()</td><td>知道向量会写入 chunk_vectors 表。</td></tr>
+              <tr><td>怎么检索</td><td>backend/app/vector_store.py</td><td>search_similar_chunks(), hybrid_rank(), rerank_chunks()</td><td>知道 FAISS、BM25、Hybrid、Rerank 的位置。</td></tr>
+              <tr><td>聊天怎么回答</td><td>backend/app/services.py</td><td>answer_question(), call_chat_model(), build_local_answer()</td><td>知道有 API 时调模型，没 API 时本地兜底。</td></tr>
+              <tr><td>质量怎么判断</td><td>backend/app/services.py</td><td>evaluate_rag_answer(), has_direct_evidence_for_strict_question()</td><td>知道 grounded、weak_evidence、no_evidence 怎么判。</td></tr>
+              <tr><td>评测集怎么跑</td><td>backend/app/main.py</td><td>run_rag_eval_batch(), judge_rag_eval_case()</td><td>知道每条用例都会进 RAG Lab，再比对预期。</td></tr>
+              <tr><td>前端怎么调用接口</td><td>vb界面/app.js</td><td>api(), runRagLab(), submitQuestion()</td><td>知道前端本质是收集表单、请求后端、渲染结果。</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="grid two" style="margin-top:14px">
+          <article class="card">
+            <h3>请求链路：上传文档</h3>
+            <div class="code">前端选择文件
+  ↓
+POST /api/knowledge-bases/{id}/documents
+  ↓
+ensure_supported_file()
+  ↓
+read_text_file() / read_pdf_file() / read_docx_file()
+  ↓
+split_text()
+  ↓
+INSERT documents + document_chunks
+  ↓
+upsert_chunk_vector()</div>
+          </article>
+          <article class="card">
+            <h3>请求链路：问答</h3>
+            <div class="code">用户输入问题
+  ↓
+POST /api/chat
+  ↓
+retrieve_chunks()
+  ↓
+search_similar_chunks()
+  ↓
+evaluate_rag_answer()
+  ↓
+call_chat_model() 或 build_local_answer()
+  ↓
+save_chat()
+  ↓
+前端展示回答 + 引用 + 质量检查</div>
+          </article>
+        </div>
+      </section>
+
+      <section id="api">
+        <div class="section-head">
+          <div>
+            <span class="tag">接口地图</span>
+            <h2>你要会认的 API</h2>
+            <p>API 是前端和后端之间的约定。你作为测试工程师，应该特别熟悉接口输入、输出、错误状态和回归验证。</p>
+          </div>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>接口</th><th>用途</th><th>你要重点测什么</th></tr></thead>
+            <tbody>
+              <tr><td>GET /api/health</td><td>健康检查</td><td>后端是否启动，返回 status=ok。</td></tr>
+              <tr><td>POST /api/knowledge-bases</td><td>创建知识库</td><td>名称为空、超长、重复创建后的列表显示。</td></tr>
+              <tr><td>POST /api/knowledge-bases/{id}/documents</td><td>上传文档</td><td>支持格式、错误格式、PDF 扫描件、上传后切片和向量是否生成。</td></tr>
+              <tr><td>GET /api/documents/{id}</td><td>查看文档详情</td><td>正文、切片、摘要、状态是否正确。</td></tr>
+              <tr><td>PUT /api/documents/{id}</td><td>编辑文档</td><td>改正文后是否重新切片并更新向量。</td></tr>
+              <tr><td>POST /api/chat</td><td>知识库问答</td><td>有依据、弱依据、无依据三类问题的回答行为。</td></tr>
+              <tr><td>POST /api/rag/lab</td><td>RAG 实验</td><td>不同 chunk_size、overlap、top_k、hybrid、rerank 的影响。</td></tr>
+              <tr><td>POST /api/rag/eval-cases</td><td>新增评测用例</td><td>预期 verdict、关键词、空问题校验。</td></tr>
+              <tr><td>POST /api/rag/eval-batches/run</td><td>运行评测集</td><td>通过率、失败原因、评测结果是否持久化。</td></tr>
+              <tr><td>POST /api/model-configs</td><td>保存模型配置</td><td>API Key 是否脱敏、错误 Key 是否能提示。</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="practice">
+        <div class="section-head">
+          <div>
+            <span class="tag">动手任务</span>
+            <h2>照着做的 7 个练习</h2>
+            <p>只看文档很容易以为自己懂了。下面这些练习做完，你会真正理解这个系统。</p>
+          </div>
+        </div>
+
+        <div class="grid">
+          <article class="card"><h3>练习 1：上传一份 Markdown</h3><p>确认文档状态 ready，查看切片数量，问一个文档里一定有答案的问题。</p></article>
+          <article class="card"><h3>练习 2：上传一份 PDF</h3><p>如果解析失败，判断它是不是扫描件。记录错误信息。</p></article>
+          <article class="card"><h3>练习 3：改切片参数</h3><p>在 RAG 实验室里只改 chunk_size，看命中片段完整性怎么变化。</p></article>
+          <article class="card"><h3>练习 4：关闭 Hybrid</h3><p>对同一个问题关闭混合检索，观察关键词强的问题是否变差。</p></article>
+          <article class="card"><h3>练习 5：关闭 Rerank</h3><p>观察片段排序是否变得不稳定，尤其是问题覆盖率。</p></article>
+          <article class="card"><h3>练习 6：添加拒答用例</h3><p>问“资料里有没有给出某个不存在的配置”，预期设置为 no_evidence。</p></article>
+          <article class="card"><h3>练习 7：跑冒烟检查</h3><p>执行 backend/scripts/smoke_check.py，确认后端、向量、RAG Lab、评测集都正常。</p></article>
+        </div>
+
+        <div class="code" style="margin-top:14px">cd /Users/zhushuai/Downloads/知行者/backend
+.venv/bin/python scripts/smoke_check.py</div>
+      </section>
+
+      <section id="lab">
+        <div class="section-head">
+          <div>
+            <span class="tag">互动实验</span>
+            <h2>在网页里模拟一次 RAG</h2>
+            <p>这个实验不调用后端，只在浏览器里演示切片、关键词检索和参数影响。真实知行者后端会再加上 Embedding、FAISS、BM25、rerank 和数据库存储。</p>
+          </div>
+        </div>
+
+        <div class="lab">
+          <div class="card">
+            <div class="control">
+              <label for="demoQuestion">问题 <span>试试改问法</span></label>
+              <input id="demoQuestion" type="text" value="RAG 的核心流程是什么？" />
+            </div>
+            <div class="control">
+              <label for="demoChunk">切片长度 <span id="demoChunkVal">180</span></label>
+              <input id="demoChunk" type="range" min="80" max="420" step="20" value="180" />
+            </div>
+            <div class="control">
+              <label for="demoOverlap">重叠长度 <span id="demoOverlapVal">40</span></label>
+              <input id="demoOverlap" type="range" min="0" max="160" step="20" value="40" />
+            </div>
+            <div class="control">
+              <label for="demoTopK">Top K <span id="demoTopKVal">3</span></label>
+              <input id="demoTopK" type="range" min="1" max="5" step="1" value="3" />
+            </div>
+            <button class="btn" id="runDemo" type="button">运行前端模拟</button>
+          </div>
+          <div class="result" id="demoResult"></div>
+        </div>
+      </section>
+
+      <section id="quiz">
+        <div class="section-head">
+          <div>
+            <span class="tag">检查理解</span>
+            <h2>10 道小测</h2>
+            <p>不要追求一次全对。你答错的地方，就是下一轮应该回去看的章节。</p>
+          </div>
+        </div>
+        <div class="quiz" id="quizList"></div>
+      </section>
+
+      <section id="roadmap">
+        <div class="section-head">
+          <div>
+            <span class="tag">照着做</span>
+            <h2>你的学习路线</h2>
+            <p>你现在不需要先学深度学习算法。先把 AI 应用工程跑通，再补算法和模型原理。测试工程师的优势是验证、质量、边界条件和自动化评测。</p>
+          </div>
+        </div>
+
+        <div class="grid two">
+          <article class="card">
+            <h3>第 1 阶段：跑通系统</h3>
+            <ol>
+              <li>启动后端，打开前端。</li>
+              <li>创建知识库，上传 Markdown、PDF、Word。</li>
+              <li>查看文档详情，确认解析文本正常。</li>
+              <li>问一个有依据的问题，看引用是否正确。</li>
+            </ol>
+          </article>
+          <article class="card">
+            <h3>第 2 阶段：理解 RAG</h3>
+            <ol>
+              <li>进入 RAG 实验室。</li>
+              <li>固定同一个问题，只改 chunk_size。</li>
+              <li>固定同一个问题，只改 overlap。</li>
+              <li>对比开启和关闭 hybrid、rerank。</li>
+            </ol>
+          </article>
+          <article class="card">
+            <h3>第 3 阶段：学会评测</h3>
+            <ol>
+              <li>添加 grounded 用例。</li>
+              <li>添加 no_evidence 用例。</li>
+              <li>运行评测集，记录通过率。</li>
+              <li>改参数后重新跑，看是否退化。</li>
+            </ol>
+          </article>
+          <article class="card">
+            <h3>第 4 阶段：升级系统</h3>
+            <ol>
+              <li>接入一个真实聊天模型 API。</li>
+              <li>尝试不同 Embedding 模型。</li>
+              <li>增加网页抓取或 OCR。</li>
+              <li>把评测脚本接入自动化。</li>
+            </ol>
+          </article>
+        </div>
+
+        <div class="checklist" style="margin-top:14px" id="studyChecklist">
+          <label><input type="checkbox" /> 我能说清楚 RAG 和普通聊天的区别。</label>
+          <label><input type="checkbox" /> 我知道文档解析失败通常有哪些原因。</label>
+          <label><input type="checkbox" /> 我能解释 chunk_size 和 overlap 的取舍。</label>
+          <label><input type="checkbox" /> 我知道 Embedding 和聊天模型不是一回事。</label>
+          <label><input type="checkbox" /> 我知道 FAISS + SQLite 在知行者里分别负责什么。</label>
+          <label><input type="checkbox" /> 我能设计 grounded、weak_evidence、no_evidence 三类评测用例。</label>
+        </div>
+      </section>
+
+      <section id="terms">
+        <div class="section-head">
+          <div>
+            <span class="tag">随时查</span>
+            <h2>术语速查</h2>
+            <p>学 AI 应用开发时，先把术语翻译成人话。能讲清术语，代码就不会那么吓人。</p>
+          </div>
+        </div>
+        <input class="term-search" id="termSearch" type="text" placeholder="搜索术语，例如 Embedding、FAISS、Rerank" />
+        <div class="term-list" id="termList"></div>
+      </section>
+
+      <div class="footer">
+        本页面是知行者项目的离线学习站。建议你先通读一遍，再边打开系统边做 RAG 实验室。
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const demoDoc = `RAG 是 Retrieval-Augmented Generation 的缩写，中文常称为检索增强生成。一个典型的 RAG 系统包含五个核心步骤：文档解析、文本切片、向量化、检索、生成回答。文档解析负责从 PDF、Word、Markdown 或网页中提取文本。文本切片负责把长文档拆成适合检索的小片段。向量化使用 Embedding 模型把文本片段转换成数字向量。检索会根据用户问题找到最相关的文档片段。生成回答会把检索结果作为上下文交给大模型，让模型基于资料回答。RAG 的关键价值是减少幻觉，让回答能够基于用户自己的知识库。好的 RAG 产品应该展示引用来源，也应该在没有依据时拒答。MVP 阶段可以先用简单文本切片和关键词检索跑通流程，后续再升级为向量数据库、Embedding、BM25 混合检索和 rerank。`;
+
+    const terms = [
+      ["RAG", "检索增强生成。先从知识库找证据，再让大模型基于证据回答。"],
+      ["Embedding", "把文本变成数字向量的模型或过程，用来计算语义相似度。"],
+      ["向量", "一组数字，可以理解成文本在语义空间里的坐标。"],
+      ["FAISS", "本地向量检索库，擅长快速找相似向量。知行者用它做本地向量搜索。"],
+      ["SQLite", "轻量本地数据库。知行者用它保存知识库、文档、切片、向量和评测结果。"],
+      ["Chunk", "文档切片。RAG 检索时通常不是检索整篇文章，而是检索切片。"],
+      ["chunk_size", "每个切片的长度。越小越精准，越大上下文越完整。"],
+      ["overlap", "相邻切片重复的长度，用来避免重要句子被切断。"],
+      ["Top K", "检索时返回前 K 个最相关片段。K 太小可能漏证据，K 太大可能混入噪声。"],
+      ["BM25", "经典关键词检索算法，适合错误码、专有名词、配置项等字面匹配。"],
+      ["Hybrid Search", "混合检索，把向量语义分和关键词分结合起来。"],
+      ["Rerank", "重排序。先召回一批候选片段，再用更多规则重新排序。"],
+      ["Grounded", "回答有充分依据，检索片段能支撑答案。"],
+      ["No Evidence", "没有依据，系统应该拒答或提示资料不足。"],
+      ["Prompt", "给大模型的指令和上下文。RAG Prompt 通常包含问题、证据和回答规则。"],
+      ["API Key", "调用模型服务的密钥。不能写死在前端，也不能上传到公开仓库。"],
+      ["OCR", "把图片里的文字识别出来。扫描件 PDF 需要 OCR 后才能做 RAG。"],
+      ["评测集", "一组问题、预期结果和关键词，用来批量验证 RAG 效果是否稳定。"]
+    ];
+
+    const quizzes = [
+      { q: "RAG 最核心的思想是什么？", a: 1, o: ["训练一个更大的模型", "先检索证据，再基于证据回答", "把所有文档一次性塞给模型"] },
+      { q: "Embedding 在 RAG 里的主要作用是什么？", a: 0, o: ["把文本变成可计算相似度的向量", "直接生成最终回答", "保存用户密码"] },
+      { q: "chunk_size 太小可能带来什么问题？", a: 2, o: ["成本一定下降到 0", "模型不需要引用", "上下文被切断"] },
+      { q: "overlap 的作用是什么？", a: 1, o: ["让页面更好看", "减少切片边界导致的信息断裂", "替代向量数据库"] },
+      { q: "FAISS 在知行者里负责什么？", a: 0, o: ["向量相似度检索", "渲染前端页面", "加密 API Key"] },
+      { q: "BM25 更擅长什么？", a: 2, o: ["图片生成", "语音识别", "关键词、错误码、专有名词匹配"] },
+      { q: "资料不足时，可信 RAG 应该怎么做？", a: 1, o: ["继续编一个答案", "拒答或提示没有依据", "删除知识库"] },
+      { q: "引用来源的价值是什么？", a: 0, o: ["让用户能验证答案依据", "让回答更长", "让数据库变小"] },
+      { q: "测试工程师学习 RAG 的优势在哪里？", a: 2, o: ["完全不用理解系统", "只负责点按钮", "擅长边界、质量、自动化评测"] },
+      { q: "本地 Embedding 的一个优势是什么？", a: 1, o: ["永远比 API 快", "数据可以不出本地", "不需要模型文件"] }
+    ];
+
+    const $ = (selector) => document.querySelector(selector);
+    const $$ = (selector) => Array.from(document.querySelectorAll(selector));
+
+    function tokenize(text) {
+      return new Set((text.toLowerCase().match(/[\u4e00-\u9fff]{2,}|[a-z0-9_]{2,}/g) || [])
+        .filter((word) => !["什么", "这个", "一个", "可以", "如何", "为什么", "系统", "资料"].includes(word)));
+    }
+
+    function splitText(text, size, overlap) {
+      const chunks = [];
+      let start = 0;
+      const safeOverlap = Math.min(overlap, size - 1);
+      while (start < text.length) {
+        chunks.push(text.slice(start, start + size));
+        start += size - safeOverlap;
+      }
+      return chunks;
+    }
+
+    function runDemo() {
+      const question = $("#demoQuestion").value.trim() || "RAG 的核心流程是什么？";
+      const size = Number($("#demoChunk").value);
+      const overlap = Number($("#demoOverlap").value);
+      const topK = Number($("#demoTopK").value);
+      const chunks = splitText(demoDoc, size, overlap);
+      const qTokens = tokenize(question);
+      const scored = chunks.map((content, index) => {
+        const cTokens = tokenize(content);
+        const overlapTerms = [...qTokens].filter((term) => cTokens.has(term));
+        const score = overlapTerms.length / Math.max(qTokens.size, 1);
+        return { content, index, score, overlapTerms };
+      }).filter((item) => item.score > 0).sort((a, b) => b.score - a.score).slice(0, topK);
+
+      const verdict = scored.length ? "依据充分：前端模拟检索到了相关片段" : "没有依据：当前问题没有命中片段";
+      $("#demoResult").innerHTML = `
+        <h3>${verdict}</h3>
+        <p style="color:var(--muted);line-height:1.8">切片 ${chunks.length} 个，命中 ${scored.length} 个。真实系统会把这里的关键词检索升级为 Embedding + FAISS + BM25 + Rerank。</p>
+        <div class="chips">
+          <span class="chip">chunk_size=${size}</span>
+          <span class="chip">overlap=${overlap}</span>
+          <span class="chip">top_k=${topK}</span>
+        </div>
+        ${scored.map((item) => `
+          <article class="card" style="margin-top:12px">
+            <h3>片段 ${item.index + 1} · 分数 ${item.score.toFixed(2)}</h3>
+            <p>${item.content}</p>
+            <div class="chips">${item.overlapTerms.map((term) => `<span class="chip">${term}</span>`).join("") || "<span class='chip'>无关键词</span>"}</div>
+          </article>
+        `).join("")}
+      `;
+    }
+
+    function renderTerms() {
+      const keyword = ($("#termSearch")?.value || "").trim().toLowerCase();
+      $("#termList").innerHTML = terms
+        .filter(([name, desc]) => !keyword || name.toLowerCase().includes(keyword) || desc.toLowerCase().includes(keyword))
+        .map(([name, desc]) => `<article class="term"><strong>${name}</strong><span>${desc}</span></article>`)
+        .join("");
+    }
+
+    function renderQuiz() {
+      $("#quizList").innerHTML = quizzes.map((item, index) => `
+        <article class="quiz-item" data-quiz="${index}">
+          <strong>${index + 1}. ${item.q}</strong>
+          <div class="quiz-options">
+            ${item.o.map((option, optionIndex) => `<button type="button" data-answer="${optionIndex}">${option}</button>`).join("")}
+          </div>
+        </article>
+      `).join("");
+
+      $$(".quiz-item").forEach((item) => {
+        const quizIndex = Number(item.dataset.quiz);
+        item.querySelectorAll("button").forEach((button) => {
+          button.addEventListener("click", () => {
+            item.querySelectorAll("button").forEach((btn) => btn.classList.remove("is-right", "is-wrong"));
+            const answer = Number(button.dataset.answer);
+            button.classList.add(answer === quizzes[quizIndex].a ? "is-right" : "is-wrong");
+            item.querySelectorAll("button")[quizzes[quizIndex].a].classList.add("is-right");
+          });
+        });
+      });
+    }
+
+    function updateProgress() {
+      const sections = $$("section, header.hero");
+      const total = sections.length;
+      const seen = sections.filter((section) => section.getBoundingClientRect().top < window.innerHeight * .58).length;
+      const percent = Math.min(100, Math.round((seen / total) * 100));
+      $("#progressText").textContent = `${percent}%`;
+      $("#progressBar").style.setProperty("--progress", `${percent}%`);
+    }
+
+    function updateActiveNav() {
+      const links = $$("#nav a");
+      let activeId = "start";
+      $$("header.hero, section").forEach((section) => {
+        if (section.getBoundingClientRect().top < 120) activeId = section.id;
+      });
+      links.forEach((link) => link.classList.toggle("is-active", link.getAttribute("href") === `#${activeId}`));
+    }
+
+    function init() {
+      $("#menuBtn").addEventListener("click", () => document.body.classList.toggle("nav-open"));
+      $$("#nav a").forEach((link) => link.addEventListener("click", () => document.body.classList.remove("nav-open")));
+      ["demoChunk", "demoOverlap", "demoTopK"].forEach((id) => {
+        const input = document.getElementById(id);
+        const label = document.getElementById(`${id}Val`);
+        input.addEventListener("input", () => {
+          label.textContent = input.value;
+          runDemo();
+        });
+      });
+      $("#demoQuestion").addEventListener("input", runDemo);
+      $("#runDemo").addEventListener("click", runDemo);
+      $("#termSearch").addEventListener("input", renderTerms);
+      window.addEventListener("scroll", () => {
+        updateProgress();
+        updateActiveNav();
+      }, { passive: true });
+      renderQuiz();
+      renderTerms();
+      runDemo();
+      updateProgress();
+      updateActiveNav();
+    }
+
+    init();
+  </script>
+</body>
+</html>

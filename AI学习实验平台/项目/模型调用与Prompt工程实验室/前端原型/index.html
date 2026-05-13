@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>模型调用与 Prompt 工程实验室</title>
+    <link rel="stylesheet" href="./styles.css?v=20260512-modelprompt-v1" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="project-switcher">
+          <button class="brand project-trigger" id="projectTrigger" aria-expanded="false">
+            <div class="brand-mark">模</div>
+            <div>
+              <strong>模型调用与 Prompt 工程</strong>
+              <span>API、提示词、结构化输出</span>
+            </div>
+            <i>切换</i>
+          </button>
+          <div class="project-menu" id="projectMenu">
+            <button data-project="chunking"><strong>01 文本切分实验室</strong><span>先把长文档拆成 chunk</span></button>
+            <button data-project="embedding"><strong>02 Embedding 与相似度</strong><span>把文本变向量并计算相似度</span></button>
+            <button data-project="vectordb"><strong>03 向量库实验室</strong><span>保存向量并查询 Top K</span></button>
+            <button data-project="rerank"><strong>04 Rerank 重排序实验室</strong><span>把初筛证据重新排序</span></button>
+            <button data-project="rageval"><strong>05 RAG 评测实验室</strong><span>评估检索、引用和回答质量</span></button>
+            <button data-project="graphrag"><strong>06 Graph RAG 图谱实验室</strong><span>实体关系和多跳推理</span></button>
+            <button data-project="agent"><strong>07 Agent 工程实验室</strong><span>目标如何变成工具调用</span></button>
+            <button class="is-active" data-project="modelprompt"><strong>08 模型调用与 Prompt 工程</strong><span>真实模型接入前必学</span></button>
+            <button data-project="zhixingzhe"><strong>09 知行者 AI 实验室</strong><span>完整 RAG、Agent、大模型应用</span></button>
+            <button data-project="itemcf"><strong>10 ItemCF 实验室</strong><span>物品共现如何推荐</span></button>
+            <button data-project="tagrec"><strong>11 标签推荐实验室</strong><span>标签画像如何推荐</span></button>
+            <button data-project="usercf"><strong>12 UserCF 实验室</strong><span>相似用户如何贡献推荐</span></button>
+            <button data-project="svd"><strong>13 SVD 矩阵分解实验室</strong><span>隐向量如何预测喜欢</span></button>
+            <button data-project="recsys"><strong>14 推荐系统总览</strong><span>四类推荐算法对比</span></button>
+          </div>
+        </div>
+
+        <nav class="nav">
+          <button class="nav-item is-active" data-view="overview"><span>01</span><b>项目总览</b></button>
+          <button class="nav-item" data-view="lab"><span>02</span><b>调用实验台</b></button>
+          <button class="nav-item" data-view="visual"><span>03</span><b>调用链路图</b></button>
+          <button class="nav-item" data-view="roadmap"><span>04</span><b>学习路线</b></button>
+          <button class="nav-item" data-view="interview"><span>05</span><b>面试题</b></button>
+        </nav>
+
+        <div class="side-note">
+          <span>当前阶段</span>
+          <strong>接真实模型前的工程课</strong>
+          <p>模型 API 不是只会发请求，还要处理 Prompt、结构化输出、重试、限流、成本和日志。</p>
+        </div>
+      </aside>
+
+      <main class="main">
+        <header class="topbar">
+          <div>
+            <span class="eyebrow">Model API & Prompt Lab</span>
+            <h1 id="pageTitle">项目总览</h1>
+          </div>
+          <div class="top-actions">
+            <span class="status-pill is-ok">本地教学版</span>
+            <button class="primary-btn" data-view-link="lab">开始实验</button>
+          </div>
+        </header>
+
+        <section class="view is-active" id="overview">
+          <div class="hero-panel">
+            <div>
+              <span class="eyebrow">真实 AI 应用绕不开模型调用工程</span>
+              <h2>你不只是要会调 API，还要会设计 Prompt、约束输出、处理失败、记录日志、控制成本。</h2>
+              <p>
+                RAG 和 Agent 最终都要调用大模型。这个实验室用教学模拟器展示一次模型调用从输入消息、上下文拼接、Token 估算、结构化校验、失败重试到最终结果的完整链路。
+              </p>
+              <div class="hero-actions">
+                <button class="primary-btn" data-view-link="lab">打开调用实验台</button>
+                <button class="secondary-btn" data-view-link="visual">看调用链路</button>
+              </div>
+            </div>
+            <div class="flow-card">
+              <div><span>01</span><strong>Prompt</strong><p>系统提示词、用户问题、上下文和输出格式。</p></div>
+              <div><span>02</span><strong>Request</strong><p>模型、温度、最大输出、结构化约束。</p></div>
+              <div><span>03</span><strong>Validate</strong><p>检查 JSON、字段、引用和证据。</p></div>
+              <div><span>04</span><strong>Retry</strong><p>失败时降温、补约束、重试或拒答。</p></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="view" id="lab">
+          <div class="lab-grid rerank-grid">
+            <section class="panel query-panel">
+              <div class="panel-head">
+                <div>
+                  <h2>请求配置</h2>
+                  <p>修改 Prompt 和参数，看输出质量、成本和校验结果变化。</p>
+                </div>
+              </div>
+              <label class="field">
+                模型策略
+                <select id="modelSelect">
+                  <option value="fast">快速便宜模型</option>
+                  <option value="balanced" selected>平衡模型</option>
+                  <option value="strong">强推理模型</option>
+                </select>
+              </label>
+              <div class="control-pair">
+                <label class="field">
+                  温度
+                  <select id="temperatureSelect">
+                    <option value="0.1">0.1 稳定</option>
+                    <option value="0.4" selected>0.4 平衡</option>
+                    <option value="0.8">0.8 发散</option>
+                  </select>
+                </label>
+                <label class="field">
+                  最大输出
+                  <select id="maxOutputSelect">
+                    <option value="300">300 tokens</option>
+                    <option value="600" selected>600 tokens</option>
+                    <option value="1200">1200 tokens</option>
+                  </select>
+                </label>
+              </div>
+              <label class="field">
+                System Prompt
+                <textarea id="systemPrompt">你是企业知识库助手。只能基于提供的上下文回答；如果依据不足，必须说明依据不足；输出必须符合 JSON Schema。</textarea>
+              </label>
+              <label class="field">
+                用户问题
+                <textarea id="userPrompt">Graph RAG 和普通 RAG 有什么区别？请给我学习建议。</textarea>
+              </label>
+              <label class="field">
+                上下文
+                <textarea id="contextText">普通 RAG 主要通过向量检索找到相似文本片段。Graph RAG 会把实体和关系构造成知识图谱，适合多跳关系问题。最终回答仍然需要引用原文证据。</textarea>
+              </label>
+              <label class="field">
+                JSON Schema 字段
+                <input id="schemaFields" value="answer,citations,next_steps,risk" />
+              </label>
+              <div class="check-list">
+                <label><input type="checkbox" id="requireJson" checked /> 要求 JSON 输出</label>
+                <label><input type="checkbox" id="requireCitation" checked /> 要求引用来源</label>
+                <label><input type="checkbox" id="enableRetry" checked /> 校验失败自动重试</label>
+              </div>
+              <button class="primary-btn" id="runBtn">模拟模型调用</button>
+            </section>
+
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <h2>调用过程</h2>
+                  <p>一次模型调用不止请求和响应，还要检查和兜底。</p>
+                </div>
+                <span class="status-pill" id="callStatus">等待调用</span>
+              </div>
+              <div class="result-list" id="callSteps"></div>
+            </section>
+
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <h2>模型输出</h2>
+                  <p>看最终内容是否符合格式、是否引用证据、是否可用。</p>
+                </div>
+                <span class="status-pill" id="outputStatus">等待输出</span>
+              </div>
+              <div id="outputPanel"></div>
+            </section>
+          </div>
+
+          <div class="grid two">
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <h2>Token 与成本</h2>
+                  <p>上下文越长、模型越强、输出越多，成本和延迟越高。</p>
+                </div>
+              </div>
+              <div id="costPanel"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <h2>Prompt 诊断</h2>
+                  <p>这里会指出提示词常见问题。</p>
+                </div>
+              </div>
+              <div id="diagnosisPanel"></div>
+            </section>
+          </div>
+        </section>
+
+        <section class="view" id="visual">
+          <div class="visual-grid">
+            <section class="panel visual-main">
+              <div class="panel-head">
+                <div>
+                  <h2>调用链路图</h2>
+                  <p>从消息拼接到校验重试，每一步都是上线系统要考虑的工程点。</p>
+                </div>
+              </div>
+              <div class="space-stage">
+                <canvas id="callCanvas" width="980" height="520"></canvas>
+                <div class="canvas-tooltip" id="canvasTooltip"></div>
+              </div>
+            </section>
+            <section class="panel explain-panel">
+              <div class="panel-head">
+                <div>
+                  <h2>怎么读链路</h2>
+                  <p>重点看哪里会失败。</p>
+                </div>
+              </div>
+              <div class="plain-card"><strong>Prompt</strong><p>决定模型知道什么、不能做什么、输出什么格式。</p></div>
+              <div class="plain-card"><strong>Validation</strong><p>模型输出不是天然可靠，必须检查 JSON、字段和引用。</p></div>
+              <div class="plain-card"><strong>Retry</strong><p>重试不是重复发同一个请求，而是带着失败原因修正请求。</p></div>
+            </section>
+          </div>
+        </section>
+
+        <section class="view" id="roadmap">
+          <section class="panel">
+            <div class="panel-head">
+              <div>
+                <h2>学习路线</h2>
+                <p>模型调用工程是所有 AI 应用后端的地基。</p>
+              </div>
+            </div>
+            <div class="roadmap-list" id="roadmapList"></div>
+          </section>
+        </section>
+
+        <section class="view" id="interview">
+          <section class="panel">
+            <div class="panel-head">
+              <div>
+                <h2>模型调用面试题</h2>
+                <p>面试重点是可靠性、结构化输出和成本控制。</p>
+              </div>
+            </div>
+            <div class="roadmap-list" id="interviewList"></div>
+          </section>
+        </section>
+      </main>
+    </div>
+    <script src="./app.js?v=20260512-modelprompt-v1"></script>
+  </body>
+</html>

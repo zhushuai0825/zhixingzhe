@@ -1,0 +1,276 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Embedding 与相似度实验室</title>
+    <link rel="stylesheet" href="./styles.css?v=20260512-quality-v1" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="project-switcher">
+          <button class="brand project-trigger" id="projectTrigger" aria-expanded="false">
+            <div class="brand-mark">E</div>
+            <div>
+              <strong>Embedding 与相似度</strong>
+              <span>文本向量化底层实验</span>
+            </div>
+            <i>切换</i>
+          </button>
+          <div class="project-menu" id="projectMenu">
+            <button data-project="chunking">
+              <strong>01 文本切分实验室</strong>
+              <span>先把长文档拆成 chunk</span>
+            </button>
+            <button class="is-active" data-project="embedding">
+              <strong>02 Embedding 与相似度</strong>
+              <span>把文本变向量并计算相似度</span>
+            </button>
+            <button data-project="vectordb">
+              <strong>03 向量库实验室</strong>
+              <span>保存向量并查询 Top K</span>
+            </button>
+            <button data-project="rerank">
+              <strong>04 Rerank 重排序实验室</strong>
+              <span>把初筛证据重新排序</span>
+            </button>
+            <button data-project="rageval">
+              <strong>05 RAG 评测实验室</strong>
+              <span>评估检索、引用和回答质量</span>
+            </button>
+            <button data-project="graphrag">
+              <strong>06 Graph RAG 图谱实验室</strong>
+              <span>实体关系和多跳推理</span>
+            </button>
+            <button data-project="agent">
+              <strong>07 Agent 工程实验室</strong>
+              <span>目标如何变成工具调用</span>
+            </button>
+            <button data-project="modelprompt">
+              <strong>08 模型调用与 Prompt 工程</strong>
+              <span>真实模型接入前必学</span>
+            </button>
+            <button data-project="zhixingzhe">
+              <strong>09 知行者 AI 实验室</strong>
+              <span>完整 RAG、Agent、大模型应用</span>
+            </button>
+            <button data-project="itemcf">
+              <strong>10 ItemCF 实验室</strong>
+              <span>物品共现如何推荐</span>
+            </button>
+            <button data-project="tagrec">
+              <strong>11 标签推荐实验室</strong>
+              <span>标签画像如何推荐</span>
+            </button>
+            <button data-project="usercf">
+              <strong>12 UserCF 实验室</strong>
+              <span>相似用户如何贡献推荐</span>
+            </button>
+            <button data-project="svd">
+              <strong>13 SVD 矩阵分解实验室</strong>
+              <span>隐向量如何预测喜欢</span>
+            </button>
+            <button data-project="recsys">
+              <strong>14 推荐系统总览</strong>
+              <span>四类推荐算法对比</span>
+            </button>
+          </div>
+        </div>
+
+        <nav class="nav">
+          <button class="nav-item is-active" data-view="overview">
+            <span>01</span>
+            <b>项目总览</b>
+          </button>
+          <button class="nav-item" data-view="lab">
+            <span>02</span>
+            <b>Embedding 实验台</b>
+          </button>
+          <button class="nav-item" data-view="similarity">
+            <span>03</span>
+            <b>相似度可视化</b>
+          </button>
+          <button class="nav-item" data-view="roadmap">
+            <span>04</span>
+            <b>学习路线</b>
+          </button>
+        </nav>
+
+        <div class="side-note">
+          <span>当前阶段</span>
+          <strong>本地教学 embedding</strong>
+          <p>不用 API Key，先把 token、向量、相似度、召回结果看清楚。</p>
+        </div>
+      </aside>
+
+      <main class="main">
+        <header class="topbar">
+          <div>
+            <span class="eyebrow">Embedding Lab</span>
+            <h1 id="pageTitle">项目总览</h1>
+          </div>
+          <div class="top-actions">
+            <span class="status-pill" id="backendStatus">正在连接后端</span>
+            <button class="primary-btn" data-view-link="lab">开始实验</button>
+          </div>
+        </header>
+
+        <section class="view is-active" id="overview">
+          <div class="hero-panel">
+            <div>
+              <span class="eyebrow">文本如何变成可计算的向量</span>
+              <h2>把 RAG 检索最底层的 embedding 和相似度拆开看。</h2>
+              <p>
+                你输入一句问题，系统把它切成 token，再映射成 16 维向量，最后和候选文本向量计算相似度。这里学懂了，后面的文本切分、向量库、Rerank 都会顺很多。
+              </p>
+              <div class="hero-actions">
+                <button class="primary-btn" data-view-link="lab">打开实验台</button>
+                <button class="secondary-btn" data-view-link="similarity">看匹配画布</button>
+              </div>
+            </div>
+            <div class="flow-card">
+              <div><span>01</span><strong>文本</strong><p>用户问题和知识片段。</p></div>
+              <div><span>02</span><strong>Token</strong><p>把文本拆成模型可处理的单位。</p></div>
+              <div><span>03</span><strong>向量</strong><p>每段文本变成一组数字。</p></div>
+              <div><span>04</span><strong>相似度</strong><p>比较问题向量和片段向量。</p></div>
+            </div>
+          </div>
+
+          <div class="grid three">
+            <section class="panel">
+              <h2>Embedding 学什么</h2>
+              <p>学文本如何从自然语言变成数字向量，重点看 token、维度、归一化和向量可视化。</p>
+            </section>
+            <section class="panel">
+              <h2>相似度学什么</h2>
+              <p>学余弦相似度、点积、欧氏距离的差别，理解为什么 Top K 排名会变化。</p>
+            </section>
+            <section class="panel">
+              <h2>后续接什么</h2>
+              <p>后面继续拆成文本切分实验室、向量库实验室和 Rerank 实验室。</p>
+            </section>
+          </div>
+        </section>
+
+        <section class="view" id="lab">
+          <div class="lab-grid">
+            <section class="panel controls-panel">
+              <div class="panel-head">
+                <div>
+                  <h2>实验输入</h2>
+                  <p>修改查询和候选文本，观察向量与排名变化。</p>
+                </div>
+              </div>
+
+              <label class="field">
+                查询文本
+                <textarea id="queryInput" rows="4"></textarea>
+              </label>
+              <div class="plain-card explain-mini">
+                <strong>查询文本查的是哪里？</strong>
+                <p>它会和下面“候选文本集合”里的每一条做向量相似度比较。现在这些候选文本就是一个迷你知识库。</p>
+              </div>
+
+              <div class="controls-row">
+                <label class="field">
+                  相似度方法
+                  <select id="metricSelect">
+                    <option value="cosine">余弦相似度</option>
+                    <option value="dot">点积</option>
+                    <option value="euclidean">欧氏距离</option>
+                  </select>
+                </label>
+                <label class="field">
+                  Top K
+                  <select id="topKSelect">
+                    <option>3</option>
+                    <option selected>5</option>
+                    <option>8</option>
+                  </select>
+                </label>
+              </div>
+
+              <label class="field">
+                候选文本集合
+                <textarea id="candidateInput" rows="11"></textarea>
+              </label>
+
+              <button class="primary-btn" id="runBtn">运行向量匹配</button>
+              <button class="secondary-btn" id="resetBtn">恢复示例</button>
+            </section>
+
+            <section class="panel vector-panel">
+              <div class="panel-head">
+                <div>
+                  <h2>查询文本向量</h2>
+                  <p>查询文本向量就是把你输入的问题，转换到一组可计算的语义维度上。</p>
+                </div>
+                <span class="status-pill" id="dimStatus">16 维</span>
+              </div>
+              <div class="token-list" id="queryTokens"></div>
+              <div class="vector-bars" id="queryVector"></div>
+            </section>
+
+            <section class="panel result-panel">
+              <div class="panel-head">
+                <div>
+                  <h2>Top K 召回结果</h2>
+                  <p>分数越高越相似，欧氏距离则越小越相似。</p>
+                </div>
+              </div>
+              <div class="result-list" id="resultList"></div>
+            </section>
+          </div>
+        </section>
+
+        <section class="view" id="similarity">
+          <div class="visual-grid">
+            <section class="panel visual-main">
+              <div class="panel-head">
+                <div>
+                  <h2>3D 相似度空间</h2>
+                  <p>中心点是查询向量，候选点越靠近它，表示共同语义维度越多、相似度越高。</p>
+                </div>
+              </div>
+              <div class="match-stage">
+                <canvas id="matchCanvas" width="980" height="520"></canvas>
+                <div class="canvas-tooltip" id="canvasTooltip"></div>
+              </div>
+            </section>
+
+            <section class="panel explain-panel">
+              <div class="panel-head">
+                <div>
+                  <h2>当前方法解释</h2>
+                  <p>把公式讲成人话。</p>
+                </div>
+              </div>
+              <div class="plain-card" id="metricExplanation"></div>
+              <div class="plain-card">
+                <strong>你要记住</strong>
+                <p>当前查询只在“候选文本集合”里查找最相似的文本。真实 RAG 里，这个集合会变成向量数据库里的文档 chunk。</p>
+              </div>
+              <div class="plain-card" id="topReason"></div>
+            </section>
+          </div>
+        </section>
+
+        <section class="view" id="roadmap">
+          <section class="panel">
+            <div class="panel-head">
+              <div>
+                <h2>学习路线</h2>
+                <p>按这个顺序学，RAG 底层会越来越清楚。</p>
+              </div>
+            </div>
+            <div class="roadmap-list" id="roadmapList"></div>
+          </section>
+        </section>
+      </main>
+    </div>
+
+    <div class="toast" id="toast"></div>
+    <script src="./app.js?v=20260512-quality-v1"></script>
+  </body>
+</html>

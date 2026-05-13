@@ -1,0 +1,675 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>RAG 与本地 Embedding 学习路线</title><style>
+:root{color-scheme:light dark;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC",sans-serif;line-height:1.75;color:#182026;background:#f6f8fb}body{margin:0}.wrap{max-width:980px;margin:0 auto;padding:40px 22px 80px}h1{font-size:34px;margin:0 0 24px}h2{margin-top:38px;border-top:1px solid #dfe6ec;padding-top:24px}h3{margin-top:28px;color:#1f7a8c}h4{margin:22px 0 8px;color:#145463;font-size:18px}p{margin:10px 0}.li{padding-left:12px}pre{overflow:auto;padding:14px 16px;border-radius:8px;background:#10252c;color:#eef7f8}.tableline{margin:0;padding:4px 12px;background:#eef4f8;color:#182026}code{font-family:"SFMono-Regular",Consolas,monospace}@media (prefers-color-scheme:dark){:root{background:#071820;color:#e9f4f6}.tableline{background:#10252c;color:#e9f4f6}h2{border-color:#23414a}h4{color:#75d7e6}}
+</style></head><body><main class="wrap">
+<h1>RAG 与本地 Embedding 学习路线</h1>
+<h2>1. 你现在到底要学什么</h2>
+<p>你要学的不是单独某一个工具，而是一套企业最常见的 AI 应用工程能力：</p>
+<pre><code>
+文档 -&gt; 切片 -&gt; Embedding -&gt; 向量数据库 -&gt; 检索 -&gt; Prompt -&gt; 大模型回答 -&gt; 引用 -&gt; 质量评估
+</code></pre>
+<p>这套能力叫 RAG，中文通常叫“检索增强生成”。</p>
+<p>它解决的问题是：让 AI 基于你的文档回答，而不是凭空编。</p>
+<h2>2. 一句话理解 RAG</h2>
+<p>RAG 的本质是：</p>
+<pre><code>
+先从知识库里找证据，再让大模型基于证据回答。
+</code></pre>
+<p>普通聊天是：</p>
+<pre><code>
+用户问题 -&gt; 大模型直接回答
+</code></pre>
+<p>RAG 是：</p>
+<pre><code>
+用户问题 -&gt; 检索相关文档片段 -&gt; 把片段交给大模型 -&gt; 基于片段回答
+</code></pre>
+<p>所以 RAG 的关键不是“模型多聪明”，而是“证据找得准不准”。</p>
+<h2>3. 你应该掌握的核心模块</h2>
+<h3>3.1 文档解析</h3>
+<p>你要知道不同文件怎么变成文本：</p>
+<p class="li">• txt / md：直接读取。</p>
+<p class="li">• PDF：文本型 PDF 可以提取，扫描件需要 OCR。</p>
+<p class="li">• Word：提取正文段落。</p>
+<p class="li">• 网页：提取正文，去掉导航、广告、页脚。</p>
+<p>你要练习：</p>
+<p class="li">• 上传不同格式文档。</p>
+<p class="li">• 看解析出来的文本是否完整。</p>
+<p class="li">• 检查标题、表格、段落有没有丢失。</p>
+<p>做到什么程度算会：</p>
+<p class="li">• 你能判断一个 PDF 为什么提取不到文字。</p>
+<p class="li">• 你知道扫描件要先 OCR。</p>
+<p class="li">• 你知道表格、图片、批注是文档解析里的难点。</p>
+<h3>3.2 文本清洗</h3>
+<p>解析后的文本经常有噪声：</p>
+<p class="li">• 多余空行。</p>
+<p class="li">• 页眉页脚。</p>
+<p class="li">• 重复目录。</p>
+<p class="li">• 网页导航。</p>
+<p class="li">• 乱码。</p>
+<p>你要练习：</p>
+<p class="li">• 看上传后的正文内容。</p>
+<p class="li">• 判断哪些内容会干扰检索。</p>
+<p class="li">• 尝试手动改文档内容后重新保存。</p>
+<p>做到什么程度算会：</p>
+<p class="li">• 你知道“垃圾文本进知识库，RAG 结果也会变差”。</p>
+<p class="li">• 你能说明为什么清洗比想象中重要。</p>
+<h3>3.3 文本切片 Chunking</h3>
+<p>切片是 RAG 最重要的基础能力之一。</p>
+<p>大文档不能整篇塞给模型，所以要拆成很多小片段。</p>
+<p>常见参数：</p>
+<pre><code>
+chunk_size：每个片段多长
+overlap：相邻片段重复多少
+</code></pre>
+<p>经验：</p>
+<p class="li">• 切太小：检索更聚焦，但容易丢上下文。</p>
+<p class="li">• 切太大：上下文完整，但相似度可能变钝。</p>
+<p class="li">• 有 overlap：能缓解句子被切断的问题。</p>
+<p class="li">• overlap 太大：片段重复变多，成本上升。</p>
+<p>你要练习：</p>
+<p>在 RAG 实验室里，同一个问题只改一个参数：</p>
+<pre><code>
+chunk_size = 300 / 600 / 900 / 1500
+overlap = 0 / 80 / 160 / 300
+</code></pre>
+<p>观察：</p>
+<p class="li">• 临时切片数量有没有变化。</p>
+<p class="li">• 命中的片段是否完整。</p>
+<p class="li">• 相关度分数是否变化。</p>
+<p class="li">• 是否把答案切断了。</p>
+<p>做到什么程度算会：</p>
+<p class="li">• 你能解释为什么“流程总结类问题”适合较大切片。</p>
+<p class="li">• 你能解释为什么“单点概念类问题”可能适合较小切片。</p>
+<p class="li">• 你知道不同文档没有万能参数。</p>
+<h3>3.4 Embedding</h3>
+<p>Embedding 是把文本变成数字向量。</p>
+<p>简单理解：</p>
+<pre><code>
+文本 -&gt; 一组数字 -&gt; 可以被计算相似度
+</code></pre>
+<p>比如：</p>
+<pre><code>
+“文本切片” 和 “chunking” 的向量应该比较接近
+</code></pre>
+<p>Embedding 不负责回答问题，它只负责表达语义。</p>
+<p>你要知道三种模式：</p>
+<h4>外部 Embedding API</h4>
+<pre><code>
+文本 -&gt; 阿里/硅基/OpenAI API -&gt; 向量
+</code></pre>
+<p>优点：</p>
+<p class="li">• 接入快。</p>
+<p class="li">• 效果稳定。</p>
+<p class="li">• 本地压力小。</p>
+<p>缺点：</p>
+<p class="li">• 需要联网。</p>
+<p class="li">• 可能收费。</p>
+<p class="li">• 文档内容会发给外部服务。</p>
+<h4>本地 Embedding 模型</h4>
+<pre><code>
+文本 -&gt; 本地 bge-small-zh-v1.5 -&gt; 向量
+</code></pre>
+<p>优点：</p>
+<p class="li">• 数据不出本地。</p>
+<p class="li">• 不依赖外部 Embedding API。</p>
+<p class="li">• 更适合学习底层原理。</p>
+<p>缺点：</p>
+<p class="li">• 第一次需要下载模型。</p>
+<p class="li">• 本地会占用内存和磁盘。</p>
+<p class="li">• 比 API 慢一些。</p>
+<h4>本地 hash 兜底</h4>
+<p>你的项目当前有：</p>
+<pre><code>
+local-hash-384
+</code></pre>
+<p>它可以让流程跑通，但它不是真正的语义 Embedding。</p>
+<p>你要知道：</p>
+<p class="li">• 它适合学习流程。</p>
+<p class="li">• 它不适合追求最终检索效果。</p>
+<p class="li">• 后续应该升级成本地模型或真实 Embedding API。</p>
+<p>做到什么程度算会：</p>
+<p class="li">• 你能说清楚 Embedding 和大模型回答不是一回事。</p>
+<p class="li">• 你知道 Embedding 是为了检索，不是为了聊天。</p>
+<p class="li">• 你知道真实 Embedding 会比 hash 兜底更准。</p>
+<h3>3.5 向量数据库</h3>
+<p>向量数据库负责存向量和查相似向量。</p>
+<p>你的项目现在用：</p>
+<pre><code>
+FAISS + SQLite
+</code></pre>
+<p>含义：</p>
+<p class="li">• FAISS：负责向量相似度检索。</p>
+<p class="li">• SQLite：保存文档、切片、向量 JSON、元数据。</p>
+<p>当前对比方式：</p>
+<pre><code>
+FAISS IndexFlatIP
+</code></pre>
+<p>也就是内积相似度。</p>
+<p>因为向量会先归一化，所以可以近似理解为：</p>
+<pre><code>
+余弦相似度
+</code></pre>
+<p>常见向量库：</p>
+<p class="li">• FAISS：适合本地学习和单机检索。</p>
+<p class="li">• Chroma：适合快速搭 RAG Demo。</p>
+<p class="li">• Qdrant：适合服务化向量数据库。</p>
+<p class="li">• pgvector：适合把向量存在 PostgreSQL。</p>
+<p class="li">• Milvus：适合更大规模向量检索。</p>
+<p>做到什么程度算会：</p>
+<p class="li">• 你知道向量数据库不是大模型。</p>
+<p class="li">• 你知道它负责“找相似片段”。</p>
+<p class="li">• 你能解释 FAISS 和 SQLite 在项目里分别负责什么。</p>
+<h3>3.6 检索 Top K</h3>
+<p>Top K 是每次返回几个最相关片段。</p>
+<pre><code>
+top_k = 3：更聚焦，可能漏证据
+top_k = 5：常用默认值
+top_k = 8：召回更多，但可能混入噪声
+</code></pre>
+<p>你要练习：</p>
+<p>同一个问题分别跑：</p>
+<pre><code>
+top_k = 1
+top_k = 3
+top_k = 5
+top_k = 8
+</code></pre>
+<p>观察：</p>
+<p class="li">• 第一条是否最准确。</p>
+<p class="li">• 后面的片段是不是补充证据。</p>
+<p class="li">• 是否出现无关片段。</p>
+<p>做到什么程度算会：</p>
+<p class="li">• 你知道“召回多”不一定更好。</p>
+<p class="li">• 你知道 top_k 太小会漏信息，太大会带噪声。</p>
+<h3>3.7 Rerank 重排序</h3>
+<p>Embedding 检索第一轮可能找得不够准。</p>
+<p>Rerank 是第二轮排序：</p>
+<pre><code>
+先召回 20 个片段 -&gt; rerank 重新排序 -&gt; 取前 5 个给大模型
+</code></pre>
+<p>它解决的问题：</p>
+<p class="li">• 关键词命中了，但片段不一定真的能回答。</p>
+<p class="li">• 向量相似度高，但证据可能不完整。</p>
+<p class="li">• 第一条不一定是最好的引用。</p>
+<p>知行者当前已经加入了轻量 Rerank：</p>
+<pre><code>
+先用向量检索召回更多候选片段
+再综合向量分、问题词覆盖、片段完整度重新排序
+最后取 top_k 个片段给问答链路
+</code></pre>
+<p>它不是最强的模型版 rerank，但非常适合学习：</p>
+<p class="li">• 为什么“召回”和“排序”是两步。</p>
+<p class="li">• 为什么相似度最高的片段不一定最好。</p>
+<p class="li">• 为什么完整片段更适合当引用。</p>
+<p>做到什么程度算会：</p>
+<p class="li">• 你能解释为什么“检索命中”不等于“引用正确”。</p>
+<p class="li">• 你知道 rerank 是为了提高证据排序质量。</p>
+<p class="li">• 你能在 RAG 实验室里开关 rerank，对比排序变化。</p>
+<h3>3.8 Prompt 拼接</h3>
+<p>检索到片段后，要把片段放进提示词里。</p>
+<p>典型 Prompt：</p>
+<pre><code>
+你是知识库问答助手。
+请只基于以下参考资料回答。
+如果资料不足，请明确说明没有找到依据。
+
+用户问题：
+...
+
+参考资料：
+[1] ...
+[2] ...
+</code></pre>
+<p>重点：</p>
+<p class="li">• 不要让模型脱离资料乱答。</p>
+<p class="li">• 要求模型说明依据不足。</p>
+<p class="li">• 要求模型不要编造引用。</p>
+<p>做到什么程度算会：</p>
+<p class="li">• 你知道 RAG 不是只检索，还要设计 Prompt。</p>
+<p class="li">• 你知道 Prompt 要约束模型“基于证据回答”。</p>
+<h3>3.9 引用来源</h3>
+<p>企业 RAG 一定要展示引用。</p>
+<p>引用的价值：</p>
+<p class="li">• 用户能验证答案。</p>
+<p class="li">• 测试人员能判断答案是否有依据。</p>
+<p class="li">• 产品能降低幻觉风险。</p>
+<p>你要练习：</p>
+<p class="li">• 看回答引用的是不是正确文档。</p>
+<p class="li">• 看引用片段是否真的支持答案。</p>
+<p class="li">• 看无依据问题是否拒答。</p>
+<p>做到什么程度算会：</p>
+<p class="li">• 你能发现“答案看起来对，但引用不支持”的问题。</p>
+<p class="li">• 你能把引用正确性写成测试用例。</p>
+<h3>3.10 RAG 质量评估</h3>
+<p>你是测试工程师，这里是你的优势。</p>
+<p>你要重点评估：</p>
+<p class="li">• 检索命中率。</p>
+<p class="li">• 引用正确性。</p>
+<p class="li">• 无依据拒答。</p>
+<p class="li">• 答案是否只基于资料。</p>
+<p class="li">• 不同参数下的结果差异。</p>
+<p class="li">• 模型失败时是否有兜底。</p>
+<p>常见测试问题类型：</p>
+<p class="tableline">| 类型 | 示例 | 预期 |</p>
+<p class="tableline">| --- | --- | --- |</p>
+<p class="tableline">| 明确事实 | RAG 的核心步骤是什么？ | 命中包含步骤的片段 |</p>
+<p class="tableline">| 局部概念 | Embedding 起什么作用？ | 命中向量化相关片段 |</p>
+<p class="tableline">| 总结归纳 | 这篇文档主要讲什么？ | 命中多个核心片段 |</p>
+<p class="tableline">| 无依据 | 文档里有没有 Kubernetes 部署方案？ | 没依据时拒答 |</p>
+<p class="tableline">| 边界问题 | 问跨段落的信息 | overlap 可能改善命中 |</p>
+<p>做到什么程度算会：</p>
+<p class="li">• 你能设计一组 RAG 回归测试集。</p>
+<p class="li">• 你能判断一次 RAG 改动是变好还是变差。</p>
+<h2>4. 你现在的项目处于什么阶段</h2>
+<p>知行者当前已经有：</p>
+<pre><code>
+文档上传
+PDF / Word / Markdown / txt 解析
+文本切片
+FAISS 本地向量检索
+本地真实 Embedding：BAAI/bge-small-zh-v1.5
+SQLite 数据保存
+RAG 问答
+引用展示
+RAG 质量检查
+RAG 实验室
+RAG 实验记录保存
+轻量 Rerank 重排序
+更强的无依据拒答
+BM25 + 向量混合检索
+RAG 自动评测集
+</code></pre>
+<p>当前还需要继续升级：</p>
+<pre><code>
+模型版 rerank / cross-encoder rerank
+Chroma / Qdrant / pgvector 对比
+评测结果趋势图
+</code></pre>
+<h2>5. 你接下来的学习路线</h2>
+<h3>第 1 阶段：先把 RAG 流程跑熟</h3>
+<p>目标：</p>
+<pre><code>
+知道一个问题从输入到答案中间发生了什么。
+</code></pre>
+<p>练习：</p>
+<p>1. 上传 3 份文档。</p>
+<p>2. 每份文档问 5 个问题。</p>
+<p>3. 看引用片段是否正确。</p>
+<p>4. 对无依据问题检查是否拒答。</p>
+<p>你要掌握：</p>
+<p class="li">• 文档解析。</p>
+<p class="li">• 切片。</p>
+<p class="li">• 检索。</p>
+<p class="li">• 引用。</p>
+<p class="li">• RAG 质量检查。</p>
+<h3>第 2 阶段：专门练切片参数</h3>
+<p>目标：</p>
+<pre><code>
+理解 chunk_size、overlap、top_k 对结果的影响。
+</code></pre>
+<p>练习：</p>
+<p>同一问题分别对比：</p>
+<pre><code>
+chunk_size = 300 / 600 / 900 / 1500
+overlap = 0 / 80 / 160
+top_k = 1 / 3 / 5 / 8
+</code></pre>
+<p>每次只改一个参数。</p>
+<p>你要记录：</p>
+<p class="li">• 命中了几个片段。</p>
+<p class="li">• 第一条是否正确。</p>
+<p class="li">• 片段是否完整。</p>
+<p class="li">• 分数是否变化。</p>
+<h3>第 3 阶段：接本地 Embedding 模型</h3>
+<p>目标：</p>
+<pre><code>
+不用外部 Embedding API，在本地生成真实语义向量。
+</code></pre>
+<p>推荐模型：</p>
+<pre><code>
+BAAI/bge-small-zh-v1.5
+</code></pre>
+<p>推荐组合：</p>
+<pre><code>
+bge-small-zh-v1.5 + FAISS + SQLite
+</code></pre>
+<p>你要掌握：</p>
+<p class="li">• sentence-transformers。</p>
+<p class="li">• 模型第一次下载。</p>
+<p class="li">• 本地向量生成。</p>
+<p class="li">• 向量维度变化。</p>
+<p class="li">• 重新生成已有文档向量。</p>
+<h3>第 4 阶段：学习向量库对比</h3>
+<p>目标：</p>
+<pre><code>
+知道不同向量库适合什么场景。
+</code></pre>
+<p>学习顺序：</p>
+<pre><code>
+FAISS -&gt; Chroma -&gt; Qdrant -&gt; pgvector
+</code></pre>
+<p>你要掌握：</p>
+<p class="li">• 本地文件型向量库。</p>
+<p class="li">• 服务型向量库。</p>
+<p class="li">• 数据库扩展型向量库。</p>
+<p class="li">• 元数据过滤。</p>
+<p class="li">• 持久化和备份。</p>
+<h3>第 5 阶段：学习 RAG 测试体系</h3>
+<p>目标：</p>
+<pre><code>
+把你的测试工程师能力迁移到 AI 应用测试。
+</code></pre>
+<p>你要做：</p>
+<p class="li">• 建一份 RAG 测试集。</p>
+<p class="li">• 每个问题写预期引用。</p>
+<p class="li">• 每次改参数后跑回归。</p>
+<p class="li">• 记录命中率和引用正确率。</p>
+<p class="li">• 找出幻觉、错引、漏召回问题。</p>
+<p>这会成为你区别于普通开发者的优势。</p>
+<h3>第 6 阶段：学习 RAG 相关算法基础</h3>
+<p>目标：</p>
+<pre><code>
+不为了刷题而学算法，而是为了看懂 RAG 为什么能检索、为什么会错、怎么评估好坏。
+</code></pre>
+<p>你不需要一开始学很深的算法竞赛内容。你应该优先学习和 AI 应用直接相关的算法。</p>
+<h4>6.1 向量基础</h4>
+<p>你要理解：</p>
+<p class="li">• 什么是向量。</p>
+<p class="li">• 文本为什么可以表示成向量。</p>
+<p class="li">• 向量维度是什么意思。</p>
+<p class="li">• 为什么两个文本可以通过向量距离比较相似。</p>
+<p>要会解释：</p>
+<pre><code>
+Embedding 模型把文本变成一串数字，这串数字就是向量。
+语义相近的文本，向量距离通常更近。
+</code></pre>
+<p>练习：</p>
+<p class="li">• 找两个相似问题，看它们是否命中同一片段。</p>
+<p class="li">• 找两个完全无关问题，看相似度是否下降。</p>
+<h4>6.2 相似度算法</h4>
+<p>你要学：</p>
+<p class="li">• 余弦相似度 cosine similarity。</p>
+<p class="li">• 内积 inner product。</p>
+<p class="li">• 欧氏距离 Euclidean distance。</p>
+<p class="li">• 向量归一化 normalization。</p>
+<p>在知行者里，当前 FAISS 使用：</p>
+<pre><code>
+IndexFlatIP
+</code></pre>
+<p>也就是内积相似度。</p>
+<p>因为向量会做归一化，所以可以近似理解为：</p>
+<pre><code>
+归一化后的内积 ≈ 余弦相似度
+</code></pre>
+<p>做到什么程度算会：</p>
+<p class="li">• 你能解释“相似度分数越高，代表问题和片段越接近”。</p>
+<p class="li">• 你知道 0.8 不一定永远好，分数要结合模型和数据分布看。</p>
+<p class="li">• 你知道不同 embedding 模型的分数不能随便横向比较。</p>
+<h4>6.3 Top K 检索</h4>
+<p>你要学：</p>
+<p class="li">• Top K 是什么。</p>
+<p class="li">• 为什么召回多个片段。</p>
+<p class="li">• top_k 太小和太大的风险。</p>
+<p>经验：</p>
+<pre><code>
+top_k 太小：可能漏掉正确证据。
+top_k 太大：可能混入无关内容，让模型被干扰。
+</code></pre>
+<p>练习：</p>
+<p>在 RAG 实验室里同一问题分别设置：</p>
+<pre><code>
+top_k = 1
+top_k = 3
+top_k = 5
+top_k = 8
+</code></pre>
+<p>观察第一条是否正确，后面的片段是否有帮助。</p>
+<h4>6.4 关键词检索与倒排索引</h4>
+<p>你要理解传统搜索是怎么做的：</p>
+<p class="li">• 分词。</p>
+<p class="li">• 关键词匹配。</p>
+<p class="li">• 倒排索引。</p>
+<p class="li">• TF-IDF。</p>
+<p class="li">• BM25。</p>
+<p>简单理解：</p>
+<pre><code>
+倒排索引像一本词典：
+某个词出现在哪些文档里，系统提前记下来。
+</code></pre>
+<p>BM25 是很多搜索系统的经典排序算法，它比简单关键词匹配更稳。</p>
+<p>为什么要学：</p>
+<p class="li">• RAG 不一定只用向量检索。</p>
+<p class="li">• 企业里经常使用“关键词检索 + 向量检索”的混合检索。</p>
+<p class="li">• 有些专有名词、编号、接口名、错误码，用关键词检索反而更准。</p>
+<p>做到什么程度算会：</p>
+<p class="li">• 你知道关键词检索适合精确词。</p>
+<p class="li">• 你知道向量检索适合语义相似。</p>
+<p class="li">• 你能解释为什么混合检索比单一路线更稳。</p>
+<h4>6.5 Embedding 与语义空间</h4>
+<p>你要学：</p>
+<p class="li">• 词向量。</p>
+<p class="li">• 句向量。</p>
+<p class="li">• 语义空间。</p>
+<p class="li">• 中文 embedding 模型。</p>
+<p class="li">• 多语言 embedding 模型。</p>
+<p>你不需要训练模型，但要知道模型在做什么：</p>
+<pre><code>
+它把文本压缩成向量，让相似语义在空间里更接近。
+</code></pre>
+<p>你要重点对比：</p>
+<pre><code>
+local-hash-384
+bge-small-zh-v1.5
+bge-m3
+Qwen embedding
+</code></pre>
+<p>做到什么程度算会：</p>
+<p class="li">• 你知道 hash 向量只是兜底，不是真语义模型。</p>
+<p class="li">• 你知道中文文档优先选中文或多语言 embedding。</p>
+<p class="li">• 你知道模型变了，历史向量需要重新生成。</p>
+<h4>6.6 聚类与分类</h4>
+<p>这部分不是第一优先级，但后续有用。</p>
+<p>聚类可以用来：</p>
+<p class="li">• 自动发现文档主题。</p>
+<p class="li">• 把相似问题归类。</p>
+<p class="li">• 找重复文档。</p>
+<p class="li">• 做知识库主题分布分析。</p>
+<p>分类可以用来：</p>
+<p class="li">• 判断问题类型。</p>
+<p class="li">• 判断是否需要 RAG。</p>
+<p class="li">• 判断是否是无依据问题。</p>
+<p class="li">• 判断任务优先级。</p>
+<p>你要先理解概念，不用急着手写算法。</p>
+<h4>6.7 Rerank 重排序算法</h4>
+<p>你要理解：</p>
+<pre><code>
+第一轮检索负责“召回”，rerank 负责“重新排序”。
+</code></pre>
+<p>为什么需要 rerank：</p>
+<p class="li">• 向量相似度高，不代表片段真的能回答问题。</p>
+<p class="li">• 有些片段只是出现关键词，但证据不完整。</p>
+<p class="li">• top_k 很大时，需要二次筛选最好的证据。</p>
+<p>典型流程：</p>
+<pre><code>
+向量检索召回 20 条 -&gt; rerank 重新排序 -&gt; 取前 5 条给大模型
+</code></pre>
+<p>知行者当前采用的是轻量可解释 rerank，公式可以简单理解为：</p>
+<pre><code>
+rerank 分 = 向量相似度 * 0.65 + 问题词覆盖 * 0.25 + 片段完整度 * 0.10
+</code></pre>
+<p>这三个分数分别代表：</p>
+<p class="li">• 向量相似度：语义上像不像。</p>
+<p class="li">• 问题词覆盖：问题里的关键字有没有被片段覆盖。</p>
+<p class="li">• 片段完整度：片段是否像一段完整证据，而不是被切断的半句话。</p>
+<p>为什么先用这种轻量方案：</p>
+<p class="li">• 不需要再下载新的 rerank 模型。</p>
+<p class="li">• 能直接看懂排序为什么变化。</p>
+<p class="li">• 适合你先学习“召回后重排”的工程思想。</p>
+<p>以后可以升级成模型版 rerank：</p>
+<pre><code>
+query + chunk -&gt; rerank 模型 -&gt; 更准确的相关性分数
+</code></pre>
+<p>做到什么程度算会：</p>
+<p class="li">• 你能解释为什么“命中片段”不等于“命中正确片段”。</p>
+<p class="li">• 你知道 rerank 是企业 RAG 的常见增强手段。</p>
+<p class="li">• 你能看懂 RAG 实验室里的向量分、rerank 分和覆盖率。</p>
+<h4>6.8 RAG 评估指标</h4>
+<p>你作为测试工程师，最应该重视这一块。</p>
+<p>你要学：</p>
+<p class="li">• Hit Rate：是否命中正确文档。</p>
+<p class="li">• Recall@K：前 K 个结果里是否包含正确证据。</p>
+<p class="li">• Precision@K：前 K 个结果里有多少是真的相关。</p>
+<p class="li">• MRR：正确答案排得越靠前越好。</p>
+<p class="li">• NDCG：排序质量指标。</p>
+<p class="li">• 引用正确率：引用是否真的支持答案。</p>
+<p class="li">• 无依据拒答率：知识库没有资料时是否拒答。</p>
+<p class="li">• 幻觉率：模型是否编造内容。</p>
+<p>你不用一开始背公式，先会用业务语言解释。</p>
+<p>例子：</p>
+<pre><code>
+如果正确片段排在第 1 名，比排在第 5 名更好。
+如果 top_k=5 里有 3 个无关片段，说明 Precision@5 不高。
+如果文档里没有答案但模型仍然回答，说明无依据拒答失败。
+</code></pre>
+<p>做到什么程度算会：</p>
+<p class="li">• 你能写一份 RAG 测试用例表。</p>
+<p class="li">• 你能判断一次参数调整是让系统变好还是变差。</p>
+<p class="li">• 你能发现错引、漏召回、幻觉这三类问题。</p>
+<h4>6.9 暂时不用优先学的算法</h4>
+<p>这些不是没用，而是现在离你的目标比较远：</p>
+<p class="li">• 红黑树。</p>
+<p class="li">• 动态规划难题。</p>
+<p class="li">• 复杂图算法。</p>
+<p class="li">• 编译原理。</p>
+<p class="li">• 手写神经网络训练。</p>
+<p class="li">• 大模型训练底层算法。</p>
+<p>可以以后补，但不要拿它们当当前主线。</p>
+<p>你当前算法主线应该是：</p>
+<pre><code>
+向量相似度 -&gt; 检索排序 -&gt; 混合检索 -&gt; rerank -&gt; RAG 评估指标
+</code></pre>
+<h2>6. 你每天怎么学</h2>
+<p>每天 60 到 90 分钟即可。</p>
+<h3>第 1 周</h3>
+<p>重点：理解 RAG 流程。</p>
+<p>任务：</p>
+<p class="li">• 上传文档。</p>
+<p class="li">• 问问题。</p>
+<p class="li">• 看引用。</p>
+<p class="li">• 用 RAG 实验室观察检索片段。</p>
+<h3>第 2 周</h3>
+<p>重点：理解切片。</p>
+<p>任务：</p>
+<p class="li">• 同一问题改 chunk_size。</p>
+<p class="li">• 同一问题改 overlap。</p>
+<p class="li">• 同一问题改 top_k。</p>
+<p class="li">• 记录哪组参数更好。</p>
+<h3>第 3 周</h3>
+<p>重点：本地 Embedding。</p>
+<p>任务：</p>
+<p class="li">• 安装 sentence-transformers。</p>
+<p class="li">• 下载 bge-small-zh-v1.5。</p>
+<p class="li">• 替换 local-hash。</p>
+<p class="li">• 重建向量。</p>
+<p class="li">• 对比检索效果。</p>
+<h3>第 4 周</h3>
+<p>重点：算法基础和测试体系。</p>
+<p>任务：</p>
+<p class="li">• 写 20 个问题。</p>
+<p class="li">• 标注预期文档和预期片段。</p>
+<p class="li">• 测不同参数。</p>
+<p class="li">• 输出一份 RAG 质量报告。</p>
+<p class="li">• 学会解释 Hit Rate、Recall@K、Precision@K。</p>
+<p class="li">• 对比关键词检索、向量检索和混合检索的差异。</p>
+<h2>7. 你应该能回答的问题</h2>
+<p>学完这一阶段，你应该能回答：</p>
+<p>1. RAG 是什么？</p>
+<p>2. Embedding 是什么？</p>
+<p>3. 向量数据库是干什么的？</p>
+<p>4. FAISS 和 SQLite 分别负责什么？</p>
+<p>5. chunk_size 太小有什么问题？</p>
+<p>6. overlap 有什么作用？</p>
+<p>7. top_k 太大有什么风险？</p>
+<p>8. 为什么命中片段不一定正确？</p>
+<p>9. 为什么需要引用来源？</p>
+<p>10. 如何测试一个 RAG 系统是否可靠？</p>
+<p>11. 余弦相似度和内积是什么关系？</p>
+<p>12. Top K 太大为什么会带来噪声？</p>
+<p>13. BM25 和向量检索有什么区别？</p>
+<p>14. rerank 解决什么问题？</p>
+<p>15. Recall@K 和 Precision@K 分别衡量什么？</p>
+<p>如果这些问题你能讲清楚，你就已经入门企业级 RAG 了。</p>
+<h2>8. 当前最推荐你的下一步</h2>
+<p>不要急着换复杂工具。</p>
+<p>这一步已经完成：</p>
+<pre><code>
+把知行者升级成本地真实 Embedding：
+bge-small-zh-v1.5 + FAISS + SQLite
+</code></pre>
+<p>这一步也已经完成：</p>
+<pre><code>
+用 RAG 实验室对比不同参数，并开始保存实验记录。
+</code></pre>
+<p>这一步也已经完成：</p>
+<pre><code>
+加入轻量 rerank 重排序，对比“只用向量检索”和“向量检索 + rerank”的差异。
+</code></pre>
+<p>这一步也已经完成：</p>
+<pre><code>
+加入更强的无依据拒答：即使检索到了相似片段，如果没有覆盖问题关键概念，也要拒答。
+</code></pre>
+<p>这一步也已经完成：</p>
+<pre><code>
+加入 BM25 + 向量混合检索：向量负责语义相似，BM25 负责关键词命中，最终融合排序。
+</code></pre>
+<p>这一步也已经完成：</p>
+<pre><code>
+加入 RAG 自动评测集：保存测试问题、预期判断、预期关键词，一键运行并查看通过率。
+</code></pre>
+<p>当前已经内置 35 条评测用例：</p>
+<pre><code>
+20 条 RAG 基础用例
+15 条 AI 前沿资料包用例
+覆盖明确事实、局部概念、总结归纳、无依据拒答
+</code></pre>
+<p>最新回归结果：</p>
+<pre><code>
+通过 35 / 35
+通过率 100%
+</code></pre>
+<p>这次评测集还反向推动了规则优化：</p>
+<p class="li">• “英文全称、主要介绍”这类定义/概览问题，不能只看关键词覆盖率。</p>
+<p class="li">• “有没有介绍某个外部主题”不能被误判成概览问题。</p>
+<p class="li">• “大模型、参数、设计”这类泛词不能单独支撑有依据判断。</p>
+<p class="li">• “有没有给出 API Key / YAML / 下载地址 / 完整复现”这类问题，必须有直接证据，不能只靠关键词命中。</p>
+<p>你接下来最应该做：</p>
+<pre><code>
+上传更多真实学习文档，把评测集扩展到 40 到 60 个问题，再观察不同参数下通过率如何变化。
+</code></pre>
+<p>建议继续测试：</p>
+<pre><code>
+RAG 的核心流程是什么？
+Embedding 在 RAG 里起什么作用？
+文档里有没有没有提到的内容？
+文档里有没有 Kubernetes 部署方案？
+</code></pre>
+<p>建议评测集至少覆盖：</p>
+<pre><code>
+5 个明确事实问题
+5 个局部概念问题
+5 个总结归纳问题
+5 个无依据拒答问题
+</code></pre>
+<p>对比：</p>
+<pre><code>
+local-hash-384 的结果
+本地 bge-small-zh-v1.5 的结果
+混合检索关闭的结果
+混合检索开启的结果
+rerank 关闭的结果
+rerank 开启的结果
+无依据问题的拒答结果
+</code></pre>
+<p>这样你会真正理解 Embedding、向量检索、rerank、无依据拒答对 RAG 可靠性的影响。</p>
+</main></body></html>

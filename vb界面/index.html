@@ -39,6 +39,14 @@
             <span class="nav-icon">✦</span>
             <span>AI 问答</span>
           </button>
+          <button class="nav-item" data-view="ragLab">
+            <span class="nav-icon">⌁</span>
+            <span>RAG 实验室</span>
+          </button>
+          <button class="nav-item" data-view="agentLab">
+            <span class="nav-icon">⌬</span>
+            <span>Agent 实验室</span>
+          </button>
           <button class="nav-item" data-view="tasks">
             <span class="nav-icon">✓</span>
             <span>任务</span>
@@ -337,6 +345,250 @@
           </div>
         </section>
 
+        <section class="view" id="ragLab">
+          <div class="page-head">
+            <div>
+              <span class="eyebrow">RAG Lab</span>
+              <h1>RAG 实验室</h1>
+            </div>
+            <div class="head-actions">
+              <select id="ragLabKbSelect"></select>
+              <button class="secondary-btn" data-view-link="documents">查看文档切片</button>
+              <button class="secondary-btn" id="saveRagLabRunBtn" disabled>保存本次实验</button>
+            </div>
+          </div>
+
+          <div class="rag-lab-layout">
+            <section class="panel rag-module-panel full-panel">
+              <div class="panel-head">
+                <div>
+                  <h2>RAG 学习地图</h2>
+                  <p>先按四条主线学习：基础跑通、企业增强、图谱推理、智能体决策</p>
+                </div>
+              </div>
+              <div class="rag-module-grid" id="ragModuleCards"></div>
+              <div class="rag-module-detail" id="ragModuleDetail"></div>
+            </section>
+
+            <section class="panel rag-visual-panel full-panel">
+              <div class="panel-head">
+                <div>
+                  <h2>RAG 可视化推演</h2>
+                  <p id="ragVisualSummary">选择一种 RAG 类型，查看它如何切分、匹配、检索、存储和决策</p>
+                </div>
+              </div>
+              <div class="rag-visual" id="ragVisual"></div>
+            </section>
+
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <h2>实验参数</h2>
+                  <p>同一问题下对比切片、重叠和召回数量</p>
+                </div>
+              </div>
+              <form class="stack-form" id="ragLabForm">
+                <label>
+                  问题
+                  <textarea id="ragLabQuestion" placeholder="例如：RAG 系统的核心流程是什么？"></textarea>
+                </label>
+                <label>
+                  切片长度
+                  <input type="range" id="ragLabChunkSize" min="200" max="2000" value="900" step="50" />
+                  <span class="kb-range-value" id="ragLabChunkSizeVal">900 字符</span>
+                </label>
+                <label>
+                  重叠长度
+                  <input type="range" id="ragLabOverlap" min="0" max="500" value="120" step="20" />
+                  <span class="kb-range-value" id="ragLabOverlapVal">120 字符</span>
+                </label>
+                <label>
+                  检索 Top K
+                  <input type="range" id="ragLabTopK" min="1" max="12" value="5" step="1" />
+                  <span class="kb-range-value" id="ragLabTopKVal">5 条</span>
+                </label>
+                <label class="choice-card">
+                  <input type="checkbox" id="ragLabRerank" checked />
+                  <span>启用 Rerank 重排序</span>
+                </label>
+                <label class="choice-card">
+                  <input type="checkbox" id="ragLabHybrid" checked />
+                  <span>启用 BM25 + 向量混合检索</span>
+                </label>
+                <button class="primary-btn" type="submit">运行实验</button>
+              </form>
+            </section>
+
+            <section class="panel wide-panel">
+              <div class="panel-head">
+                <div>
+                  <h2>检索结果</h2>
+                  <p id="ragLabSummary">运行后会展示切片数量、相似度和命中片段</p>
+                </div>
+              </div>
+              <div class="rag-lab-result" id="ragLabResult">
+                <p class="empty-text">先选择知识库并输入问题，然后运行一次实验。</p>
+              </div>
+            </section>
+
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <h2>学习记录</h2>
+                  <p>每次实验后重点看这些判断</p>
+                </div>
+              </div>
+              <div class="rag-lab-notes" id="ragLabNotes">
+                <p class="empty-text">建议先用默认参数跑一遍，再只改一个参数做对比。</p>
+              </div>
+            </section>
+
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <h2>最近实验</h2>
+                  <p>保存后可用于回归对比</p>
+                </div>
+              </div>
+              <div class="rag-lab-history" id="ragLabHistory">
+                <p class="empty-text">还没有保存过实验。</p>
+              </div>
+            </section>
+
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <h2>自动评测集</h2>
+                  <p>保存问题预期，一键回归检索效果</p>
+                </div>
+              </div>
+              <form class="stack-form" id="ragEvalCaseForm">
+                <label>
+                  评测问题
+                  <textarea id="ragEvalQuestion" placeholder="例如：文档里有没有 Kubernetes 部署方案？"></textarea>
+                </label>
+                <label>
+                  预期判断
+                  <select id="ragEvalExpectedVerdict">
+                    <option value="grounded">依据充分</option>
+                    <option value="weak_evidence">依据偏弱</option>
+                    <option value="no_evidence">没有依据</option>
+                  </select>
+                </label>
+                <label>
+                  预期关键词
+                  <input id="ragEvalExpectedTerms" placeholder="可选，用中文逗号分隔，例如：Embedding,向量化" />
+                </label>
+                <label>
+                  备注
+                  <input id="ragEvalNote" placeholder="可选，例如：验证无依据拒答" />
+                </label>
+                <button class="secondary-btn" type="submit">添加用例</button>
+              </form>
+              <div class="rag-lab-history" id="ragEvalCaseList">
+                <p class="empty-text">还没有评测用例。</p>
+              </div>
+            </section>
+
+            <section class="panel wide-panel">
+              <div class="panel-head">
+                <div>
+                  <h2>评测结果</h2>
+                  <p id="ragEvalSummary">运行后展示通过率和失败原因</p>
+                </div>
+                <button class="primary-btn" id="runRagEvalBtn">运行评测集</button>
+              </div>
+              <div class="rag-lab-result" id="ragEvalResult">
+                <p class="empty-text">添加用例后，用当前实验参数运行评测。</p>
+              </div>
+            </section>
+          </div>
+        </section>
+
+        <section class="view" id="agentLab">
+          <div class="page-head">
+            <div>
+              <span class="eyebrow">Agent Lab</span>
+              <h1>Agent 实验室</h1>
+            </div>
+            <div class="head-actions">
+              <select id="agentLabKbSelect"></select>
+              <button class="secondary-btn" data-view-link="tasks">查看任务中心</button>
+            </div>
+          </div>
+
+          <div class="agent-lab-layout">
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <h2>运行一个 Agent</h2>
+                  <p>输入目标，观察它如何计划、检索、评估和生成行动</p>
+                </div>
+              </div>
+              <form class="stack-form" id="agentLabForm">
+                <label>
+                  Agent 模式
+                  <select id="agentLabMode">
+                    <option value="rag_agent">RAG 助手</option>
+                    <option value="test_agent">测试分析助手</option>
+                    <option value="learning_agent">学习规划助手</option>
+                  </select>
+                </label>
+                <label>
+                  目标
+                  <textarea id="agentLabGoal" placeholder="例如：帮我分析知行者下一步应该优先优化什么"></textarea>
+                </label>
+                <label>
+                  最大步骤
+                  <input type="range" id="agentLabMaxSteps" min="2" max="8" value="5" step="1" />
+                  <span class="kb-range-value" id="agentLabMaxStepsVal">5 步</span>
+                </label>
+                <label class="choice-card">
+                  <input type="checkbox" id="agentLabCreateTasks" />
+                  <span>把候选行动保存到任务中心</span>
+                </label>
+                <button class="primary-btn" type="submit">运行 Agent</button>
+              </form>
+            </section>
+
+            <section class="panel wide-panel">
+              <div class="panel-head">
+                <div>
+                  <h2>运行轨迹</h2>
+                  <p id="agentLabSummary">运行后会展示每一步思考、工具输入和工具输出</p>
+                </div>
+              </div>
+              <div class="agent-trace-list" id="agentLabTrace">
+                <p class="empty-text">先选择知识库并输入一个目标。</p>
+              </div>
+            </section>
+
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <h2>候选行动</h2>
+                  <p>Agent 会把证据转成可以执行的任务</p>
+                </div>
+              </div>
+              <div class="agent-task-list" id="agentLabTasks">
+                <p class="empty-text">运行后会出现候选任务。</p>
+              </div>
+            </section>
+
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <h2>最近运行</h2>
+                  <p>用于复盘 Agent 是否按正确流程工作</p>
+                </div>
+              </div>
+              <div class="agent-run-history" id="agentLabRuns">
+                <p class="empty-text">还没有 Agent 运行记录。</p>
+              </div>
+            </section>
+          </div>
+        </section>
+
         <section class="view" id="tasks">
           <div class="page-head">
             <div>
@@ -532,8 +784,8 @@
         </div>
         <div class="upload-drop" id="uploadDrop">
           <strong>拖拽或点击选择文件</strong>
-          <span>当前支持 txt、md、markdown。上传后会保存文件、解析文本、切片并写入 SQLite。</span>
-          <input id="fileInput" type="file" multiple accept=".txt,.md,.markdown" />
+          <span>当前支持 txt、md、markdown、pdf、docx。上传后会解析文本、切片、检索并生成引用。</span>
+          <input id="fileInput" type="file" multiple accept=".txt,.md,.markdown,.pdf,.docx" />
         </div>
         <label class="modal-field">
           上传到知识库

@@ -10,6 +10,8 @@ from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 
 from .models import (
+    AgentLabRequest,
+    AgentLabRunOut,
     ChatRequest,
     ChatResponse,
     ChatSessionUpdate,
@@ -25,6 +27,16 @@ from .models import (
     ModelConfigTestRequest,
     ModelConfigTestResponse,
     ModelConfigUpdate,
+    RagEvaluateRequest,
+    RagEvaluateResponse,
+    RagEvalBatchOut,
+    RagEvalCaseCreate,
+    RagEvalCaseOut,
+    RagEvalRunRequest,
+    RagLabRequest,
+    RagLabResponse,
+    RagLabRunCreate,
+    RagLabRunOut,
     TaskCreate,
     TaskGenerateRequest,
     TaskGenerateResponse,
@@ -34,11 +46,14 @@ from .models import (
 from .services import (
     AppError,
     answer_question,
+    build_rag_learning_notes,
     clean_text,
+    evaluate_rag_answer,
     ensure_supported_file,
     generate_tasks_from_content,
     mask_api_key,
     read_text_file,
+    retrieve_chunks,
     save_chat,
     split_text,
     summarize_text,
@@ -55,7 +70,7 @@ from .trend_explain import (
     schedule_explanations_for_live_data,
 )
 from .trend_scraper import fetch_live_trends, trends_to_markdown
-from .vector_store import rebuild_all_vectors, upsert_chunk_vector
+from .vector_store import embed_text, rebuild_all_vectors, search_similar_chunks, search_similar_texts_with_rerank, upsert_chunk_vector
 
 
 app = FastAPI(title="知行者 Backend MVP", version="0.1.0")
@@ -84,6 +99,179 @@ def handle_app_error(_, exc: AppError):
 @app.get("/api/health")
 def health() -> Dict[str, str]:
     return {"status": "ok"}
+
+
+def vector_entries(vector: List[float], indexes: List[int]) -> List[Dict[str, float]]:
+    return [{"index": index, "value": round(float(vector[index]), 4)} for index in indexes if 0 <= index < len(vector)]
+
+
+def vector_preview(vector: List[float], limit: int = 12) -> Dict[str, object]:
+    non_zero_indexes = [index for index, value in enumerate(vector) if abs(float(value)) > 1e-9]
+    top_indexes = sorted(range(len(vector)), key=lambda index: abs(float(vector[index])), reverse=True)[:limit]
+    return {
+        "dimensions": len(vector),
+        "first_values": [round(float(value), 4) for value in vector[:limit]],
+        "first_dimensions": vector_entries(vector, list(range(min(limit, len(vector))))),
+        "non_zero_values": vector_entries(vector, non_zero_indexes[:limit]),
+        "top_values": vector_entries(vector, top_indexes),
+        "min": round(min(vector), 4) if vector else 0,
+        "max": round(max(vector), 4) if vector else 0,
+        "non_zero": len(non_zero_indexes),
+    }
+
+
+def vector_shared_dimensions(query_vector: List[float], chunk_vector: List[float], limit: int = 8) -> List[Dict[str, float]]:
+    length = min(len(query_vector), len(chunk_vector))
+    contributions = []
+    for index in range(length):
+        query_value = float(query_vector[index])
+        chunk_value = float(chunk_vector[index])
+        contribution = query_value * chunk_value
+        if abs(contribution) <= 1e-9:
+            continue
+        contributions.append(
+            {
+                "index": index,
+                "query": round(query_value, 4),
+                "chunk": round(chunk_value, 4),
+                "contribution": round(contribution, 4),
+            }
+        )
+    contributions.sort(key=lambda item: abs(item["contribution"]), reverse=True)
+    return contributions[:limit]
+
+
+def build_rag_vector_trace(knowledge_base_id: str, question: str, retrieved_chunks: List[Dict]) -> Dict[str, object]:
+    query_vector, model_name, provider = embed_text(question)
+    chunk_ids = [chunk.get("chunk_id") for chunk in retrieved_chunks if chunk.get("chunk_id")]
+    if not chunk_ids:
+        return {
+            "query": {
+                "text": question,
+                "storage": "实时计算，不写入数据库",
+                "model_name": model_name,
+                "provider": provider,
+                "vector": vector_preview(query_vector),
+            },
+            "tables": [
+                "documents.id -> document_chunks.document_id",
+                "document_chunks.id -> chunk_vectors.chunk_id",
+                "FAISS IndexFlatIP 使用归一化向量做内积相似度",
+            ],
+            "chunks": [],
+        }
+
+    placeholders = ",".join("?" for _ in chunk_ids)
+    with connect() as conn:
+        rows = conn.execute(
+            f"""
+            SELECT
+                c.id AS chunk_id,
+                c.document_id,
+                c.knowledge_base_id,
+                c.chunk_index,
+                c.token_count,
+                c.content,
+                c.created_at AS chunk_created_at,
+                d.file_name AS document_name,
+                d.file_path,
+                v.vector_json,
+                v.model_name,
+                v.provider,
+                v.dimensions,
+                v.updated_at AS vector_updated_at
+            FROM document_chunks c
+            JOIN documents d ON d.id = c.document_id
+            LEFT JOIN chunk_vectors v ON v.chunk_id = c.id
+            WHERE c.knowledge_base_id = ? AND c.id IN ({placeholders})
+            """,
+            [knowledge_base_id, *chunk_ids],
+        ).fetchall()
+
+    rows_by_id = {row["chunk_id"]: row for row in rows}
+    chunks = []
+    for rank, chunk in enumerate(retrieved_chunks, 1):
+        chunk_id = chunk.get("chunk_id")
+        row = rows_by_id.get(chunk_id)
+        if not row:
+            chunks.append(
+                {
+                    "rank": rank,
+                    "chunk_id": chunk_id,
+                    "document_name": chunk.get("document_name"),
+                    "storage": "临时实验切片，未写入 document_chunks / chunk_vectors",
+                    "scores": {
+                        "vector": chunk.get("vector_score"),
+                        "bm25": chunk.get("bm25_score"),
+                        "hybrid": chunk.get("hybrid_score"),
+                        "rerank": chunk.get("rerank_score"),
+                    },
+                }
+            )
+            continue
+        try:
+            vector = json.loads(row["vector_json"] or "[]")
+        except json.JSONDecodeError:
+            vector = []
+        chunks.append(
+            {
+                "rank": rank,
+                "chunk_id": row["chunk_id"],
+                "document_id": row["document_id"],
+                "document_name": row["document_name"],
+                "chunk_index": row["chunk_index"],
+                "token_count": row["token_count"],
+                "content_preview": row["content"][:220],
+                "storage": {
+                    "documents": {
+                        "id": row["document_id"],
+                        "file_name": row["document_name"],
+                        "file_path": row["file_path"],
+                    },
+                    "document_chunks": {
+                        "id": row["chunk_id"],
+                        "document_id": row["document_id"],
+                        "knowledge_base_id": row["knowledge_base_id"],
+                        "chunk_index": row["chunk_index"],
+                    },
+                    "chunk_vectors": {
+                        "chunk_id": row["chunk_id"],
+                        "model_name": row["model_name"],
+                        "provider": row["provider"],
+                        "dimensions": row["dimensions"],
+                        "updated_at": row["vector_updated_at"],
+                    },
+                },
+                "vector": vector_preview(vector),
+                "shared_dimensions": vector_shared_dimensions(query_vector, vector),
+                "scores": {
+                    "vector": chunk.get("vector_score"),
+                    "bm25": chunk.get("bm25_score"),
+                    "hybrid": chunk.get("hybrid_score"),
+                    "rerank": chunk.get("rerank_score"),
+                    "token_coverage": chunk.get("token_coverage"),
+                    "completeness": chunk.get("completeness_score"),
+                },
+            }
+        )
+
+    return {
+        "query": {
+            "text": question,
+            "storage": "实时计算，不写入数据库",
+            "model_name": model_name,
+            "provider": provider,
+            "vector": vector_preview(query_vector),
+        },
+        "tables": [
+            "documents.id -> document_chunks.document_id",
+            "document_chunks.id -> chunk_vectors.chunk_id",
+            "FAISS IndexFlatIP 使用归一化向量做内积相似度",
+            "hybrid_score = vector_score * 0.65 + bm25_score * 0.35",
+            "临时实验链路再计算 rerank_score = base_score * 0.65 + token_coverage * 0.25 + completeness * 0.10",
+        ],
+        "chunks": chunks,
+    }
 
 
 @app.post("/api/knowledge-bases", response_model=KnowledgeBaseOut)
@@ -703,6 +891,7 @@ def chat(payload: ChatRequest):
         }
         for chunk in chunks
     ]
+    rag_evaluation = evaluate_rag_answer(payload.question, chunks, answer)
     session_id = save_chat(
         payload.knowledge_base_id,
         payload.question,
@@ -719,7 +908,576 @@ def chat(payload: ChatRequest):
         "citations": citations,
         "used_fallback": used_fallback,
         "warning": warning,
+        "rag_evaluation": rag_evaluation,
     }
+
+
+@app.post("/api/rag/evaluate", response_model=RagEvaluateResponse)
+def evaluate_rag(payload: RagEvaluateRequest):
+    chunks = retrieve_chunks(payload.knowledge_base_id, payload.question, payload.top_k)
+    citations = [
+        {
+            "document_id": chunk["document_id"],
+            "document_name": chunk["document_name"],
+            "chunk_id": chunk["chunk_id"],
+            "chunk_index": chunk["chunk_index"],
+            "snippet": chunk["content"][:180],
+            "score": chunk["score"],
+        }
+        for chunk in chunks
+    ]
+    return {
+        "question": payload.question,
+        "retrieved_chunks": citations,
+        "evaluation": evaluate_rag_answer(payload.question, chunks, payload.answer or ""),
+    }
+
+
+@app.post("/api/rag/lab", response_model=RagLabResponse)
+def rag_lab(payload: RagLabRequest):
+    if payload.overlap >= payload.chunk_size:
+        raise HTTPException(status_code=400, detail="overlap 必须小于 chunk_size")
+
+    with connect() as conn:
+        rows = conn.execute(
+            """
+            SELECT id, file_name, file_path
+            FROM documents
+            WHERE knowledge_base_id = ? AND status = 'ready'
+            ORDER BY updated_at DESC
+            """,
+            (payload.knowledge_base_id,),
+        ).fetchall()
+
+    experiment_chunks = []
+    for row in rows:
+        try:
+            text = read_text_file(Path(row["file_path"]))
+        except AppError:
+            continue
+        for index, content in enumerate(split_text(text, payload.chunk_size, payload.overlap)):
+            experiment_chunks.append(
+                {
+                    "document_id": row["id"],
+                    "document_name": row["file_name"],
+                    "chunk_id": f"lab_{row['id']}_{index}",
+                    "chunk_index": index,
+                    "content": content,
+                    "token_count": len(tokenize(content)),
+                }
+            )
+
+    retrieved = search_similar_texts_with_rerank(
+        payload.question,
+        experiment_chunks,
+        payload.top_k,
+        payload.rerank,
+        payload.hybrid,
+    )
+    citations = [
+        {
+            "document_id": chunk["document_id"],
+            "document_name": chunk["document_name"],
+            "chunk_id": chunk["chunk_id"],
+            "chunk_index": chunk["chunk_index"],
+            "snippet": chunk["content"][:180],
+            "content": chunk["content"],
+            "score": chunk["score"],
+            "vector_score": chunk.get("vector_score"),
+            "bm25_score": chunk.get("bm25_score"),
+            "hybrid_score": chunk.get("hybrid_score"),
+            "rerank_score": chunk.get("rerank_score"),
+            "token_coverage": chunk.get("token_coverage"),
+            "completeness_score": chunk.get("completeness_score"),
+        }
+        for chunk in retrieved
+    ]
+    params = {
+        "chunk_size": payload.chunk_size,
+        "overlap": payload.overlap,
+        "top_k": payload.top_k,
+        "rerank": payload.rerank,
+        "hybrid": payload.hybrid,
+        "embedding_mode": "temporary",
+    }
+    evaluation = evaluate_rag_answer(payload.question, retrieved, "")
+    stored_retrieved = search_similar_chunks(payload.knowledge_base_id, payload.question, payload.top_k, payload.hybrid)
+    return {
+        "question": payload.question,
+        "params": params,
+        "chunk_count": len(experiment_chunks),
+        "retrieved_chunks": citations,
+        "evaluation": evaluation,
+        "learning_notes": build_rag_learning_notes(params, retrieved, evaluation),
+        "vector_trace": build_rag_vector_trace(payload.knowledge_base_id, payload.question, stored_retrieved),
+    }
+
+
+@app.post("/api/rag/lab/runs", response_model=RagLabRunOut)
+def create_rag_lab_run(payload: RagLabRunCreate):
+    now = now_iso()
+    run_id = new_id("ragrun")
+    with connect() as conn:
+        kb = conn.execute("SELECT id FROM knowledge_bases WHERE id = ?", (payload.knowledge_base_id,)).fetchone()
+        if not kb:
+            raise HTTPException(status_code=404, detail="知识库不存在")
+        conn.execute(
+            """
+            INSERT INTO rag_lab_runs (
+                id, knowledge_base_id, question, params_json, chunk_count,
+                retrieved_chunks_json, evaluation_json, learning_notes_json, created_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                run_id,
+                payload.knowledge_base_id,
+                payload.question,
+                json.dumps(payload.params, ensure_ascii=False),
+                payload.chunk_count,
+                json.dumps([item.model_dump() for item in payload.retrieved_chunks], ensure_ascii=False),
+                json.dumps(payload.evaluation, ensure_ascii=False),
+                json.dumps(payload.learning_notes, ensure_ascii=False),
+                now,
+            ),
+        )
+    return {
+        **payload.model_dump(),
+        "id": run_id,
+        "created_at": now,
+    }
+
+
+@app.get("/api/rag/lab/runs", response_model=List[RagLabRunOut])
+def list_rag_lab_runs(knowledge_base_id: Optional[str] = None, limit: int = 20):
+    limit = max(1, min(limit, 100))
+    sql = "SELECT * FROM rag_lab_runs"
+    values: List[str] = []
+    if knowledge_base_id:
+        sql += " WHERE knowledge_base_id = ?"
+        values.append(knowledge_base_id)
+    sql += " ORDER BY created_at DESC LIMIT ?"
+    values.append(str(limit))
+    with connect() as conn:
+        rows = conn.execute(sql, values).fetchall()
+    return [
+        {
+            "id": row["id"],
+            "knowledge_base_id": row["knowledge_base_id"],
+            "question": row["question"],
+            "params": json.loads(row["params_json"]),
+            "chunk_count": row["chunk_count"],
+            "retrieved_chunks": json.loads(row["retrieved_chunks_json"]),
+            "evaluation": json.loads(row["evaluation_json"]),
+            "learning_notes": json.loads(row["learning_notes_json"]),
+            "created_at": row["created_at"],
+        }
+        for row in rows
+    ]
+
+
+def agent_mode_text(mode: str) -> str:
+    return {
+        "rag_agent": "RAG 助手",
+        "test_agent": "测试分析助手",
+        "learning_agent": "学习规划助手",
+    }.get(mode, "RAG 助手")
+
+
+def compact_chunk(chunk: Dict) -> Dict:
+    return {
+        "document_name": chunk.get("document_name"),
+        "chunk_index": chunk.get("chunk_index"),
+        "score": chunk.get("score"),
+        "vector_score": chunk.get("vector_score"),
+        "bm25_score": chunk.get("bm25_score"),
+        "hybrid_score": chunk.get("hybrid_score"),
+        "snippet": (chunk.get("content") or "")[:220],
+    }
+
+
+def build_agent_lab_summary(mode: str, evaluation: Dict, chunks: List[Dict], suggested_tasks: List[Dict]) -> str:
+    mode_name = agent_mode_text(mode)
+    verdict = ragVerdictTextForBackend(evaluation.get("verdict"))
+    if not chunks:
+        return f"{mode_name} 未找到可用依据，正确动作是先补充文档或改写目标。"
+    return (
+        f"{mode_name} 已完成一次计划-检索-评估-行动流程："
+        f"命中 {len(chunks)} 个片段，证据判断为{verdict}，"
+        f"生成 {len(suggested_tasks)} 个候选行动。"
+    )
+
+
+def ragVerdictTextForBackend(verdict: Optional[str]) -> str:
+    return {"grounded": "依据充分", "weak_evidence": "依据偏弱", "no_evidence": "没有依据"}.get(verdict or "", "未评估")
+
+
+def build_agent_lab_steps(payload: AgentLabRequest):
+    top_k = min(max(payload.max_steps, 2), 8)
+    plan_by_mode = {
+        "rag_agent": "先判断目标是否需要查知识库，再检索证据，最后给出可执行建议。",
+        "test_agent": "先把目标当作测试分析任务处理，检索相关资料，再输出验证点和风险任务。",
+        "learning_agent": "先把目标拆成学习问题，检索资料，再生成下一步学习任务。",
+    }
+    steps = [
+        {
+            "step_index": 1,
+            "phase": "plan",
+            "thought": plan_by_mode.get(payload.mode, plan_by_mode["rag_agent"]),
+            "tool_name": "agent_planner",
+            "tool_input": {"goal": payload.goal, "mode": payload.mode, "max_steps": payload.max_steps},
+            "tool_output": {
+                "strategy": "retrieve_evaluate_act",
+                "tools": ["knowledge_search", "rag_evaluator", "task_generator"],
+            },
+            "status": "done",
+        }
+    ]
+
+    chunks = search_similar_chunks(payload.knowledge_base_id, payload.goal, top_k, hybrid=True)
+    steps.append(
+        {
+            "step_index": 2,
+            "phase": "retrieve",
+            "thought": "调用知识库检索工具，先找和目标最相关的证据片段。",
+            "tool_name": "knowledge_search",
+            "tool_input": {"knowledge_base_id": payload.knowledge_base_id, "query": payload.goal, "top_k": top_k, "hybrid": True},
+            "tool_output": {"retrieved_count": len(chunks), "chunks": [compact_chunk(chunk) for chunk in chunks[:5]]},
+            "status": "done",
+        }
+    )
+
+    evaluation = evaluate_rag_answer(payload.goal, chunks, "")
+    steps.append(
+        {
+            "step_index": 3,
+            "phase": "evaluate",
+            "thought": "检查检索证据是否足够支撑下一步行动，证据不足时不能硬编。",
+            "tool_name": "rag_evaluator",
+            "tool_input": {"goal": payload.goal, "retrieved_count": len(chunks)},
+            "tool_output": evaluation,
+            "status": "done",
+        }
+    )
+
+    evidence_text = "\n".join((chunk.get("content") or "")[:500] for chunk in chunks[:3])
+    task_seed = (
+        f"目标：{payload.goal}\n"
+        f"模式：{agent_mode_text(payload.mode)}\n"
+        f"证据判断：{ragVerdictTextForBackend(evaluation.get('verdict'))}\n"
+        f"建议先学习、整理、验证、实现和输出下一步行动。\n"
+        f"{evidence_text}"
+    )
+    suggested_tasks = generate_tasks_from_content(task_seed, payload.knowledge_base_id)
+    for task in suggested_tasks:
+        task["source_type"] = "agent_lab"
+        task["ai_reason"] = f"Agent 实验室根据目标和检索证据生成。证据判断：{ragVerdictTextForBackend(evaluation.get('verdict'))}。"
+    steps.append(
+        {
+            "step_index": 4,
+            "phase": "act",
+            "thought": "把检索和评估结果转成候选任务，这就是 Agent 从知识走向行动的关键。",
+            "tool_name": "task_generator",
+            "tool_input": {"create_tasks": payload.create_tasks},
+            "tool_output": {"suggested_tasks": suggested_tasks},
+            "status": "done",
+        }
+    )
+    return steps[: payload.max_steps], chunks, evaluation, suggested_tasks
+
+
+@app.post("/api/agent/lab/run", response_model=AgentLabRunOut)
+def run_agent_lab(payload: AgentLabRequest):
+    now = now_iso()
+    run_id = new_id("agentrun")
+    with connect() as conn:
+        kb = conn.execute("SELECT id FROM knowledge_bases WHERE id = ?", (payload.knowledge_base_id,)).fetchone()
+        if not kb:
+            raise HTTPException(status_code=404, detail="知识库不存在")
+
+    steps, chunks, evaluation, suggested_tasks = build_agent_lab_steps(payload)
+    summary = build_agent_lab_summary(payload.mode, evaluation, chunks, suggested_tasks)
+    created_task_ids = []
+    with connect() as conn:
+        if payload.create_tasks:
+            for task in suggested_tasks:
+                task_id = new_id("task")
+                conn.execute(
+                    """
+                    INSERT INTO tasks (
+                        id, title, description, status, priority, source_type, source_id,
+                        knowledge_base_id, ai_reason, created_at, updated_at
+                    )
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    (
+                        task_id,
+                        task["title"],
+                        task.get("description", ""),
+                        task.get("status", "todo"),
+                        task.get("priority", "medium"),
+                        task.get("source_type", "agent_lab"),
+                        run_id,
+                        payload.knowledge_base_id,
+                        task.get("ai_reason"),
+                        now,
+                        now,
+                    ),
+                )
+                created_task_ids.append(task_id)
+        conn.execute(
+            """
+            INSERT INTO agent_lab_runs (
+                id, knowledge_base_id, goal, mode, summary, steps_json,
+                suggested_tasks_json, created_task_ids_json, created_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                run_id,
+                payload.knowledge_base_id,
+                payload.goal,
+                payload.mode,
+                summary,
+                json.dumps(steps, ensure_ascii=False),
+                json.dumps(suggested_tasks, ensure_ascii=False),
+                json.dumps(created_task_ids, ensure_ascii=False),
+                now,
+            ),
+        )
+    return {
+        "id": run_id,
+        "knowledge_base_id": payload.knowledge_base_id,
+        "goal": payload.goal,
+        "mode": payload.mode,
+        "summary": summary,
+        "steps": steps,
+        "suggested_tasks": suggested_tasks,
+        "created_task_ids": created_task_ids,
+        "created_at": now,
+    }
+
+
+@app.get("/api/agent/lab/runs", response_model=List[AgentLabRunOut])
+def list_agent_lab_runs(knowledge_base_id: Optional[str] = None, limit: int = 20):
+    limit = max(1, min(limit, 100))
+    sql = "SELECT * FROM agent_lab_runs"
+    values: List[str] = []
+    if knowledge_base_id:
+        sql += " WHERE knowledge_base_id = ?"
+        values.append(knowledge_base_id)
+    sql += " ORDER BY created_at DESC LIMIT ?"
+    values.append(str(limit))
+    with connect() as conn:
+        rows = conn.execute(sql, values).fetchall()
+    return [
+        {
+            "id": row["id"],
+            "knowledge_base_id": row["knowledge_base_id"],
+            "goal": row["goal"],
+            "mode": row["mode"],
+            "summary": row["summary"],
+            "steps": json.loads(row["steps_json"] or "[]"),
+            "suggested_tasks": json.loads(row["suggested_tasks_json"] or "[]"),
+            "created_task_ids": json.loads(row["created_task_ids_json"] or "[]"),
+            "created_at": row["created_at"],
+        }
+        for row in rows
+    ]
+
+
+@app.post("/api/rag/eval-cases", response_model=RagEvalCaseOut)
+def create_rag_eval_case(payload: RagEvalCaseCreate):
+    now = now_iso()
+    case_id = new_id("ragcase")
+    with connect() as conn:
+        kb = conn.execute("SELECT id FROM knowledge_bases WHERE id = ?", (payload.knowledge_base_id,)).fetchone()
+        if not kb:
+            raise HTTPException(status_code=404, detail="知识库不存在")
+        conn.execute(
+            """
+            INSERT INTO rag_eval_cases (
+                id, knowledge_base_id, question, expected_verdict,
+                expected_terms, note, created_at, updated_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                case_id,
+                payload.knowledge_base_id,
+                payload.question,
+                payload.expected_verdict,
+                json.dumps(payload.expected_terms, ensure_ascii=False),
+                payload.note,
+                now,
+                now,
+            ),
+        )
+    return {**payload.model_dump(), "id": case_id, "created_at": now, "updated_at": now}
+
+
+@app.get("/api/rag/eval-cases", response_model=List[RagEvalCaseOut])
+def list_rag_eval_cases(knowledge_base_id: Optional[str] = None):
+    sql = "SELECT * FROM rag_eval_cases"
+    values: List[str] = []
+    if knowledge_base_id:
+        sql += " WHERE knowledge_base_id = ?"
+        values.append(knowledge_base_id)
+    sql += " ORDER BY created_at DESC"
+    with connect() as conn:
+        rows = conn.execute(sql, values).fetchall()
+    return [
+        {
+            "id": row["id"],
+            "knowledge_base_id": row["knowledge_base_id"],
+            "question": row["question"],
+            "expected_verdict": row["expected_verdict"],
+            "expected_terms": json.loads(row["expected_terms"] or "[]"),
+            "note": row["note"],
+            "created_at": row["created_at"],
+            "updated_at": row["updated_at"],
+        }
+        for row in rows
+    ]
+
+
+@app.delete("/api/rag/eval-cases/{case_id}")
+def delete_rag_eval_case(case_id: str):
+    with connect() as conn:
+        row = conn.execute("SELECT id FROM rag_eval_cases WHERE id = ?", (case_id,)).fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="评测用例不存在")
+        conn.execute("DELETE FROM rag_eval_cases WHERE id = ?", (case_id,))
+    return {"ok": True}
+
+
+@app.post("/api/rag/eval-batches/run", response_model=RagEvalBatchOut)
+def run_rag_eval_batch(payload: RagEvalRunRequest):
+    if payload.overlap >= payload.chunk_size:
+        raise HTTPException(status_code=400, detail="overlap 必须小于 chunk_size")
+
+    with connect() as conn:
+        case_rows = conn.execute(
+            "SELECT * FROM rag_eval_cases WHERE knowledge_base_id = ? ORDER BY created_at ASC",
+            (payload.knowledge_base_id,),
+        ).fetchall()
+    if not case_rows:
+        raise HTTPException(status_code=400, detail="请先添加至少一个评测用例")
+
+    params = {
+        "chunk_size": payload.chunk_size,
+        "overlap": payload.overlap,
+        "top_k": payload.top_k,
+        "rerank": payload.rerank,
+        "hybrid": payload.hybrid,
+    }
+    results = []
+    for row in case_rows:
+        lab_payload = RagLabRequest(
+            knowledge_base_id=payload.knowledge_base_id,
+            question=row["question"],
+            chunk_size=payload.chunk_size,
+            overlap=payload.overlap,
+            top_k=payload.top_k,
+            rerank=payload.rerank,
+            hybrid=payload.hybrid,
+        )
+        lab_result = rag_lab(lab_payload)
+        evaluation = lab_result["evaluation"]
+        retrieved_chunks = lab_result["retrieved_chunks"]
+        expected_terms = json.loads(row["expected_terms"] or "[]")
+        passed, reason = judge_rag_eval_case(row["expected_verdict"], expected_terms, evaluation, retrieved_chunks)
+        results.append(
+            {
+                "case_id": row["id"],
+                "question": row["question"],
+                "expected_verdict": row["expected_verdict"],
+                "actual_verdict": evaluation.get("verdict") or "",
+                "passed": passed,
+                "reason": reason,
+                "evaluation": evaluation,
+                "retrieved_chunks": retrieved_chunks,
+            }
+        )
+
+    now = now_iso()
+    batch_id = new_id("ragbatch")
+    passed_count = sum(1 for item in results if item["passed"])
+    failed_count = len(results) - passed_count
+    pass_rate = round(passed_count / max(len(results), 1), 4)
+    with connect() as conn:
+        conn.execute(
+            """
+            INSERT INTO rag_eval_batches (
+                id, knowledge_base_id, params_json, total_count,
+                passed_count, failed_count, pass_rate, created_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                batch_id,
+                payload.knowledge_base_id,
+                json.dumps(params, ensure_ascii=False),
+                len(results),
+                passed_count,
+                failed_count,
+                pass_rate,
+                now,
+            ),
+        )
+        for item in results:
+            result_id = new_id("ragresult")
+            conn.execute(
+                """
+                INSERT INTO rag_eval_results (
+                    id, batch_id, case_id, question, expected_verdict,
+                    actual_verdict, passed, reason, evaluation_json,
+                    retrieved_chunks_json, created_at
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    result_id,
+                    batch_id,
+                    item["case_id"],
+                    item["question"],
+                    item["expected_verdict"],
+                    item["actual_verdict"],
+                    1 if item["passed"] else 0,
+                    item["reason"],
+                    json.dumps(item["evaluation"], ensure_ascii=False),
+                    json.dumps(item["retrieved_chunks"], ensure_ascii=False),
+                    now,
+                ),
+            )
+            item["id"] = result_id
+            item["created_at"] = now
+
+    return {
+        "id": batch_id,
+        "knowledge_base_id": payload.knowledge_base_id,
+        "params": params,
+        "total_count": len(results),
+        "passed_count": passed_count,
+        "failed_count": failed_count,
+        "pass_rate": pass_rate,
+        "results": results,
+        "created_at": now,
+    }
+
+
+def judge_rag_eval_case(expected_verdict: str, expected_terms: List[str], evaluation: Dict, retrieved_chunks: List[Dict]):
+    actual_verdict = evaluation.get("verdict") or ""
+    failures = []
+    if actual_verdict != expected_verdict:
+        failures.append(f"预期 {expected_verdict}，实际 {actual_verdict}")
+    merged = "\n".join((chunk.get("content") or chunk.get("snippet") or "") for chunk in retrieved_chunks)
+    missing_terms = [term for term in expected_terms if term and term not in merged]
+    if missing_terms:
+        failures.append("缺少预期关键词：" + "、".join(missing_terms[:6]))
+    if failures:
+        return False, "；".join(failures)
+    return True, "符合预期"
 
 
 @app.get("/api/chat/sessions")

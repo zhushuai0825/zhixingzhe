@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>RAG 评测实验室</title>
+    <link rel="icon" href="data:," />
+    <link rel="stylesheet" href="./styles.css?v=20260512-rageval-v2" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="project-switcher">
+          <button class="brand project-trigger" id="projectTrigger" aria-expanded="false">
+            <div class="brand-mark">评</div>
+            <div>
+              <strong>RAG 评测实验室</strong>
+              <span>判断系统到底准不准</span>
+            </div>
+            <i>切换</i>
+          </button>
+          <div class="project-menu" id="projectMenu">
+            <button data-project="chunking"><strong>01 文本切分实验室</strong><span>先把长文档拆成 chunk</span></button>
+            <button data-project="embedding"><strong>02 Embedding 与相似度</strong><span>把文本变向量并计算相似度</span></button>
+            <button data-project="vectordb"><strong>03 向量库实验室</strong><span>保存向量并查询 Top K</span></button>
+            <button data-project="rerank"><strong>04 Rerank 重排序实验室</strong><span>把初筛证据重新排序</span></button>
+            <button class="is-active" data-project="rageval"><strong>05 RAG 评测实验室</strong><span>评估检索、引用和回答质量</span></button>
+            <button data-project="graphrag">
+              <strong>06 Graph RAG 图谱实验室</strong>
+              <span>实体关系和多跳推理</span>
+            </button>
+            <button data-project="agent">
+              <strong>07 Agent 工程实验室</strong>
+              <span>目标如何变成工具调用</span>
+            </button>
+            <button data-project="modelprompt">
+              <strong>08 模型调用与 Prompt 工程</strong>
+              <span>真实模型接入前必学</span>
+            </button>
+            <button data-project="zhixingzhe"><strong>09 知行者 AI 实验室</strong><span>完整 RAG、Agent、大模型应用</span></button>
+            <button data-project="itemcf"><strong>10 ItemCF 实验室</strong><span>物品共现如何推荐</span></button>
+            <button data-project="tagrec"><strong>11 标签推荐实验室</strong><span>标签画像如何推荐</span></button>
+            <button data-project="usercf"><strong>12 UserCF 实验室</strong><span>相似用户如何贡献推荐</span></button>
+            <button data-project="svd"><strong>13 SVD 矩阵分解实验室</strong><span>隐向量如何预测喜欢</span></button>
+            <button data-project="recsys"><strong>14 推荐系统总览</strong><span>四类推荐算法对比</span></button>
+          </div>
+        </div>
+
+        <nav class="nav">
+          <button class="nav-item is-active" data-view="overview"><span>01</span><b>项目总览</b></button>
+          <button class="nav-item" data-view="lab"><span>02</span><b>评测实验台</b></button>
+          <button class="nav-item" data-view="visual"><span>03</span><b>指标可视化</b></button>
+          <button class="nav-item" data-view="roadmap"><span>04</span><b>学习路线</b></button>
+          <button class="nav-item" data-view="interview"><span>05</span><b>面试题</b></button>
+        </nav>
+
+        <div class="side-note">
+          <span>当前阶段</span>
+          <strong>从能跑到可评估</strong>
+          <p>没有评测，RAG 只是“看起来能回答”。有评测，才知道哪里该优化。</p>
+        </div>
+      </aside>
+
+      <main class="main">
+        <header class="topbar">
+          <div>
+            <span class="eyebrow">RAG Evaluation Lab</span>
+            <h1 id="pageTitle">项目总览</h1>
+          </div>
+          <div class="top-actions">
+            <span class="status-pill is-ok">本地教学版</span>
+            <button class="primary-btn" data-view-link="lab">开始评测</button>
+          </div>
+        </header>
+
+        <section class="view is-active" id="overview">
+          <div class="hero-panel">
+            <div>
+              <span class="eyebrow">RAG 不是回答出来就算对</span>
+              <h2>评测要同时看检索有没有命中、引用是否正确、回答是否忠实、拒答是否合理。</h2>
+              <p>
+                企业 RAG 最怕“看起来很会答，其实证据没支撑”。这个实验室用一组带标准答案和标准证据的问题，让你看懂 Recall@K、MRR、引用准确率、忠实度和拒答正确性。
+              </p>
+              <div class="hero-actions">
+                <button class="primary-btn" data-view-link="lab">打开评测实验台</button>
+                <button class="secondary-btn" data-view-link="visual">看指标面板</button>
+              </div>
+            </div>
+            <div class="flow-card">
+              <div><span>01</span><strong>Eval Set</strong><p>准备问题、标准答案和标准证据。</p></div>
+              <div><span>02</span><strong>Run RAG</strong><p>模拟检索、引用、回答和拒答。</p></div>
+              <div><span>03</span><strong>Score</strong><p>计算检索和回答质量指标。</p></div>
+              <div><span>04</span><strong>Improve</strong><p>根据失败原因调切分、检索、rerank 或 prompt。</p></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="view" id="lab">
+          <div class="lab-grid rerank-grid">
+            <section class="panel query-panel">
+              <div class="panel-head">
+                <div>
+                  <h2>评测集</h2>
+                  <p>选择或新增一个问题，观察 RAG 指标怎么变化。</p>
+                </div>
+              </div>
+              <label class="field">
+                评测问题
+                <select id="caseSelect"></select>
+              </label>
+              <label class="field">
+                新增问题
+                <textarea id="newQuestion" placeholder="例如：RAG 为什么需要引用来源？"></textarea>
+              </label>
+              <label class="field">
+                标准证据 ID
+                <input id="newGoldDocs" placeholder="例如：d1,d4" />
+              </label>
+              <button class="secondary-btn" id="addCaseBtn">新增评测问题</button>
+              <div class="control-pair">
+                <label class="field">
+                  检索 Top K
+                  <select id="topKSelect">
+                    <option value="2">Top 2</option>
+                    <option value="3" selected>Top 3</option>
+                    <option value="5">Top 5</option>
+                  </select>
+                </label>
+                <label class="field">
+                  系统版本
+                  <select id="systemSelect">
+                    <option value="naive">Naive RAG</option>
+                    <option value="rerank" selected>Rerank RAG</option>
+                    <option value="strict">严格证据门</option>
+                  </select>
+                </label>
+              </div>
+              <button class="primary-btn" id="runEvalBtn">运行评测</button>
+            </section>
+
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <h2>检索结果</h2>
+                  <p>看标准证据是否被 Top K 找到。</p>
+                </div>
+                <span class="status-pill" id="retrievalStatus">0 条</span>
+              </div>
+              <div class="result-list" id="retrievalList"></div>
+            </section>
+
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <h2>回答评测</h2>
+                  <p>看答案是否基于证据，以及是否该拒答。</p>
+                </div>
+                <span class="status-pill" id="answerStatus">等待评测</span>
+              </div>
+              <div id="answerPanel"></div>
+            </section>
+          </div>
+
+          <div class="grid two">
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <h2>指标解释</h2>
+                  <p>点击指标，看它是怎么计算出来的。</p>
+                </div>
+              </div>
+              <div class="result-list" id="metricCards"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <h2>失败诊断</h2>
+                  <p>评测的价值是告诉你该优化哪一层。</p>
+                </div>
+              </div>
+              <div id="diagnosisPanel"></div>
+            </section>
+          </div>
+        </section>
+
+        <section class="view" id="visual">
+          <div class="visual-grid">
+            <section class="panel visual-main">
+              <div class="panel-head">
+                <div>
+                  <h2>指标可视化</h2>
+                  <p>雷达图看整体形状，指标条看具体分数。评测参数变化后，这里会重新计算并动画更新。</p>
+                </div>
+              </div>
+              <div class="space-stage">
+                <canvas id="metricCanvas" width="980" height="520"></canvas>
+                <div class="canvas-tooltip" id="canvasTooltip"></div>
+              </div>
+            </section>
+            <section class="panel explain-panel">
+              <div class="panel-head">
+                <div>
+                  <h2>怎么读指标</h2>
+                  <p>不要只看一个总分。</p>
+                </div>
+              </div>
+              <div class="plain-card"><strong>检索差</strong><p>先调 chunk、embedding、向量库、Hybrid、Top K。</p></div>
+              <div class="plain-card"><strong>引用差</strong><p>检查 metadata、引用来源、证据拼接和 prompt 约束。</p></div>
+              <div class="plain-card"><strong>忠实度差</strong><p>说明模型没有严格基于证据回答，需要改 prompt、加证据门或拒答。</p></div>
+              <div class="plain-card"><strong>图形越饱满越好</strong><p>雷达图凹进去的方向就是短板。比如 MRR 凹进去，说明标准证据虽然可能被找回，但排得不够靠前。</p></div>
+            </section>
+          </div>
+        </section>
+
+        <section class="view" id="roadmap">
+          <section class="panel">
+            <div class="panel-head">
+              <div>
+                <h2>学习路线</h2>
+                <p>评测学完后，你才真正知道 RAG 系统怎么持续优化。</p>
+              </div>
+            </div>
+            <div class="roadmap-list" id="roadmapList"></div>
+          </section>
+        </section>
+
+        <section class="view" id="interview">
+          <section class="panel">
+            <div class="panel-head">
+              <div>
+                <h2>RAG 评测面试题</h2>
+                <p>面试里要能从指标讲到工程优化。</p>
+              </div>
+            </div>
+            <div class="roadmap-list" id="interviewList"></div>
+          </section>
+        </section>
+      </main>
+    </div>
+    <script src="./app.js?v=20260512-rageval-v2"></script>
+  </body>
+</html>

@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SVD 矩阵分解实验室</title>
+    <link rel="icon" href="data:," />
+    <link rel="stylesheet" href="./styles.css?v=20260512-data-v1" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="project-switcher">
+          <button class="brand project-trigger" id="projectTrigger" aria-expanded="false">
+            <div class="brand-mark">矩</div>
+            <div>
+              <strong>SVD 矩阵分解</strong>
+              <span>隐向量 + 点积预测</span>
+            </div>
+            <i>切换</i>
+          </button>
+          <div class="project-menu" id="projectMenu"></div>
+        </div>
+        <nav class="nav">
+          <button class="nav-item is-active" data-view="overview"><span>01</span><b>项目总览</b></button>
+          <button class="nav-item" data-view="lab"><span>02</span><b>SVD 实验台</b></button>
+          <button class="nav-item" data-view="visual"><span>03</span><b>3D 隐向量</b></button>
+          <button class="nav-item" data-view="roadmap"><span>04</span><b>学习路线</b></button>
+        </nav>
+        <div class="side-note">
+          <span>当前阶段</span>
+          <strong>理解隐向量</strong>
+          <p>把用户和物品放进同一个潜在兴趣空间，用点积预测喜欢程度。</p>
+        </div>
+      </aside>
+
+      <main class="main">
+        <header class="topbar">
+          <div>
+            <span class="eyebrow">Matrix Factorization Lab</span>
+            <h1 id="pageTitle">项目总览</h1>
+          </div>
+          <div class="top-actions">
+            <select id="userSelect"></select>
+            <button class="primary-btn" data-view-link="lab">开始实验</button>
+          </div>
+        </header>
+
+        <section class="view is-active" id="overview">
+          <div class="hero-panel">
+            <div>
+              <span class="eyebrow">从稀疏矩阵到隐向量</span>
+              <h2>SVD：把用户和物品压缩到低维兴趣空间，再用点积预测喜欢程度。</h2>
+              <p>它不像标签推荐那样只看显式标签，也不像 ItemCF/UserCF 那样直接数共现。SVD 会从行为矩阵里学习潜在兴趣。</p>
+              <div class="hero-actions">
+                <button class="primary-btn" data-view-link="lab">打开 SVD 实验台</button>
+                <button class="secondary-btn" data-view-link="visual">看 3D 隐向量</button>
+              </div>
+            </div>
+            <div class="flow-card">
+              <article><span>01</span><strong>行为矩阵</strong><small>用户 × 物品</small></article>
+              <article><span>02</span><strong>用户隐向量</strong><small>用户的潜在兴趣</small></article>
+              <article><span>03</span><strong>物品隐向量</strong><small>物品的潜在属性</small></article>
+              <article><span>04</span><strong>点积得分</strong><small>预测喜欢程度</small></article>
+            </div>
+          </div>
+          <section class="panel">
+            <h2>SVD 知识拆解</h2>
+            <div class="lesson-grid">
+              <article class="lesson-card"><span>01</span><strong>矩阵是什么</strong><p>行是用户，列是物品，值表示用户是否喜欢、点击、评分或购买。</p></article>
+              <article class="lesson-card"><span>02</span><strong>为什么稀疏</strong><p>用户只接触过很少一部分物品，所以矩阵里大多数位置都是空的。</p></article>
+              <article class="lesson-card"><span>03</span><strong>隐向量是什么</strong><p>不是人工标签，而是算法从行为里学出的潜在兴趣维度。</p></article>
+              <article class="lesson-card"><span>04</span><strong>点积怎么理解</strong><p>用户向量和物品向量方向越一致，点积越大，预测越喜欢。</p></article>
+              <article class="lesson-card"><span>05</span><strong>优点</strong><p>能发现标签和共现之外的潜在关系，是深度推荐的基础。</p></article>
+              <article class="lesson-card"><span>06</span><strong>缺点</strong><p>解释性弱，训练复杂，新用户和新物品仍然有冷启动问题。</p></article>
+            </div>
+          </section>
+        </section>
+
+        <section class="view" id="lab">
+          <section class="panel">
+            <div id="dataWorkbench"></div>
+            <div class="demo-grid">
+              <div>
+                <h2>当前用户隐向量</h2>
+                <div id="factorPanel"></div>
+                <h3>手算公式</h3>
+                <div class="formula">推荐分 = 用户隐向量 · 物品隐向量</div>
+              </div>
+              <div>
+                <h2>Top N 推荐</h2>
+                <div id="resultPanel"></div>
+              </div>
+            </div>
+            <h3>计算过程拆解</h3>
+            <div id="tracePanel" class="lesson-grid"></div>
+          </section>
+        </section>
+
+        <section class="view" id="visual">
+          <section class="panel">
+            <h2>3D 隐向量空间</h2>
+            <p>中心是用户隐向量，周围是候选物品隐向量。越靠近或方向越一致，点积越高。</p>
+            <div class="canvas-shell">
+              <canvas id="svdCanvas"></canvas>
+              <div class="tooltip" id="canvasTip"></div>
+            </div>
+            <div class="lesson-grid">
+              <article class="lesson-card"><span>读图 1</span><strong>同一空间</strong><p>SVD 的关键是用户和物品都在同一个隐向量空间里，所以可以直接做点积。</p></article>
+              <article class="lesson-card"><span>读图 2</span><strong>方向一致</strong><p>用户向量和物品向量方向越一致，点积分越高，越可能推荐。</p></article>
+              <article class="lesson-card"><span>读图 3</span><strong>教学简化</strong><p>这里用 2 维向量帮助理解。真实系统可能是几十到几百维，坐标不能直接画出来。</p></article>
+            </div>
+          </section>
+        </section>
+
+        <section class="view" id="roadmap">
+          <section class="panel">
+            <h2>学习路线与面试题</h2>
+            <div id="roadmapPanel" class="interview-grid"></div>
+          </section>
+        </section>
+      </main>
+    </div>
+    <script src="../../推荐系统核心技术实验室/前端原型/recommendation-shared.js?v=20260512-data-v1"></script>
+    <script src="./app.js?v=20260512-data-v1"></script>
+  </body>
+</html>

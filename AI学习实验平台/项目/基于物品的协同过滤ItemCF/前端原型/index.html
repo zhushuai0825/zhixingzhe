@@ -1,0 +1,443 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ItemCF 学习实验室</title>
+    <link rel="stylesheet" href="./styles.css?v=20260512-quality-v1" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="project-switcher">
+          <button class="brand project-trigger" id="projectTrigger" aria-expanded="false">
+            <div class="brand-mark">I</div>
+            <div>
+              <strong>ItemCF 学习实验室</strong>
+              <span>基于物品的协同过滤</span>
+            </div>
+            <i>切换</i>
+          </button>
+          <div class="project-menu" id="projectMenu">
+            <button data-project="chunking">
+              <strong>01 文本切分实验室</strong>
+              <span>先把长文档拆成 chunk</span>
+            </button>
+            <button data-project="embedding">
+              <strong>02 Embedding 与相似度</strong>
+              <span>把文本变向量并计算相似度</span>
+            </button>
+            <button data-project="vectordb">
+              <strong>03 向量库实验室</strong>
+              <span>保存向量并查询 Top K</span>
+            </button>
+            <button data-project="rerank">
+              <strong>04 Rerank 重排序实验室</strong>
+              <span>把初筛证据重新排序</span>
+            </button>
+            <button data-project="rageval">
+              <strong>05 RAG 评测实验室</strong>
+              <span>评估检索、引用和回答质量</span>
+            </button>
+            <button data-project="graphrag">
+              <strong>06 Graph RAG 图谱实验室</strong>
+              <span>实体关系和多跳推理</span>
+            </button>
+            <button data-project="agent">
+              <strong>07 Agent 工程实验室</strong>
+              <span>目标如何变成工具调用</span>
+            </button>
+            <button data-project="modelprompt">
+              <strong>08 模型调用与 Prompt 工程</strong>
+              <span>真实模型接入前必学</span>
+            </button>
+            <button data-project="zhixingzhe">
+              <strong>09 知行者 AI 实验室</strong>
+              <span>完整 RAG、Agent、大模型应用</span>
+            </button>
+            <button class="is-active" data-project="itemcf">
+              <strong>10 ItemCF 实验室</strong>
+              <span>物品共现如何推荐</span>
+            </button>
+            <button data-project="tagrec">
+              <strong>11 标签推荐实验室</strong>
+              <span>标签画像如何推荐</span>
+            </button>
+            <button data-project="usercf">
+              <strong>12 UserCF 实验室</strong>
+              <span>相似用户如何贡献推荐</span>
+            </button>
+            <button data-project="svd">
+              <strong>13 SVD 矩阵分解实验室</strong>
+              <span>隐向量如何预测喜欢</span>
+            </button>
+            <button data-project="recsys">
+              <strong>14 推荐系统总览</strong>
+              <span>四类推荐算法对比</span>
+            </button>
+          </div>
+        </div>
+
+        <nav class="nav">
+          <button class="nav-item is-active" data-view="overview">
+            <span>01</span>
+            <b>项目总览</b>
+          </button>
+          <button class="nav-item" data-view="visual">
+            <span>02</span>
+            <b>推荐可视化台</b>
+          </button>
+          <button class="nav-item" data-view="lab">
+            <span>03</span>
+            <b>算法实验台</b>
+          </button>
+          <button class="nav-item" data-view="matrix">
+            <span>04</span>
+            <b>矩阵可视化</b>
+          </button>
+          <button class="nav-item" data-view="roadmap">
+            <span>05</span>
+            <b>学习路线</b>
+          </button>
+        </nav>
+
+        <div class="side-note">
+          <span>当前阶段</span>
+          <strong>PostgreSQL 真数据实验版</strong>
+          <p>用户、物品、行为来自 PG；3D 空间展示 ItemCF 行为相似度。</p>
+        </div>
+      </aside>
+
+      <main class="main">
+        <header class="topbar">
+          <div>
+            <span class="eyebrow">Recommendation Lab</span>
+            <h1 id="pageTitle">项目总览</h1>
+          </div>
+          <div class="top-actions">
+            <button class="ghost-btn" id="resetBtn">重置数据</button>
+            <button class="primary-btn" data-view-link="visual">推荐可视化</button>
+          </div>
+        </header>
+
+        <section class="view is-active" id="overview">
+          <div class="hero-panel">
+            <div>
+              <span class="eyebrow">从行为到推荐</span>
+              <h2>把 ItemCF 拆成看得见的四步计算。</h2>
+              <p>
+                先用用户行为统计物品之间的相似度，再根据目标用户喜欢过的物品累加推荐分。
+                这个实验室会把每一步矩阵和分数都展示出来。
+              </p>
+              <div class="hero-actions">
+                <button class="primary-btn" data-view-link="visual">进入可视化台</button>
+                <button class="secondary-btn" data-view-link="lab">查看推荐计算</button>
+                <button class="secondary-btn" data-view-link="matrix">查看矩阵</button>
+              </div>
+            </div>
+            <div class="flow-card">
+              <article><span>1</span><strong>行为矩阵</strong><small>谁喜欢了什么</small></article>
+              <article><span>2</span><strong>共现统计</strong><small>哪些物品被一起喜欢</small></article>
+              <article><span>3</span><strong>相似度矩阵</strong><small>物品之间有多接近</small></article>
+              <article><span>4</span><strong>Top N 推荐</strong><small>过滤已喜欢物品后排序</small></article>
+            </div>
+          </div>
+
+          <div class="grid two visual-detail-grid">
+            <section class="panel visual-info-panel">
+              <div class="panel-head">
+                <div>
+                  <h2>ItemCF 一句话</h2>
+                  <p>根据你喜欢过的物品，推荐和它们相似的其他物品。</p>
+                </div>
+              </div>
+              <div class="plain-card">
+                <strong>关键不是“找相似的人”，而是“找相似的物品”。</strong>
+                <p>如果很多用户同时喜欢科幻电影和太空纪录片，那么它们相似。喜欢科幻电影的人，可能也会喜欢太空纪录片。</p>
+              </div>
+            </section>
+
+            <section class="panel visual-info-panel">
+              <div class="panel-head">
+                <div>
+                  <h2>核心公式</h2>
+                  <p>这里使用二值行为下最常见的归一化共现相似度。</p>
+                </div>
+              </div>
+              <pre class="formula">sim(i, j) = co_count(i, j) / sqrt(count(i) * count(j))</pre>
+              <pre class="formula">score(u, j) = sum(sim(j, i) * preference(u, i))</pre>
+            </section>
+          </div>
+        </section>
+
+        <section class="view" id="visual">
+          <section class="panel backend-panel">
+            <div class="panel-head">
+              <div>
+                <h2>推荐可视化平台</h2>
+                <p>用真实数据库行为展示“用户历史 -> 相似物品 -> 候选得分 -> 推荐结果”的完整路径。</p>
+              </div>
+              <span class="status-pill" id="visualStatus">等待数据</span>
+            </div>
+          </section>
+
+          <div class="visual-grid">
+            <section class="panel visual-side">
+              <div class="panel-head">
+                <div>
+                  <h2>目标用户</h2>
+                  <p>先选一个用户，看他的历史行为如何触发推荐。</p>
+                </div>
+              </div>
+              <label class="field">
+                当前用户
+                <select id="visualUserSelect"></select>
+              </label>
+              <div class="user-card" id="visualUserSummary"></div>
+              <div class="visual-edit-box">
+                <label class="field">
+                  新增喜欢
+                  <select id="visualAddItemSelect"></select>
+                </label>
+                <button class="primary-btn" id="visualAddLikeBtn">添加到当前用户</button>
+                <div class="custom-item-form">
+                  <p class="form-note">自定义物品会先作为冷启动物品加入数据库。只有多个用户和它产生共现后，它才会更容易被推荐。</p>
+                  <label class="field">
+                    自定义物品名称
+                    <input id="customItemTitle" placeholder="例如：AI Agent 实战课" />
+                  </label>
+                  <label class="field">
+                    分类
+                    <input id="customItemCategory" value="自定义" />
+                  </label>
+                  <button class="secondary-btn" id="createCustomItemBtn">创建并喜欢</button>
+                </div>
+              </div>
+              <div class="visual-list compact-scroll" id="visualLikedFlow"></div>
+            </section>
+
+            <section class="panel visual-main">
+              <div class="panel-head">
+                <div>
+                  <h2>匹配过程画布</h2>
+                  <p>左边是用户和已喜欢物品，右边是推荐候选；橙色路径表示当前推荐的主要贡献来源。</p>
+                </div>
+              </div>
+              <div class="match-stage">
+                <canvas id="matchCanvas" width="980" height="520"></canvas>
+                <div class="match-tooltip" id="matchTooltip"></div>
+                <div class="match-hint">选择右侧推荐项，可以看到匹配路径和公式同步变化</div>
+              </div>
+            </section>
+
+            <section class="panel visual-side">
+              <div class="panel-head">
+                <div>
+                  <h2>推荐结果</h2>
+                  <p>点击任意推荐，查看它为什么会排在这里。</p>
+                </div>
+              </div>
+              <div class="visual-list recommendation-scroll" id="visualRecommendationList"></div>
+            </section>
+          </div>
+
+          <div class="grid two">
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <h2>推荐链路</h2>
+                  <p>把数据库里的行为数据拆成一条可观察的数据流水线。</p>
+                </div>
+              </div>
+              <div class="visual-process" id="visualProcess"></div>
+            </section>
+
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <h2>当前推荐解释</h2>
+                  <p>看清楚推荐分由哪些历史物品贡献出来。</p>
+                </div>
+              </div>
+              <div class="match-detail" id="visualDetail"></div>
+            </section>
+          </div>
+        </section>
+
+        <section class="view" id="lab">
+          <section class="panel backend-panel">
+            <div class="panel-head">
+              <div>
+                <h2>后端连接</h2>
+                <p>默认连接 FastAPI + PostgreSQL。离线模式只用于后端未启动时学习兜底。</p>
+              </div>
+              <span class="status-pill" id="backendStatus">正在连接数据库</span>
+            </div>
+            <div class="backend-row">
+              <label class="field">
+                API 地址
+                <input id="apiBaseInput" value="http://127.0.0.1:8020" />
+              </label>
+              <div class="backend-actions">
+                <button class="secondary-btn" id="useLocalBtn">离线兜底演示</button>
+                <button class="primary-btn" id="useBackendBtn">连接 PostgreSQL</button>
+                <button class="ghost-btn" id="refreshBackendBtn">刷新后端数据</button>
+              </div>
+            </div>
+          </section>
+
+          <div class="lab-layout">
+            <section class="panel controls-panel">
+              <div class="panel-head">
+                <div>
+                  <h2>选择目标用户</h2>
+                  <p>切换用户后，已喜欢物品、候选物品和推荐分会重新计算。</p>
+                </div>
+              </div>
+              <label class="field">
+                目标用户
+                <select id="userSelect"></select>
+              </label>
+              <div class="user-card" id="userProfile"></div>
+              <div class="liked-list liked-scroll" id="likedItems"></div>
+            </section>
+
+            <section class="panel sandbox-panel">
+              <div class="panel-head">
+                <div>
+                  <h2>动手改一条行为</h2>
+                  <p>给当前用户临时新增一个喜欢物品，观察推荐结果怎样变化。</p>
+                </div>
+              </div>
+              <label class="field">
+                可新增物品
+                <select id="addItemSelect"></select>
+              </label>
+              <div class="sandbox-actions">
+                <button class="primary-btn" id="addLikeBtn">添加喜欢</button>
+                <button class="ghost-btn" id="resetDataBtn">恢复原始数据</button>
+              </div>
+              <div class="change-log" id="changeLog"></div>
+            </section>
+
+            <section class="panel recommendation-panel">
+              <div class="panel-head">
+                <div>
+                  <h2>Top N 推荐</h2>
+                  <p>点击推荐项，可以查看它的公式拆解。</p>
+                </div>
+              </div>
+              <div class="recommendations" id="recommendations"></div>
+            </section>
+          </div>
+
+          <section class="panel">
+            <div class="panel-head">
+              <div>
+                <h2>当前用户计算流水线</h2>
+                <p>把“用户历史”一步步变成“候选物品推荐分”。</p>
+              </div>
+            </div>
+            <div class="calc-flow" id="calculationFlow"></div>
+          </section>
+
+          <div class="grid two">
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <h2>候选物品得分表</h2>
+                  <p>包含 0 分候选，帮助区分“没推荐”和“没有相似来源”。</p>
+                </div>
+              </div>
+              <div class="candidate-list" id="candidateScores"></div>
+            </section>
+
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <h2>历史物品相似 Top</h2>
+                  <p>从用户喜欢过的物品出发，看它们把哪些候选拉进来。</p>
+                </div>
+              </div>
+              <div class="similar-source-list" id="similarSources"></div>
+            </section>
+          </div>
+
+          <section class="panel">
+            <div class="panel-head">
+              <div>
+                <h2>推荐分贡献明细</h2>
+                <p>每个候选物品的分数来自目标用户已喜欢物品的相似度累加。</p>
+              </div>
+            </div>
+            <div class="explain-list" id="explainList"></div>
+          </section>
+
+          <section class="panel">
+            <div class="panel-head">
+              <div>
+                <h2>3D 物品相似度空间</h2>
+                <p>每个点是一个真实数据库物品。连线越亮，说明两个物品被同一批用户共同喜欢得越多。</p>
+              </div>
+              <button class="ghost-btn" id="resetSpaceBtn">重置视角</button>
+            </div>
+            <div class="item-space-stage" id="itemSpaceStage">
+              <canvas id="itemSpaceCanvas" width="900" height="460"></canvas>
+              <div class="item-space-hint">拖拽旋转 · 滚轮缩放 · 点击推荐项会高亮相似来源</div>
+            </div>
+          </section>
+        </section>
+
+        <section class="view" id="matrix">
+          <div class="grid two">
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <h2>用户-物品行为矩阵</h2>
+                  <p>1 表示喜欢过，0 表示没有行为。</p>
+                </div>
+              </div>
+              <div class="table-wrap" id="behaviorMatrix"></div>
+            </section>
+
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <h2>物品相似度矩阵</h2>
+                  <p>数值越高，说明两个物品越经常被同一批用户喜欢。</p>
+                </div>
+              </div>
+              <div class="matrix-top-list" id="similarityTopList"></div>
+              <div class="table-wrap" id="similarityMatrix"></div>
+            </section>
+          </div>
+
+          <section class="panel">
+            <div class="panel-head">
+              <div>
+                <h2>物品共现矩阵</h2>
+                <p>共现次数表示“有多少用户同时喜欢这两个物品”，它是相似度的原材料。</p>
+              </div>
+            </div>
+            <div class="table-wrap" id="coOccurrenceMatrix"></div>
+          </section>
+        </section>
+
+        <section class="view" id="roadmap">
+          <section class="panel">
+            <div class="panel-head">
+              <div>
+                <h2>学习路线</h2>
+                <p>先理解 ItemCF，再把它放进真实推荐系统。</p>
+              </div>
+            </div>
+            <div class="timeline-list" id="roadmapList"></div>
+          </section>
+        </section>
+      </main>
+    </div>
+
+    <div class="toast" id="toast">已更新</div>
+    <script src="./app.js?v=20260512-quality-v1"></script>
+  </body>
+</html>

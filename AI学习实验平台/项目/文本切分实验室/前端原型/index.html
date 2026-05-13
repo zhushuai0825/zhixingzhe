@@ -1,0 +1,273 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>文本切分实验室</title>
+    <link rel="stylesheet" href="./styles.css?v=20260512-quality-v1" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="project-switcher">
+          <button class="brand project-trigger" id="projectTrigger" aria-expanded="false">
+            <div class="brand-mark">切</div>
+            <div>
+              <strong>文本切分实验室</strong>
+              <span>Chunk Size + Overlap</span>
+            </div>
+            <i>切换</i>
+          </button>
+          <div class="project-menu" id="projectMenu">
+            <button class="is-active" data-project="chunking">
+              <strong>01 文本切分实验室</strong>
+              <span>先把长文档拆成 chunk</span>
+            </button>
+            <button data-project="embedding">
+              <strong>02 Embedding 与相似度</strong>
+              <span>把文本变向量并计算相似度</span>
+            </button>
+            <button data-project="vectordb">
+              <strong>03 向量库实验室</strong>
+              <span>保存向量并查询 Top K</span>
+            </button>
+            <button data-project="rerank">
+              <strong>04 Rerank 重排序实验室</strong>
+              <span>把初筛证据重新排序</span>
+            </button>
+            <button data-project="rageval">
+              <strong>05 RAG 评测实验室</strong>
+              <span>评估检索、引用和回答质量</span>
+            </button>
+            <button data-project="graphrag">
+              <strong>06 Graph RAG 图谱实验室</strong>
+              <span>实体关系和多跳推理</span>
+            </button>
+            <button data-project="agent">
+              <strong>07 Agent 工程实验室</strong>
+              <span>目标如何变成工具调用</span>
+            </button>
+            <button data-project="modelprompt">
+              <strong>08 模型调用与 Prompt 工程</strong>
+              <span>真实模型接入前必学</span>
+            </button>
+            <button data-project="zhixingzhe">
+              <strong>09 知行者 AI 实验室</strong>
+              <span>完整 RAG、Agent、大模型应用</span>
+            </button>
+            <button data-project="itemcf">
+              <strong>10 ItemCF 实验室</strong>
+              <span>物品共现如何推荐</span>
+            </button>
+            <button data-project="tagrec">
+              <strong>11 标签推荐实验室</strong>
+              <span>标签画像如何推荐</span>
+            </button>
+            <button data-project="usercf">
+              <strong>12 UserCF 实验室</strong>
+              <span>相似用户如何贡献推荐</span>
+            </button>
+            <button data-project="svd">
+              <strong>13 SVD 矩阵分解实验室</strong>
+              <span>隐向量如何预测喜欢</span>
+            </button>
+            <button data-project="recsys">
+              <strong>14 推荐系统总览</strong>
+              <span>四类推荐算法对比</span>
+            </button>
+          </div>
+        </div>
+
+        <nav class="nav">
+          <button class="nav-item is-active" data-view="overview">
+            <span>01</span>
+            <b>项目总览</b>
+          </button>
+          <button class="nav-item" data-view="lab">
+            <span>02</span>
+            <b>切分实验台</b>
+          </button>
+          <button class="nav-item" data-view="visual">
+            <span>03</span>
+            <b>切片可视化</b>
+          </button>
+          <button class="nav-item" data-view="roadmap">
+            <span>04</span>
+            <b>学习路线</b>
+          </button>
+        </nav>
+
+        <div class="side-note">
+          <span>当前阶段</span>
+          <strong>RAG 文档预处理</strong>
+          <p>先看懂文档怎么拆，再做 embedding 和向量入库。</p>
+        </div>
+      </aside>
+
+      <main class="main">
+        <header class="topbar">
+          <div>
+            <span class="eyebrow">Chunking Lab</span>
+            <h1 id="pageTitle">项目总览</h1>
+          </div>
+          <div class="top-actions">
+            <span class="status-pill" id="backendStatus">正在连接后端</span>
+            <button class="primary-btn" data-view-link="lab">开始切分</button>
+          </div>
+        </header>
+
+        <section class="view is-active" id="overview">
+          <div class="hero-panel">
+            <div>
+              <span class="eyebrow">RAG 的第一道质量关</span>
+              <h2>把长文档拆成适合检索的 chunk。</h2>
+              <p>
+                切分不是随便把文本剁开。切片太短会丢上下文，太长会混入噪声；overlap 太小容易断答案，太大又会浪费向量库空间。这个实验室专门让你看懂这些取舍。
+              </p>
+              <div class="hero-actions">
+                <button class="primary-btn" data-view-link="lab">打开实验台</button>
+                <button class="secondary-btn" data-view-link="visual">看切片画布</button>
+              </div>
+            </div>
+            <div class="flow-card">
+              <div><span>01</span><strong>原文</strong><p>PDF、Word、网页解析出来的长文本。</p></div>
+              <div><span>02</span><strong>切分策略</strong><p>字符、段落、递归分隔符。</p></div>
+              <div><span>03</span><strong>Chunk</strong><p>每个片段后续单独做 embedding。</p></div>
+              <div><span>04</span><strong>召回质量</strong><p>切片决定问题能否命中正确证据。</p></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="view" id="lab">
+          <div class="lab-grid">
+            <section class="panel controls-panel">
+              <div class="panel-head">
+                <div>
+                  <h2>切分参数</h2>
+                  <p>调整策略、长度和重叠，观察切片变化。</p>
+                </div>
+              </div>
+
+              <label class="field">
+                切分策略
+                <select id="strategySelect">
+                  <option value="recursive" selected>递归切分</option>
+                  <option value="paragraph">按段落切分</option>
+                  <option value="character">按字符切分</option>
+                </select>
+              </label>
+
+              <div class="control-pair">
+                <label class="field">
+                  Chunk Size
+                  <input id="chunkSizeInput" type="number" min="40" max="2000" value="260" />
+                </label>
+                <label class="field">
+                  Overlap
+                  <input id="overlapInput" type="number" min="0" max="800" value="60" />
+                </label>
+              </div>
+
+              <label class="field">
+                原始文本
+                <textarea id="sourceText" rows="18"></textarea>
+              </label>
+
+              <div class="button-row">
+                <button class="primary-btn" id="runBtn">运行切分</button>
+                <button class="secondary-btn" id="resetBtn">恢复示例</button>
+              </div>
+            </section>
+
+            <section class="panel summary-panel">
+              <div class="panel-head">
+                <div>
+                  <h2>切分质量概览</h2>
+                  <p>先看整体，再看每个 chunk。</p>
+                </div>
+              </div>
+              <div class="metric-grid" id="metricGrid"></div>
+              <div class="plain-card insight-card" id="parameterInsight"></div>
+              <div class="plain-card" id="strategyExplanation"></div>
+              <div class="plain-card pipeline-card">
+                <strong>切完之后去哪里？</strong>
+                <p>每个 chunk 会单独做 embedding，得到一条向量；向量库保存 chunk 原文、向量和 metadata。用户提问时，问题也变成向量，再去向量库里找最相似的 chunk。</p>
+              </div>
+            </section>
+
+            <section class="panel chunks-panel">
+              <div class="panel-head">
+                <div>
+                  <h2>切片列表</h2>
+                  <p>每个 chunk 都会独立进入 embedding。</p>
+                </div>
+              </div>
+              <div class="chunk-list" id="chunkList"></div>
+            </section>
+          </div>
+        </section>
+
+        <section class="view" id="visual">
+          <div class="visual-grid">
+            <section class="panel visual-main">
+              <div class="panel-head">
+                <div>
+                  <h2>3D 切片边界画布</h2>
+                  <p>拖拽旋转，滚轮缩放。每块是一个 chunk，深色厚片表示 overlap。</p>
+                </div>
+              </div>
+              <div class="chunk-stage">
+                <canvas id="chunkCanvas" width="980" height="520"></canvas>
+                <div class="canvas-tooltip" id="canvasTooltip"></div>
+              </div>
+            </section>
+
+            <section class="panel explain-panel">
+              <div class="panel-head">
+                <div>
+                  <h2>参数解释</h2>
+                  <p>把工程参数讲清楚。</p>
+                </div>
+              </div>
+              <div class="plain-card">
+                <strong>Chunk Size</strong>
+                <p>控制每个切片最大长度。太小会丢上下文，太大容易混入噪声。</p>
+              </div>
+              <div class="plain-card">
+                <strong>Overlap</strong>
+                <p>相邻切片重复保留的文本。它能保护边界信息，但会增加存储和检索成本。</p>
+              </div>
+              <div class="plain-card">
+                <strong>递归切分</strong>
+                <p>优先按标题、段落、句子等自然边界切，再退回到更小分隔符，最后才硬切。</p>
+              </div>
+              <div class="plain-card" id="selectedChunkExplain">
+                <strong>当前 chunk</strong>
+                <p>点击切片列表或悬停 3D 画布，可以看它为什么这样切。</p>
+              </div>
+              <div class="plain-card">
+                <strong>进入向量库</strong>
+                <p>切片不会直接回答问题。它会先变成 embedding，再以 id、text、vector、metadata 的形式写入向量库。</p>
+              </div>
+            </section>
+          </div>
+        </section>
+
+        <section class="view" id="roadmap">
+          <section class="panel">
+            <div class="panel-head">
+              <div>
+                <h2>学习路线</h2>
+                <p>切分学完后，就能接 embedding 和向量库。</p>
+              </div>
+            </div>
+            <div class="roadmap-list" id="roadmapList"></div>
+          </section>
+        </section>
+      </main>
+    </div>
+
+    <div class="toast" id="toast"></div>
+    <script src="./app.js?v=20260512-quality-v1"></script>
+  </body>
+</html>

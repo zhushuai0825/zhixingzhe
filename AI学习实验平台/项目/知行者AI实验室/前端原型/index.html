@@ -1,0 +1,708 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>知行者 AI 实验室 - 前端原型</title>
+    <link rel="stylesheet" href="./styles.css?v=20260511-switch2" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="project-switcher">
+          <button class="brand project-trigger" id="projectTrigger" aria-expanded="false">
+            <div class="brand-mark">知</div>
+            <div>
+              <strong>知行者 AI 实验室</strong>
+              <span>RAG + Agent 可视化学习系统</span>
+            </div>
+            <i>切换</i>
+          </button>
+          <div class="project-menu" id="projectMenu">
+            <button data-project="chunking">
+              <strong>01 文本切分实验室</strong>
+              <span>先把长文档拆成 chunk</span>
+            </button>
+            <button data-project="embedding">
+              <strong>02 Embedding 与相似度</strong>
+              <span>把文本变向量并计算相似度</span>
+            </button>
+            <button data-project="vectordb">
+              <strong>03 向量库实验室</strong>
+              <span>保存向量并查询 Top K</span>
+            </button>
+            <button data-project="rerank">
+              <strong>04 Rerank 重排序实验室</strong>
+              <span>把初筛证据重新排序</span>
+            </button>
+            <button data-project="rageval">
+              <strong>05 RAG 评测实验室</strong>
+              <span>评估检索、引用和回答质量</span>
+            </button>
+            <button data-project="graphrag">
+              <strong>06 Graph RAG 图谱实验室</strong>
+              <span>实体关系和多跳推理</span>
+            </button>
+            <button data-project="agent">
+              <strong>07 Agent 工程实验室</strong>
+              <span>目标如何变成工具调用</span>
+            </button>
+            <button data-project="modelprompt">
+              <strong>08 模型调用与 Prompt 工程</strong>
+              <span>真实模型接入前必学</span>
+            </button>
+            <button class="is-active" data-project="zhixingzhe">
+              <strong>09 知行者 AI 实验室</strong>
+              <span>完整 RAG、Agent、大模型应用</span>
+            </button>
+            <button data-project="itemcf">
+              <strong>10 ItemCF 实验室</strong>
+              <span>物品共现如何推荐</span>
+            </button>
+            <button data-project="tagrec">
+              <strong>11 标签推荐实验室</strong>
+              <span>标签画像如何推荐</span>
+            </button>
+            <button data-project="usercf">
+              <strong>12 UserCF 实验室</strong>
+              <span>相似用户如何贡献推荐</span>
+            </button>
+            <button data-project="svd">
+              <strong>13 SVD 矩阵分解实验室</strong>
+              <span>隐向量如何预测喜欢</span>
+            </button>
+            <button data-project="recsys">
+              <strong>14 推荐系统总览</strong>
+              <span>四类推荐算法对比</span>
+            </button>
+          </div>
+        </div>
+
+        <nav class="nav">
+          <button class="nav-item is-active" data-view="overview">
+            <span>⌂</span>
+            <b>项目总览</b>
+          </button>
+          <button class="nav-item" data-view="ragLab">
+            <span>⇄</span>
+            <b>RAG 实验室</b>
+          </button>
+          <button class="nav-item" data-view="visualLab">
+            <span>⌁</span>
+            <b>可视化实验台</b>
+          </button>
+          <button class="nav-item" data-view="dataCenter">
+            <span>▣</span>
+            <b>数据中心</b>
+          </button>
+          <button class="nav-item" data-view="agentLab">
+            <span>⌬</span>
+            <b>Agent 实验室</b>
+          </button>
+          <button class="nav-item" data-view="roadmap">
+            <span>▥</span>
+            <b>学习路线</b>
+          </button>
+        </nav>
+
+        <div class="side-note">
+          <span>当前原型</span>
+          <strong>V0 可视化实验台</strong>
+          <p>先看懂数据如何流动，再接真实 FastAPI、PostgreSQL、Chroma 和模型 API。</p>
+        </div>
+      </aside>
+
+      <main class="main">
+        <header class="topbar">
+          <div>
+            <span class="eyebrow">Visual AI Lab</span>
+            <h1 id="pageTitle">项目总览</h1>
+          </div>
+          <div class="top-actions">
+            <button class="ghost-btn" id="resetDemoBtn">重置演示</button>
+            <button class="primary-btn" data-view-link="ragLab">开始看 RAG 实验室</button>
+          </div>
+        </header>
+
+        <section class="view is-active" id="overview">
+          <div class="hero-panel">
+            <div>
+              <span class="eyebrow">从黑盒变成透明盒</span>
+              <h2>先建知识库，再看检索命中，最后让 Agent 用工具做事。</h2>
+              <p>
+                RAG 实验室负责文件如何变成向量数据库；可视化实验台负责问题如何命中资料；
+                Agent 实验室负责 AI 如何调用工具完成目标。
+              </p>
+              <div class="hero-actions">
+                <button class="primary-btn" data-view-link="ragLab">RAG 实验室</button>
+                <button class="secondary-btn" data-view-link="visualLab">可视化实验台</button>
+                <button class="secondary-btn" data-view-link="agentLab">Agent 实验室</button>
+              </div>
+            </div>
+            <div class="hero-metrics">
+              <article><strong>4</strong><span>核心数据表/索引</span></article>
+              <article><strong>5</strong><span>Top K 检索片段</span></article>
+              <article><strong>6</strong><span>Agent 执行步骤</span></article>
+              <article><strong>1</strong><span>清晰学习主线</span></article>
+            </div>
+          </div>
+
+          <div class="overview-grid">
+            <section class="panel wide-panel">
+              <div class="panel-head">
+                <div>
+                  <h2>三大实验室关系</h2>
+                  <p>这三个模块都要保留，但职责不能混在一起。</p>
+                </div>
+              </div>
+              <div class="lab-relation">
+                <article data-view-link="ragLab">
+                  <span>01</span>
+                  <strong>RAG 实验室</strong>
+                  <p>上传文档、解析、切片、向量化、存入向量数据库、建立索引。</p>
+                  <small>回答：资料怎么进系统？</small>
+                </article>
+                <div class="relation-arrow">→</div>
+                <article data-view-link="visualLab">
+                  <span>02</span>
+                  <strong>可视化实验台</strong>
+                  <p>输入问题、问题向量化、命中 Top K chunk、展示分数和上下文。</p>
+                  <small>回答：提问后怎么命中？</small>
+                </article>
+                <div class="relation-arrow">→</div>
+                <article data-view-link="agentLab">
+                  <span>03</span>
+                  <strong>Agent 实验室</strong>
+                  <p>目标分析、调用 RAG 工具、观察结果、评估证据、生成行动。</p>
+                  <small>回答：AI 怎么用工具做事？</small>
+                </article>
+              </div>
+            </section>
+
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <h2>系统主线</h2>
+                  <p>先做可视化，再接真实后端。</p>
+                </div>
+              </div>
+              <div class="timeline-list" id="overviewTimeline"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <h2>任务中心还要吗</h2>
+                  <p>保留，但不做主角。</p>
+                </div>
+              </div>
+              <div class="plain-card">
+                <strong>任务中心只负责学习闭环</strong>
+                <p>它用来承接 Agent 生成的行动项，以及记录你每个阶段要完成的练习。真正主角是 RAG 实验室、Agent 实验室和可视化实验台。</p>
+              </div>
+            </section>
+          </div>
+        </section>
+
+        <section class="view" id="ragLab">
+          <div class="page-grid">
+            <section class="panel wide-panel lab-definition">
+              <strong>RAG 实验室 = 建知识库</strong>
+              <p>这里不重点回答问题，而是看清楚一份文件如何被解析、切片、向量化、存储并建立索引。后面可视化实验台的检索，依赖这里生成的 chunk 和 vector。</p>
+            </section>
+
+            <section class="panel wide-panel live-lab">
+              <div class="panel-head">
+                <div>
+                  <span class="eyebrow">Live Backend</span>
+                  <h2>真实 RAG 入库实验</h2>
+                  <p>连接 FastAPI 后端，把文本真正写进 PostgreSQL，并把向量写进 Chroma。</p>
+                </div>
+                <button class="ghost-btn" id="refreshKbBtn">刷新知识库</button>
+              </div>
+
+              <div class="live-grid">
+                <div class="live-form">
+                  <label>
+                    API 地址
+                    <input id="apiBaseInput" value="http://127.0.0.1:8010" />
+                  </label>
+                  <div class="split-row">
+                    <label>
+                      知识库名称
+                      <input id="kbNameInput" value="RAG 可视化学习库" />
+                    </label>
+                    <button class="primary-btn" id="createKbBtn">创建知识库</button>
+                  </div>
+                  <label>
+                    当前知识库
+                    <select id="kbSelect"></select>
+                  </label>
+                  <label>
+                    文档名
+                    <input id="docNameInput" value="rag_live_demo.md" />
+                  </label>
+                  <label>
+                    选择本地文件
+                    <input id="docFileInput" type="file" accept=".txt,.md,.markdown,.pdf,text/plain,text/markdown,application/pdf" />
+                  </label>
+                  <label>
+                    文档内容
+                    <textarea id="docContentInput">RAG 是检索增强生成。系统会先解析文档，然后把长文本切成多个 chunk。每个 chunk 会通过 Embedding 模型变成向量，并写入 Chroma 这样的向量数据库。用户提问时，系统也会把问题变成向量，再用向量相似度找到最相关的 Top K 切片。最后，大模型只能基于这些切片生成回答。Advanced RAG 会加入 Hybrid 检索、BM25、Rerank、上下文压缩和无依据拒答。Agentic RAG 会让智能体自己决定是否检索、调用什么工具、是否继续追问。</textarea>
+                  </label>
+                  <div class="split-row">
+                    <label>
+                      切片长度
+                      <input id="chunkSizeInput" type="number" min="100" max="3000" value="180" />
+                    </label>
+                    <label>
+                      重叠长度
+                    <input id="overlapInput" type="number" min="0" max="1000" value="40" />
+                    </label>
+                    <button class="secondary-btn" id="previewChunksBtn" type="button">读取并预览</button>
+                    <button class="primary-btn" id="ingestTextBtn">导入并切片</button>
+                  </div>
+                </div>
+
+                <div class="live-result">
+                  <div class="status-strip" id="backendStatus">等待连接后端</div>
+                  <div class="table-flow">
+                    <article><span>PostgreSQL</span><strong>documents</strong><small id="liveDocumentId">未导入</small></article>
+                    <article><span>PostgreSQL</span><strong>document_chunks</strong><small id="liveChunkCount">0 个切片</small></article>
+                    <article><span>Chroma</span><strong>document_vectors</strong><small id="liveVectorCount">等待写入</small></article>
+                  </div>
+                  <div class="pipeline-steps" id="ingestPipeline">
+                    <span data-step="parse">解析文本</span>
+                    <span data-step="chunk">切片</span>
+                    <span data-step="postgres">写 PostgreSQL</span>
+                    <span data-step="chroma">写 Chroma</span>
+                    <span data-step="done">完成</span>
+                  </div>
+                  <div class="document-list" id="liveDocumentList"></div>
+                  <div class="live-chunks" id="liveChunkList"></div>
+                </div>
+              </div>
+            </section>
+
+            <section class="panel wide-panel">
+              <div class="panel-head">
+                <div>
+                  <span class="eyebrow">RAG Lab</span>
+                  <h2>RAG 实验室：文件如何变成向量数据库</h2>
+                  <p>点击运行，看文件解析、切片、向量化、入库、建索引的完整过程。</p>
+                </div>
+                <button class="primary-btn" id="runIngestBtn">播放当前文档流程</button>
+              </div>
+
+              <div class="rag-transform-grid" id="ragTransformGrid">
+                <article class="transform-card" data-transform="raw">
+                  <span>原始文件</span>
+                  <strong id="flowRawFile">等待选择文档</strong>
+                  <p id="flowRawDesc">选择或上传文档后，这里会显示真实文件名和解析结果。</p>
+                </article>
+                <article class="transform-card" data-transform="split">
+                  <span>文本切片</span>
+                  <strong id="flowSplitStats">尚未切片</strong>
+                  <p id="flowSplitDesc">先点击读取并预览，可以在入库前检查切片是否合理。</p>
+                </article>
+                <article class="transform-card" data-transform="embed">
+                  <span>向量化</span>
+                  <strong id="flowEmbedStats">等待入库</strong>
+                  <p>导入后，每个 chunk 会生成一条 384 维向量。</p>
+                </article>
+                <article class="transform-card" data-transform="index">
+                  <span>建立索引</span>
+                  <strong id="flowIndexStats">等待写入 Chroma</strong>
+                  <p>向量写入 Chroma 后，检索才会命中你的真实文档。</p>
+                </article>
+              </div>
+
+              <div class="flow-stage" id="ingestFlow">
+                <svg class="flow-lines" viewBox="0 0 1000 320" aria-hidden="true">
+                  <path id="line-upload-docs" d="M160 82 C245 82 245 82 330 82" />
+                  <path id="line-docs-chunks" d="M500 82 C570 82 570 168 640 168" />
+                  <path id="line-chunks-vectors" d="M810 168 C865 168 865 82 920 82" />
+                  <path id="line-vectors-index" d="M920 122 C865 252 315 252 220 210" />
+                </svg>
+                <article class="flow-node is-source" data-flow-node="upload">
+                  <span>01</span>
+                  <strong>上传文件</strong>
+                  <small id="flowNodeUploadText">等待文档</small>
+                </article>
+                <article class="flow-node" data-flow-node="documents">
+                  <span>02</span>
+                  <strong>documents</strong>
+                  <small id="flowNodeDocumentText">未写入</small>
+                </article>
+                <article class="flow-node" data-flow-node="chunks">
+                  <span>03</span>
+                  <strong>document_chunks</strong>
+                  <small id="flowNodeChunkText">未切片</small>
+                </article>
+                <article class="flow-node" data-flow-node="vectors">
+                  <span>04</span>
+                  <strong>chunk_vectors</strong>
+                  <small id="flowNodeVectorText">还没点击导入</small>
+                </article>
+                <article class="flow-node is-index" data-flow-node="index">
+                  <span>05</span>
+                  <strong>FAISS / Chroma</strong>
+                  <small id="flowNodeIndexText">还不能检索</small>
+                </article>
+              </div>
+
+              <div class="rag-inspector">
+                <div>
+                  <div class="panel-head">
+                    <div>
+                      <h2>当前节点说明</h2>
+                      <p>点流程图里的节点，看这一环做了什么、数据存在哪里。</p>
+                    </div>
+                  </div>
+                  <div class="schema-card" id="schemaDetail"></div>
+                </div>
+
+                <div>
+                  <div class="panel-head">
+                    <div>
+                      <h2>切片与向量预览</h2>
+                      <p>预览阶段只看切片；导入后才会生成向量并可检索。</p>
+                    </div>
+                  </div>
+                  <div class="chunk-list" id="chunkPreview"></div>
+                </div>
+              </div>
+            </section>
+          </div>
+        </section>
+
+        <section class="view" id="visualLab">
+          <div class="page-grid">
+            <section class="panel wide-panel lab-definition">
+              <strong>可视化实验台 = 查知识库</strong>
+              <p>这里不负责上传文档，而是看清楚用户问题如何变成向量，如何在向量数据库里匹配，哪些 chunk 被命中，为什么排在前面。</p>
+            </section>
+
+            <section class="panel wide-panel live-lab">
+              <div class="panel-head">
+                <div>
+                  <span class="eyebrow">Live Retrieval</span>
+                  <h2>真实 Chroma 命中实验</h2>
+                  <p>选择刚才入库的知识库，输入问题，查看真实 Top K 命中片段和分数。</p>
+                </div>
+              </div>
+              <div class="query-box">
+                <textarea id="liveQuestionInput">Embedding 在 RAG 里起什么作用？</textarea>
+                <div class="query-actions">
+                  <label>
+                    Top K
+                    <input id="topKInput" type="number" min="1" max="20" value="3" />
+                  </label>
+                  <label>
+                    最低相关度
+                    <input id="minScoreInput" type="number" min="0" max="1" step="0.05" value="0.2" />
+                  </label>
+                  <label>
+                    检索模式
+                    <select id="retrievalModeInput">
+                      <option value="hybrid">Hybrid：向量 + BM25</option>
+                      <option value="vector">Vector：纯向量</option>
+                      <option value="keyword">Keyword：关键词</option>
+                    </select>
+                  </label>
+                  <button class="primary-btn" id="liveSearchBtn">真实检索</button>
+                </div>
+              </div>
+              <div class="pipeline-steps" id="searchPipeline">
+                <span data-step="question">问题向量化</span>
+                <span data-step="search">Chroma 召回</span>
+                <span data-step="rank">Hybrid 排序</span>
+                <span data-step="answer">生成回答</span>
+              </div>
+              <div class="live-answer" id="liveAnswerBox">等待检索结果</div>
+              <div class="retrieval-explain" id="retrievalExplain"></div>
+              <div class="hit-list" id="liveHitList"></div>
+            </section>
+
+            <section class="panel wide-panel vector-space-panel">
+              <div class="panel-head">
+                <div>
+                  <span class="eyebrow">3D Vector Space</span>
+                  <h2>3D 向量空间：问题如何靠近命中的文档片段</h2>
+                  <p>每个点是一段 chunk，提问后会生成一个问题点，并用连线标出 Top K 命中结果。</p>
+                </div>
+                <div class="visual-actions">
+                  <button class="ghost-btn" id="loadVectorSpaceBtn" type="button">载入切片</button>
+                  <button class="ghost-btn" id="resetVectorViewBtn" type="button">复位视角</button>
+                  <button class="primary-btn" id="runVectorSpaceBtn" type="button">运行 3D 匹配</button>
+                </div>
+              </div>
+
+              <div class="vector-space-grid">
+                <div class="vector-space-stage" id="vectorSpaceStage">
+                  <canvas id="vectorSpaceCanvas" aria-label="3D 向量空间"></canvas>
+                  <div class="space-hud">
+                    <strong id="spaceStatus">等待载入知识库切片</strong>
+                    <span id="spaceStats">chunk 点 0 · 命中 0</span>
+                    <small>拖拽旋转 · 滚轮缩放 · Shift+拖拽平移</small>
+                  </div>
+                  <div class="space-legend">
+                    <span><i class="legend-chunk"></i>普通 chunk</span>
+                    <span><i class="legend-hit"></i>命中 chunk</span>
+                    <span><i class="legend-query"></i>问题向量</span>
+                  </div>
+                </div>
+                <aside class="vector-space-side">
+                  <article>
+                    <span>当前知识库</span>
+                    <strong id="spaceKbName">未选择</strong>
+                    <p>3D 点位来自 PostgreSQL 的 chunk 文本，向量预览由后端按同一个 Embedding 函数计算。</p>
+                  </article>
+                  <article>
+                    <span>当前问题</span>
+                    <strong id="spaceQuestion">Embedding 在 RAG 里起什么作用？</strong>
+                    <p>点击运行后，问题也会向量化，再和 chunk 向量做相似度匹配。</p>
+                  </article>
+                  <article>
+                    <span>选中点说明</span>
+                    <strong id="spaceSelectedTitle">还没有选中点</strong>
+                    <p id="spaceSelectedText">点击 3D 里的点，或运行匹配后查看命中片段。</p>
+                  </article>
+                </aside>
+              </div>
+            </section>
+
+            <section class="panel wide-panel">
+              <div class="panel-head">
+                <div>
+                  <span class="eyebrow">Visualization Lab</span>
+                  <h2>可视化实验台：搜索语句如何匹配向量数据库</h2>
+                  <p>输入一句话，观察问题如何变成向量，如何进入向量库匹配，哪些 chunk 被命中。</p>
+                </div>
+              </div>
+              <div class="query-box">
+                <textarea id="queryInput">Embedding 在 RAG 里起什么作用？</textarea>
+                <button class="primary-btn" id="runRetrievalBtn">运行匹配实验</button>
+              </div>
+
+              <div class="retrieval-stage">
+                <div class="query-vector-card" id="queryVectorCard">
+                  <span>用户问题</span>
+                  <strong>Question Embedding</strong>
+                  <div class="mini-vector" id="queryVectorBars"></div>
+                </div>
+                <div class="vector-db-card" id="vectorDbCard">
+                  <strong>向量数据库</strong>
+                  <span>384 dimensions · cosine / inner product</span>
+                  <div class="db-orbit">
+                    <i></i><i></i><i></i><i></i><i></i>
+                  </div>
+                </div>
+                <div class="context-card" id="contextCard">
+                  <span>进入 Prompt</span>
+                  <strong>Context Window</strong>
+                  <p>Top K 片段会被拼进上下文，模型只能基于这些证据回答。</p>
+                </div>
+              </div>
+            </section>
+
+            <section class="panel wide-panel">
+              <div class="panel-head">
+                <div>
+                  <h2>Top K 命中结果</h2>
+                  <p>重点看 vector、BM25、Hybrid、Rerank 四种分数。</p>
+                </div>
+              </div>
+              <div class="hit-list" id="hitList"></div>
+            </section>
+          </div>
+        </section>
+
+        <section class="view" id="dataCenter">
+          <div class="data-center-layout">
+            <section class="panel wide-panel lab-definition">
+              <strong>数据中心 = 看数据库里真正存了什么</strong>
+              <p>这里展示 PostgreSQL 里的知识库、文档、切片，以及根据切片重新计算出来的真实向量预览。刷新页面后也可以从这里恢复查看。</p>
+            </section>
+
+            <section class="panel wide-panel data-overview-panel">
+              <div class="panel-head">
+                <div>
+                  <span class="eyebrow">Database Snapshot</span>
+                  <h2>当前数据快照</h2>
+                  <p>先看总量，再进入文档和切片细节。</p>
+                </div>
+                <button class="ghost-btn" id="refreshDataCenterBtn">刷新数据</button>
+              </div>
+              <div class="data-summary" id="dataSummary"></div>
+            </section>
+
+            <section class="panel data-browser-panel">
+              <div class="panel-head">
+                <div>
+                  <span class="eyebrow">PostgreSQL</span>
+                  <h2>知识库与文档</h2>
+                  <p>选择知识库，查看其中保存的文档。</p>
+                </div>
+              </div>
+              <div class="data-kb-list" id="dataKbList"></div>
+              <div class="document-list" id="dataDocumentList"></div>
+            </section>
+
+            <section class="panel data-table-panel">
+              <div class="panel-head">
+                <div>
+                  <span class="eyebrow">document_chunks</span>
+                  <h2>切片表</h2>
+                  <p>每行是一个 chunk，点击查看完整文本和真实向量。</p>
+                </div>
+              </div>
+              <div class="data-chunk-table" id="dataChunkList"></div>
+            </section>
+
+            <section class="panel data-detail-panel">
+              <div class="panel-head">
+                <div>
+                  <span class="eyebrow">Embedding Detail</span>
+                  <h2>切片详情</h2>
+                  <p>这里显示选中 chunk 的内容和真实向量前 16 维。</p>
+                </div>
+              </div>
+              <div class="data-detail" id="dataChunkDetail"></div>
+            </section>
+          </div>
+        </section>
+
+        <section class="view" id="agentLab">
+          <div class="page-grid agent-grid">
+            <section class="panel wide-panel lab-definition">
+              <strong>Agent 实验室 = 用知识库和工具完成目标</strong>
+              <p>这里不是单次问答，而是让 AI 围绕一个目标做计划、调用 RAG 检索工具、评估结果、生成任务，并保留每一步运行轨迹。</p>
+            </section>
+
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <span class="eyebrow">Agent Lab</span>
+                  <h2>Agent 实验室：目标如何变成工具调用</h2>
+                  <p>Agent 会按计划、工具调用、观察、评估、行动、反思执行。</p>
+                </div>
+              </div>
+              <form class="agent-form" id="agentForm">
+                <label>
+                  Agent 类型
+                  <select id="agentType">
+                    <option value="learning">学习规划助手</option>
+                    <option value="rag">RAG 问答助手</option>
+                    <option value="test">测试分析助手</option>
+                  </select>
+                </label>
+                <label>
+                  目标
+                  <textarea id="agentGoal">帮我规划下一步学习 Agent 开发，并生成可执行任务</textarea>
+                </label>
+                <label class="choice-line">
+                  <input type="checkbox" id="enableReflect" checked />
+                  <span>开启反思检查</span>
+                </label>
+                <button class="primary-btn" type="submit">运行 Agent 实验</button>
+              </form>
+            </section>
+
+            <section class="panel agent-preview-panel">
+              <div class="panel-head">
+                <div>
+                  <span class="eyebrow">Run Preview</span>
+                  <h2>Agent 运行预览</h2>
+                  <p>运行前先看它会怎么做，运行后这里会显示最新结果。</p>
+                </div>
+              </div>
+              <div class="agent-preview">
+                <div class="agent-preview-flow">
+                  <span>Plan</span>
+                  <i></i>
+                  <span>RAG</span>
+                  <i></i>
+                  <span>Evaluate</span>
+                  <i></i>
+                  <span>Tasks</span>
+                </div>
+                <div class="agent-preview-grid">
+                  <article>
+                    <span>当前知识库</span>
+                    <strong id="agentPreviewKb">等待选择</strong>
+                  </article>
+                  <article>
+                    <span>检索工具</span>
+                    <strong>Hybrid RAG</strong>
+                  </article>
+                  <article>
+                    <span>输出产物</span>
+                    <strong>步骤轨迹 + 任务</strong>
+                  </article>
+                </div>
+                <div class="agent-preview-result" id="agentPreviewResult">
+                  <strong>还没有运行</strong>
+                  <p>输入目标后，Agent 会先检索知识库，再根据证据生成下一步任务。</p>
+                </div>
+              </div>
+            </section>
+
+            <section class="panel wide-panel">
+              <div class="panel-head">
+                <div>
+                  <h2>Agent 最终结果</h2>
+                  <p>这里是最终答案。Agent 会先检索知识库，再让大模型基于引用生成回答。</p>
+                </div>
+              </div>
+              <div class="agent-final" id="agentFinalResult">
+                <div class="agent-empty-state">
+                  <strong>还没有最终结果</strong>
+                  <p>点击“运行 Agent 实验”后，最终回答会优先出现在这里。</p>
+                </div>
+              </div>
+            </section>
+
+            <section class="panel wide-panel">
+              <div class="panel-head">
+                <div>
+                  <h2>工具调用轨迹</h2>
+                  <p>这里展示 Agent 为了得到答案，依次做了哪些计划、检索、评估和反思。</p>
+                </div>
+              </div>
+              <div class="agent-canvas" id="agentCanvas"></div>
+            </section>
+
+            <section class="panel wide-panel">
+              <div class="panel-head">
+                <div>
+                  <h2>步骤调试详情</h2>
+                  <p>这里不是最终答案，而是用来学习每个 Agent 节点的输入、输出和判断过程。</p>
+                </div>
+              </div>
+              <div class="agent-detail" id="agentDetail"></div>
+            </section>
+          </div>
+        </section>
+
+        <section class="view" id="roadmap">
+          <div class="roadmap-layout">
+            <section class="panel wide-panel">
+              <div class="panel-head">
+                <div>
+                  <span class="eyebrow">Roadmap</span>
+                  <h2>一步步做，不乱学</h2>
+                  <p>每一步都对应系统里的一个可运行能力。</p>
+                </div>
+              </div>
+              <div class="roadmap-steps" id="roadmapSteps"></div>
+            </section>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <div class="toast" id="toast"></div>
+    <script type="module" src="./vector-space.js?v=20260511-switch2"></script>
+    <script src="./app.js?v=20260511-switch2"></script>
+  </body>
+</html>

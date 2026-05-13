@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Graph RAG 图谱实验室</title>
+    <link rel="stylesheet" href="./styles.css?v=20260512-graphrag-v1" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="project-switcher">
+          <button class="brand project-trigger" id="projectTrigger" aria-expanded="false">
+            <div class="brand-mark">图</div>
+            <div>
+              <strong>Graph RAG 图谱实验室</strong>
+              <span>实体、关系、多跳证据</span>
+            </div>
+            <i>切换</i>
+          </button>
+          <div class="project-menu" id="projectMenu">
+            <button data-project="chunking"><strong>01 文本切分实验室</strong><span>先把长文档拆成 chunk</span></button>
+            <button data-project="embedding"><strong>02 Embedding 与相似度</strong><span>把文本变向量并计算相似度</span></button>
+            <button data-project="vectordb"><strong>03 向量库实验室</strong><span>保存向量并查询 Top K</span></button>
+            <button data-project="rerank"><strong>04 Rerank 重排序实验室</strong><span>把初筛证据重新排序</span></button>
+            <button data-project="rageval"><strong>05 RAG 评测实验室</strong><span>评估检索、引用和回答质量</span></button>
+            <button class="is-active" data-project="graphrag"><strong>06 Graph RAG 图谱实验室</strong><span>实体关系和多跳推理</span></button>
+            <button data-project="agent">
+              <strong>07 Agent 工程实验室</strong>
+              <span>目标如何变成工具调用</span>
+            </button>
+            <button data-project="modelprompt">
+              <strong>08 模型调用与 Prompt 工程</strong>
+              <span>真实模型接入前必学</span>
+            </button>
+            <button data-project="zhixingzhe"><strong>09 知行者 AI 实验室</strong><span>完整 RAG、Agent、大模型应用</span></button>
+            <button data-project="itemcf"><strong>10 ItemCF 实验室</strong><span>物品共现如何推荐</span></button>
+            <button data-project="tagrec"><strong>11 标签推荐实验室</strong><span>标签画像如何推荐</span></button>
+            <button data-project="usercf"><strong>12 UserCF 实验室</strong><span>相似用户如何贡献推荐</span></button>
+            <button data-project="svd"><strong>13 SVD 矩阵分解实验室</strong><span>隐向量如何预测喜欢</span></button>
+            <button data-project="recsys"><strong>14 推荐系统总览</strong><span>四类推荐算法对比</span></button>
+          </div>
+        </div>
+
+        <nav class="nav">
+          <button class="nav-item is-active" data-view="overview"><span>01</span><b>项目总览</b></button>
+          <button class="nav-item" data-view="lab"><span>02</span><b>图谱实验台</b></button>
+          <button class="nav-item" data-view="visual"><span>03</span><b>3D 图谱空间</b></button>
+          <button class="nav-item" data-view="roadmap"><span>04</span><b>学习路线</b></button>
+          <button class="nav-item" data-view="interview"><span>05</span><b>面试题</b></button>
+        </nav>
+
+        <div class="side-note">
+          <span>当前阶段</span>
+          <strong>从相似检索到关系推理</strong>
+          <p>Graph RAG 的核心不是“更炫”，而是让系统能沿实体关系找多跳证据。</p>
+        </div>
+      </aside>
+
+      <main class="main">
+        <header class="topbar">
+          <div>
+            <span class="eyebrow">Graph RAG Lab</span>
+            <h1 id="pageTitle">项目总览</h1>
+          </div>
+          <div class="top-actions">
+            <span class="status-pill is-ok">本地教学版</span>
+            <button class="primary-btn" data-view-link="lab">开始实验</button>
+          </div>
+        </header>
+
+        <section class="view is-active" id="overview">
+          <div class="hero-panel">
+            <div>
+              <span class="eyebrow">为什么普通向量 RAG 不够用</span>
+              <h2>向量 RAG 擅长找“语义相似片段”，Graph RAG 擅长找“实体之间的关系路径”。</h2>
+              <p>
+                当问题需要跨文档、多实体、多跳关联时，只看单个 chunk 的相似度容易漏掉关键证据。Graph RAG 会先抽取实体和关系，把知识变成图，再从问题命中的实体出发，沿关系边寻找可以支撑答案的路径。
+              </p>
+              <div class="hero-actions">
+                <button class="primary-btn" data-view-link="lab">打开图谱实验台</button>
+                <button class="secondary-btn" data-view-link="visual">看 3D 图谱</button>
+              </div>
+            </div>
+            <div class="flow-card">
+              <div><span>01</span><strong>Entity</strong><p>从文档中抽取实体，例如 Graph RAG、知识图谱、金融风控。</p></div>
+              <div><span>02</span><strong>Relation</strong><p>抽取实体之间的关系，例如“适合”“依赖”“解决”。</p></div>
+              <div><span>03</span><strong>Traverse</strong><p>问题命中实体后，沿关系做 1 到 3 跳扩散。</p></div>
+              <div><span>04</span><strong>Ground</strong><p>把路径和文档片段一起作为回答依据。</p></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="view" id="lab">
+          <div class="lab-grid rerank-grid">
+            <section class="panel query-panel">
+              <div class="panel-head">
+                <div>
+                  <h2>图谱输入</h2>
+                  <p>自己添加实体、关系和证据，观察图谱检索怎么变化。</p>
+                </div>
+              </div>
+              <label class="field">
+                问题
+                <textarea id="queryInput">Graph RAG 为什么适合法律和金融风控？</textarea>
+              </label>
+              <div class="control-pair">
+                <label class="field">
+                  最大跳数
+                  <select id="hopSelect">
+                    <option value="1">1 跳</option>
+                    <option value="2" selected>2 跳</option>
+                    <option value="3">3 跳</option>
+                  </select>
+                </label>
+                <label class="field">
+                  起点策略
+                  <select id="seedSelect">
+                    <option value="entity" selected>优先实体命中</option>
+                    <option value="keyword">关键词命中</option>
+                  </select>
+                </label>
+              </div>
+              <button class="primary-btn" id="runBtn">运行 Graph RAG</button>
+              <button class="secondary-btn" id="resetBtn">重置演示数据</button>
+
+              <div class="mini-form">
+                <h3>新增实体</h3>
+                <input id="entityName" placeholder="实体名，例如 Neo4j" />
+                <input id="entityType" placeholder="类型，例如 图数据库" />
+                <button class="secondary-btn" id="addEntityBtn">添加实体</button>
+              </div>
+              <div class="mini-form">
+                <h3>新增关系</h3>
+                <input id="relationFrom" placeholder="起点实体，例如 Graph RAG" />
+                <input id="relationLabel" placeholder="关系，例如 适合" />
+                <input id="relationTo" placeholder="终点实体，例如 金融风控" />
+                <button class="secondary-btn" id="addRelationBtn">添加关系</button>
+              </div>
+              <div class="mini-form">
+                <h3>新增证据片段</h3>
+                <input id="chunkTitle" placeholder="标题，例如 风控场景" />
+                <textarea id="chunkText" placeholder="写一段文档内容"></textarea>
+                <input id="chunkEntities" placeholder="关联实体，用逗号分隔" />
+                <button class="secondary-btn" id="addChunkBtn">添加证据</button>
+              </div>
+            </section>
+
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <h2>命中实体与扩散路径</h2>
+                  <p>先找到起点实体，再沿关系边做多跳扩散。</p>
+                </div>
+                <span class="status-pill" id="pathStatus">0 条路径</span>
+              </div>
+              <div class="result-list" id="pathList"></div>
+            </section>
+
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <h2>证据与回答草稿</h2>
+                  <p>Graph RAG 的答案必须回到原文证据，不能只凭图谱边回答。</p>
+                </div>
+                <span class="status-pill" id="answerStatus">等待运行</span>
+              </div>
+              <div id="answerPanel"></div>
+            </section>
+          </div>
+
+          <div class="grid two">
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <h2>图谱数据</h2>
+                  <p>实体像点，关系像线，证据片段挂在实体上。</p>
+                </div>
+              </div>
+              <div id="graphDataPanel"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <h2>当前节点解释</h2>
+                  <p>点击 3D 图谱或路径卡片，看这个点为什么重要。</p>
+                </div>
+              </div>
+              <div id="detailPanel"></div>
+            </section>
+          </div>
+        </section>
+
+        <section class="view" id="visual">
+          <div class="visual-grid">
+            <section class="panel visual-main">
+              <div class="panel-head">
+                <div>
+                  <h2>3D 图谱空间</h2>
+                  <p>蓝色是普通实体，橙色是问题命中的起点，绿色是被路径命中的证据实体。拖拽旋转，滚轮缩放。</p>
+                </div>
+              </div>
+              <div class="space-stage graph-stage">
+                <canvas id="graphCanvas"></canvas>
+                <div class="canvas-tooltip" id="graphTooltip"></div>
+              </div>
+            </section>
+            <section class="panel explain-panel">
+              <div class="panel-head">
+                <div>
+                  <h2>怎么读这张图</h2>
+                  <p>它展示的是关系检索，不是向量距离。</p>
+                </div>
+              </div>
+              <div class="plain-card"><strong>点</strong><p>一个点就是一个实体，例如“Graph RAG”“金融风控”。真实系统里实体通常来自 NER 或大模型抽取。</p></div>
+              <div class="plain-card"><strong>线</strong><p>一条线就是一个关系，例如“Graph RAG -> 适合 -> 金融风控”。真实系统会把关系存进图数据库。</p></div>
+              <div class="plain-card"><strong>高亮路径</strong><p>问题命中实体后，系统沿关系扩散，找到能连接问题和证据的路径。</p></div>
+            </section>
+          </div>
+        </section>
+
+        <section class="view" id="roadmap">
+          <section class="panel">
+            <div class="panel-head">
+              <div>
+                <h2>学习路线</h2>
+                <p>Graph RAG 建议在普通 RAG、Rerank、评测之后学习。</p>
+              </div>
+            </div>
+            <div class="roadmap-list" id="roadmapList"></div>
+          </section>
+        </section>
+
+        <section class="view" id="interview">
+          <section class="panel">
+            <div class="panel-head">
+              <div>
+                <h2>Graph RAG 面试题</h2>
+                <p>重点讲清楚它解决什么问题、代价是什么、什么时候不该用。</p>
+              </div>
+            </div>
+            <div class="roadmap-list" id="interviewList"></div>
+          </section>
+        </section>
+      </main>
+    </div>
+    <script src="./app.js?v=20260512-graphrag-v1"></script>
+    <script type="module" src="./graph-space.js?v=20260512-graphrag-v1"></script>
+  </body>
+</html>

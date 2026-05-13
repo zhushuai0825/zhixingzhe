@@ -1,0 +1,22 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: itemcf-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: itemcf_lab
+      POSTGRES_USER: itemcf
+      POSTGRES_PASSWORD: itemcf_dev_password
+    ports:
+      - "5433:5432"
+    volumes:
+      - itemcf_postgres_data:/var/lib/postgresql/data
+      - ./基础设施/postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U itemcf -d itemcf_lab"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+volumes:
+  itemcf_postgres_data:

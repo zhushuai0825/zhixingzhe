@@ -1,7 +1,7 @@
 <!-- gitnexus:start -->
 # GitNexus — Code Intelligence
 
-This project is indexed by GitNexus as **知行者** (1248 symbols, 2331 relationships, 110 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
+This project is indexed by GitNexus as **zhixingzhe** (1693 symbols, 3177 relationships, 150 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
 
 > If any GitNexus tool warns the index is stale, run `npx gitnexus analyze` in terminal first.
 
@@ -24,10 +24,10 @@ This project is indexed by GitNexus as **知行者** (1248 symbols, 2331 relatio
 
 | Resource | Use for |
 |----------|---------|
-| `gitnexus://repo/知行者/context` | Codebase overview, check index freshness |
-| `gitnexus://repo/知行者/clusters` | All functional areas |
-| `gitnexus://repo/知行者/processes` | All execution flows |
-| `gitnexus://repo/知行者/process/{name}` | Step-by-step execution trace |
+| `gitnexus://repo/zhixingzhe/context` | Codebase overview, check index freshness |
+| `gitnexus://repo/zhixingzhe/clusters` | All functional areas |
+| `gitnexus://repo/zhixingzhe/processes` | All execution flows |
+| `gitnexus://repo/zhixingzhe/process/{name}` | Step-by-step execution trace |
 
 ## CLI
 

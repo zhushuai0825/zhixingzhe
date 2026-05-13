@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>标签推荐实验室</title>
+    <link rel="icon" href="data:," />
+    <link rel="stylesheet" href="./styles.css?v=20260512-data-v1" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="project-switcher">
+          <button class="brand project-trigger" id="projectTrigger" aria-expanded="false">
+            <div class="brand-mark">标</div>
+            <div>
+              <strong>标签推荐实验室</strong>
+              <span>Tag Profile + Content Match</span>
+            </div>
+            <i>切换</i>
+          </button>
+          <div class="project-menu" id="projectMenu"></div>
+        </div>
+        <nav class="nav">
+          <button class="nav-item is-active" data-view="overview"><span>01</span><b>项目总览</b></button>
+          <button class="nav-item" data-view="lab"><span>02</span><b>标签实验台</b></button>
+          <button class="nav-item" data-view="visual"><span>03</span><b>3D 匹配可视化</b></button>
+          <button class="nav-item" data-view="roadmap"><span>04</span><b>学习路线</b></button>
+        </nav>
+        <div class="side-note">
+          <span>当前阶段</span>
+          <strong>内容推荐入门</strong>
+          <p>先看懂标签如何变成用户画像，再看候选内容如何命中画像。</p>
+        </div>
+      </aside>
+
+      <main class="main">
+        <header class="topbar">
+          <div>
+            <span class="eyebrow">Tag Recommendation Lab</span>
+            <h1 id="pageTitle">项目总览</h1>
+          </div>
+          <div class="top-actions">
+            <select id="userSelect"></select>
+            <button class="primary-btn" data-view-link="lab">开始实验</button>
+          </div>
+        </header>
+
+        <section class="view is-active" id="overview">
+          <div class="hero-panel">
+            <div>
+              <span class="eyebrow">冷启动最常用的推荐方式</span>
+              <h2>标签推荐：根据用户喜欢过的内容标签，推荐标签相近的新内容。</h2>
+              <p>它不像 ItemCF 那样依赖大量用户共同行为。只要物品有标签，新物品也可以被推荐，所以非常适合作为推荐系统的第一课。</p>
+              <div class="hero-actions">
+                <button class="primary-btn" data-view-link="lab">打开标签实验台</button>
+                <button class="secondary-btn" data-view-link="visual">看 3D 匹配</button>
+              </div>
+            </div>
+            <div class="flow-card">
+              <article><span>01</span><strong>物品标签</strong><small>AI / RAG / 推荐 / 测试</small></article>
+              <article><span>02</span><strong>用户画像</strong><small>把已喜欢物品标签累加</small></article>
+              <article><span>03</span><strong>候选匹配</strong><small>候选标签命中画像就加分</small></article>
+              <article><span>04</span><strong>Top N</strong><small>过滤已喜欢，按分数排序</small></article>
+            </div>
+          </div>
+          <section class="panel">
+            <h2>这个实验室要学会什么</h2>
+            <div class="lesson-grid">
+              <article class="lesson-card"><span>01</span><strong>标签从哪里来</strong><p>可以来自人工运营、分类体系、NLP 抽取、Embedding 聚类、图片识别等。</p></article>
+              <article class="lesson-card"><span>02</span><strong>用户画像怎么来</strong><p>用户喜欢过的物品会把标签权重累加出来，形成“用户偏好”。</p></article>
+              <article class="lesson-card"><span>03</span><strong>推荐分怎么来</strong><p>候选物品标签命中用户画像越多，推荐分越高。</p></article>
+              <article class="lesson-card"><span>04</span><strong>为什么适合冷启动</strong><p>新物品没有行为也没关系，只要有标签就能参与推荐。</p></article>
+              <article class="lesson-card"><span>05</span><strong>主要问题</strong><p>容易越推越窄，标签质量差时推荐也会差。</p></article>
+              <article class="lesson-card"><span>06</span><strong>怎么和其他算法结合</strong><p>标签推荐常和 ItemCF、SVD、热门推荐一起做多路召回。</p></article>
+            </div>
+          </section>
+        </section>
+
+        <section class="view" id="lab">
+          <section class="panel">
+            <div class="panel-head">
+              <div>
+                <h2>标签实验台</h2>
+                <p>切换用户，观察用户画像标签和推荐结果如何变化。</p>
+              </div>
+            </div>
+            <div id="dataWorkbench"></div>
+            <div class="demo-grid">
+              <div>
+                <h3>用户画像</h3>
+                <div id="profilePanel"></div>
+                <h3>手算公式</h3>
+                <div class="formula">候选得分 = Σ 用户画像中命中的标签权重 / sqrt(候选标签数量)</div>
+              </div>
+              <div>
+                <h3>Top N 推荐</h3>
+                <div id="resultPanel"></div>
+              </div>
+            </div>
+            <h3>计算过程拆解</h3>
+            <div id="tracePanel" class="lesson-grid"></div>
+          </section>
+        </section>
+
+        <section class="view" id="visual">
+          <section class="panel">
+            <div class="panel-head">
+              <div>
+                <h2>3D 标签匹配可视化</h2>
+                <p>中心是用户画像，周围是候选物品。越靠近中心，表示标签越匹配。</p>
+              </div>
+            </div>
+            <div class="canvas-shell">
+              <canvas id="tagCanvas"></canvas>
+              <div class="tooltip" id="canvasTip"></div>
+            </div>
+            <div class="lesson-grid">
+              <article class="lesson-card"><span>读图 1</span><strong>中心节点</strong><p>中心不是某一篇文章，而是当前用户的标签画像。画像来自用户已喜欢内容的标签累加。</p></article>
+              <article class="lesson-card"><span>读图 2</span><strong>候选节点</strong><p>周围节点是用户没喜欢过的候选内容。命中画像标签越多，节点越靠近中心，连线越粗。</p></article>
+              <article class="lesson-card"><span>读图 3</span><strong>注意</strong><p>这里是教学可视化，不是机器学习训练出来的真实 embedding 坐标；它用位置帮助你理解分数关系。</p></article>
+            </div>
+          </section>
+        </section>
+
+        <section class="view" id="roadmap">
+          <section class="panel">
+            <h2>学习路线与面试题</h2>
+            <div id="roadmapPanel" class="interview-grid"></div>
+          </section>
+        </section>
+      </main>
+    </div>
+    <script src="../../推荐系统核心技术实验室/前端原型/recommendation-shared.js?v=20260512-data-v1"></script>
+    <script src="./app.js?v=20260512-data-v1"></script>
+  </body>
+</html>

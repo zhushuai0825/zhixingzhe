@@ -1,0 +1,3226 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>RAG 核心技术学习站 · 上篇</title>
+    <link rel="icon" href="data:," />
+    <style>
+      :root {
+        --bg: #f6f7f4;
+        --panel: #ffffff;
+        --soft: #edf3ef;
+        --text: #202723;
+        --muted: #68716a;
+        --line: #dce5dc;
+        --brand: #2f6f48;
+        --brand-dark: #173820;
+        --accent: #b45f2a;
+        --accent-soft: #fff1e8;
+        --blue: #1f6f84;
+        --blue-soft: #eaf5f7;
+        --shadow: 0 18px 52px rgba(32, 39, 35, 0.1);
+        --radius: 8px;
+        font-family:
+          Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+          "PingFang SC", "Microsoft YaHei", sans-serif;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        scroll-behavior: smooth;
+      }
+
+      body {
+        margin: 0;
+        color: var(--text);
+        background:
+          linear-gradient(130deg, rgba(47, 111, 72, 0.08), transparent 32%),
+          linear-gradient(300deg, rgba(180, 95, 42, 0.08), transparent 30%),
+          var(--bg);
+      }
+
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+
+      button,
+      input,
+      select {
+        font: inherit;
+      }
+
+      button {
+        cursor: pointer;
+      }
+
+      .layout {
+        display: grid;
+        grid-template-columns: 292px minmax(0, 1fr);
+        min-height: 100vh;
+      }
+
+      .sidebar {
+        position: sticky;
+        top: 0;
+        height: 100vh;
+        padding: 22px;
+        color: #f5fbf2;
+        background: #17291c;
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.13);
+        border-radius: var(--radius);
+        background: rgba(255, 255, 255, 0.06);
+      }
+
+      .brand-mark {
+        width: 48px;
+        height: 48px;
+        display: grid;
+        place-items: center;
+        border-radius: var(--radius);
+        color: #17291c;
+        background: #afe08c;
+        font-size: 22px;
+        font-weight: 900;
+      }
+
+      .brand strong,
+      .brand span {
+        display: block;
+      }
+
+      .brand span {
+        margin-top: 4px;
+        color: #c6d8c2;
+        font-size: 12px;
+      }
+
+      .nav {
+        display: grid;
+        gap: 8px;
+      }
+
+      .nav a {
+        display: grid;
+        grid-template-columns: 34px minmax(0, 1fr);
+        align-items: center;
+        gap: 8px;
+        min-height: 42px;
+        padding: 0 12px;
+        border-radius: var(--radius);
+        color: #d9e6d4;
+        font-weight: 800;
+      }
+
+      .nav a:hover,
+      .nav a.is-active {
+        background: rgba(255, 255, 255, 0.1);
+        color: #ffffff;
+      }
+
+      .nav span {
+        color: #afe08c;
+        font-size: 12px;
+      }
+
+      .side-card {
+        margin-top: auto;
+        padding: 15px;
+        border: 1px solid rgba(255, 255, 255, 0.13);
+        border-radius: var(--radius);
+        background: rgba(255, 255, 255, 0.06);
+      }
+
+      .side-card p {
+        color: #c6d8c2;
+        font-size: 13px;
+      }
+
+      .main {
+        min-width: 0;
+      }
+
+      .hero {
+        padding: 42px clamp(20px, 4vw, 56px) 26px;
+        border-bottom: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.58);
+      }
+
+      .eyebrow {
+        display: inline-flex;
+        color: var(--brand);
+        font-size: 12px;
+        font-weight: 900;
+        letter-spacing: 0;
+      }
+
+      h1,
+      h2,
+      h3,
+      p {
+        margin: 0;
+      }
+
+      h1 {
+        max-width: 900px;
+        margin-top: 10px;
+        font-size: clamp(34px, 5vw, 62px);
+        line-height: 1.05;
+      }
+
+      .hero p {
+        max-width: 880px;
+        margin-top: 16px;
+        color: var(--muted);
+        font-size: 17px;
+        line-height: 1.8;
+      }
+
+      .hero-actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-top: 22px;
+      }
+
+      .btn {
+        min-height: 42px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0 16px;
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        background: #ffffff;
+        color: var(--brand-dark);
+        font-weight: 900;
+      }
+
+      .btn.primary {
+        border-color: var(--brand);
+        background: var(--brand);
+        color: #ffffff;
+      }
+
+      .content {
+        padding: 28px clamp(18px, 4vw, 56px) 80px;
+      }
+
+      .section {
+        margin-bottom: 26px;
+        padding: 24px;
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        background: rgba(255, 255, 255, 0.9);
+        box-shadow: var(--shadow);
+      }
+
+      .section-head {
+        display: grid;
+        gap: 8px;
+        margin-bottom: 18px;
+      }
+
+      .section h2 {
+        font-size: clamp(26px, 3vw, 38px);
+        line-height: 1.16;
+      }
+
+      .section h3 {
+        margin: 20px 0 10px;
+        font-size: 19px;
+      }
+
+      .section p,
+      li {
+        color: var(--muted);
+        line-height: 1.85;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 14px;
+      }
+
+      .grid.two {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .card,
+      .demo,
+      .question {
+        padding: 16px;
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        background: #fbfdfb;
+      }
+
+      .card strong,
+      .demo strong,
+      .question strong {
+        display: block;
+        margin-bottom: 6px;
+      }
+
+      .tag {
+        display: inline-flex;
+        align-items: center;
+        min-height: 26px;
+        padding: 0 8px;
+        border-radius: 999px;
+        color: var(--brand);
+        background: var(--soft);
+        font-size: 12px;
+        font-weight: 900;
+      }
+
+      .pipeline {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 10px;
+        margin-top: 16px;
+      }
+
+      .pipeline .step {
+        min-height: 116px;
+        padding: 14px;
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        background: #ffffff;
+        position: relative;
+      }
+
+      .pipeline .step::after {
+        content: "→";
+        position: absolute;
+        top: 42px;
+        right: -13px;
+        color: var(--accent);
+        font-weight: 900;
+      }
+
+      .pipeline .step:last-child::after {
+        display: none;
+      }
+
+      .code {
+        overflow: auto;
+        padding: 14px;
+        border-radius: var(--radius);
+        background: #17291c;
+        color: #e9f5e8;
+        line-height: 1.75;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        font-size: 13px;
+      }
+
+      .table-wrap {
+        overflow: auto;
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 720px;
+        background: #ffffff;
+      }
+
+      th,
+      td {
+        padding: 12px;
+        border-bottom: 1px solid var(--line);
+        text-align: left;
+        vertical-align: top;
+      }
+
+      th {
+        color: var(--brand-dark);
+        background: var(--soft);
+      }
+
+      .control-row {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+        margin: 12px 0;
+      }
+
+      label {
+        display: grid;
+        gap: 6px;
+        color: var(--muted);
+        font-size: 13px;
+        font-weight: 900;
+      }
+
+      input,
+      select {
+        min-height: 40px;
+        padding: 0 10px;
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        background: #ffffff;
+        color: var(--text);
+      }
+
+      .canvas-shell {
+        position: relative;
+        height: 420px;
+        overflow: hidden;
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        background:
+          linear-gradient(90deg, rgba(47, 111, 72, 0.08), transparent 38%),
+          linear-gradient(270deg, rgba(180, 95, 42, 0.08), transparent 38%),
+          #fbfdfb;
+      }
+
+      canvas {
+        width: 100%;
+        height: 100%;
+        display: block;
+      }
+
+      .tooltip {
+        position: absolute;
+        z-index: 4;
+        display: none;
+        width: 280px;
+        padding: 12px;
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        background: #ffffff;
+        box-shadow: var(--shadow);
+        pointer-events: none;
+      }
+
+      .tooltip.is-visible {
+        display: block;
+      }
+
+      .tooltip span {
+        display: block;
+        margin-top: 4px;
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.5;
+      }
+
+      .bars {
+        display: grid;
+        gap: 8px;
+      }
+
+      .bar {
+        display: grid;
+        grid-template-columns: 120px minmax(0, 1fr) 54px;
+        align-items: center;
+        gap: 10px;
+        font-size: 12px;
+      }
+
+      .bar-track {
+        height: 10px;
+        overflow: hidden;
+        border-radius: 999px;
+        background: var(--soft);
+      }
+
+      .bar-track i {
+        display: block;
+        height: 100%;
+        border-radius: inherit;
+        background: var(--brand);
+      }
+
+      .quiz {
+        display: grid;
+        gap: 12px;
+      }
+
+      .question summary {
+        cursor: pointer;
+        font-weight: 900;
+      }
+
+      .question p {
+        margin-top: 10px;
+      }
+
+      .answer-depth {
+        display: grid;
+        gap: 10px;
+        margin-top: 12px;
+      }
+
+      .answer-block {
+        padding: 12px;
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        background: #ffffff;
+      }
+
+      .answer-block b {
+        display: block;
+        margin-bottom: 6px;
+        color: var(--brand-dark);
+      }
+
+      .answer-block p {
+        margin-top: 0;
+      }
+
+      .question .example {
+        border-color: rgba(31, 111, 132, 0.22);
+        background: var(--blue-soft);
+      }
+
+      .question .follow {
+        border-color: rgba(180, 95, 42, 0.24);
+        background: var(--accent-soft);
+      }
+
+      .why-list {
+        display: grid;
+        gap: 12px;
+        margin-top: 12px;
+      }
+
+      .why-item {
+        padding: 14px;
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        background: #ffffff;
+      }
+
+      .why-item strong {
+        display: block;
+        margin-bottom: 6px;
+        color: var(--brand-dark);
+      }
+
+      .why-item p {
+        margin-top: 0;
+      }
+
+      .mapping-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+        margin-top: 12px;
+      }
+
+      .note {
+        margin-top: 12px;
+        padding: 14px;
+        border-left: 4px solid var(--accent);
+        border-radius: var(--radius);
+        background: var(--accent-soft);
+      }
+
+      .deep-dive {
+        display: grid;
+        gap: 14px;
+        margin-top: 18px;
+      }
+
+      .explain-block {
+        padding: 18px;
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        background: #ffffff;
+      }
+
+      .explain-block h4 {
+        margin: 0 0 8px;
+        font-size: 17px;
+      }
+
+      .plain-talk {
+        padding: 14px;
+        border-radius: var(--radius);
+        background: var(--blue-soft);
+        color: #31555d;
+        line-height: 1.8;
+      }
+
+      .check-list {
+        display: grid;
+        gap: 8px;
+        margin: 10px 0 0;
+        padding: 0;
+        list-style: none;
+      }
+
+      .check-list li {
+        padding: 10px 12px;
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        background: #fbfdfb;
+      }
+
+      .mini-title {
+        margin-top: 18px;
+        color: var(--brand-dark);
+        font-weight: 900;
+      }
+
+      .interview-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+      }
+
+      @media (max-width: 1100px) {
+        .layout {
+          grid-template-columns: 1fr;
+        }
+
+        .sidebar {
+          position: static;
+          height: auto;
+        }
+
+        .nav {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          display: grid;
+        }
+
+        .side-card {
+          margin-top: 0;
+        }
+
+        .grid,
+        .grid.two,
+        .pipeline,
+        .control-row,
+        .interview-grid,
+        .mapping-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .pipeline .step::after {
+          display: none;
+        }
+      }
+
+      @media (max-width: 640px) {
+        .content,
+        .hero {
+          padding-left: 16px;
+          padding-right: 16px;
+        }
+
+        .section {
+          padding: 18px;
+        }
+
+        .canvas-shell {
+          height: 340px;
+        }
+
+        .bar {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="layout">
+      <aside class="sidebar">
+        <div class="brand">
+          <div class="brand-mark">R</div>
+          <div>
+            <strong>RAG 学习站 · 上篇</strong>
+            <span>RAG / 评测 / Graph / Agent</span>
+          </div>
+        </div>
+        <nav class="nav" id="nav">
+          <a href="#route" class="is-active"><span>00</span>学习路线</a>
+          <a href="#chunking"><span>01</span>文本切分</a>
+          <a href="#embedding"><span>02</span>Embedding</a>
+          <a href="#vectordb"><span>03</span>向量库</a>
+          <a href="#rerank"><span>04</span>Rerank</a>
+          <a href="#rageval"><span>05</span>RAG 评测</a>
+          <a href="#graphrag"><span>06</span>Graph RAG</a>
+          <a href="#agent"><span>07</span>Agent</a>
+          <a href="#prompt"><span>08</span>Prompt 工程</a>
+          <a href="#interview"><span>09</span>综合面试题</a>
+        </nav>
+        <div class="side-card">
+          <strong>学习方法</strong>
+          <p>每章先看概念，再看数据演示，最后用面试题检查自己是否真的懂了。</p>
+        </div>
+      </aside>
+
+      <main class="main">
+        <section class="hero">
+          <span class="eyebrow">AI Learning Platform</span>
+          <h1>RAG 核心技术学习站 · 上篇</h1>
+          <p>
+            这份 HTML 是给零基础学习用的。它按真实 RAG 工程顺序讲：先切分文档，再做 embedding，再写入向量库，用 rerank 提升证据质量，然后继续学习 RAG 评测、Graph RAG、Agent 和 Prompt 工程。每一章都有具体数据、口语化讲解和面试题。
+          </p>
+          <div class="hero-actions">
+            <a class="btn primary" href="#chunking">从文本切分开始</a>
+            <a class="btn" href="#interview">直接看面试题</a>
+          </div>
+        </section>
+
+        <div class="content">
+          <section class="section" id="route">
+            <div class="section-head">
+              <span class="eyebrow">00 · Route</span>
+              <h2>你应该按什么顺序学</h2>
+              <p>RAG 不要从大模型 API 开始硬拼。先把“数据如何变成可检索证据”学明白，后面接大模型和 Agent 才不会乱。</p>
+            </div>
+
+            <div class="pipeline">
+              <div class="step">
+                <span class="tag">Step 1</span>
+                <strong>文本切分</strong>
+                <p>把长文档拆成一小段一小段，后面系统才能精准找证据。</p>
+              </div>
+              <div class="step">
+                <span class="tag">Step 2</span>
+                <strong>Embedding</strong>
+                <p>把文字变成数字坐标，让电脑可以计算“语义像不像”。</p>
+              </div>
+              <div class="step">
+                <span class="tag">Step 3</span>
+                <strong>向量库</strong>
+                <p>保存每个 chunk 的坐标，提问时找出最像的几段。</p>
+              </div>
+              <div class="step">
+                <span class="tag">Step 4</span>
+                <strong>Rerank</strong>
+                <p>对找出来的候选再复查一遍，把真正有用的排前面。</p>
+              </div>
+              <div class="step">
+                <span class="tag">Step 5</span>
+                <strong>RAG 评测</strong>
+                <p>用 Recall@K、MRR、引用准确率、忠实度判断系统是不是真的准。</p>
+              </div>
+              <div class="step">
+                <span class="tag">Step 6</span>
+                <strong>Graph RAG</strong>
+                <p>把实体关系连成图，解决多跳问题和复杂关联检索。</p>
+              </div>
+              <div class="step">
+                <span class="tag">Step 7</span>
+                <strong>Agent</strong>
+                <p>让模型围绕目标做计划、调用工具、观察结果、评估证据。</p>
+              </div>
+              <div class="step">
+                <span class="tag">Step 8</span>
+                <strong>Prompt 工程</strong>
+                <p>把证据、引用、拒答、结构化输出和重试规则写进模型调用链路。</p>
+              </div>
+            </div>
+
+            <h3>真正照着做的学习路线</h3>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>顺序</th>
+                    <th>进入哪个实验室</th>
+                    <th>先看什么</th>
+                    <th>必须动手做什么</th>
+                    <th>学会的标准</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>1</td>
+                    <td><a href="../项目/文本切分实验室/前端原型/index.html">文本切分实验室</a></td>
+                    <td>项目总览、切分实验台、切片可视化</td>
+                    <td>调 chunk size 和 overlap，看同一份文档为什么会切成不同数量、不同边界的 chunk。</td>
+                    <td>你能解释：为什么切太短会断答案，切太长会混主题，overlap 为什么不能无限大。</td>
+                  </tr>
+                  <tr>
+                    <td>2</td>
+                    <td><a href="../项目/Embedding与相似度实验室/前端原型/index.html">Embedding 与相似度实验室</a></td>
+                    <td>查询文本向量、候选文本向量、相似度匹配画布</td>
+                    <td>换几个查询文本，观察 query vector 如何和候选文本比较，为什么某条候选排第一。</td>
+                    <td>你能解释：query 和 chunk 为什么必须用同一个 embedding 模型进入同一个向量空间。</td>
+                  </tr>
+                  <tr>
+                    <td>3</td>
+                    <td><a href="../项目/向量库实验室/前端原型/index.html">向量库实验室</a></td>
+                    <td>Collection 记录、Query Top K、3D 命中可视化</td>
+                    <td>新增几条知识记录，查询一个问题，观察命中了哪些 chunk、分数是多少、metadata 怎么保存。</td>
+                    <td>你能解释：向量库里一条记录为什么必须有 id、text、embedding、metadata，而不是只存一串向量。</td>
+                  </tr>
+                  <tr>
+                    <td>4</td>
+                    <td>本页 Rerank 章节</td>
+                    <td>向量分与 Rerank 分对比表</td>
+                    <td>对比“主题相关”和“真正能回答问题”的区别，看哪些 chunk 会被 Rerank 排低。</td>
+                    <td>你能解释：向量检索是粗召回，Rerank 是精排；Rerank 不能救回根本没召回的正确证据。</td>
+                  </tr>
+                  <tr>
+                    <td>5</td>
+                    <td><a href="../项目/RAG评测实验室/前端原型/index.html">RAG 评测实验室</a></td>
+                    <td>评测问题、标准证据、指标可视化</td>
+                    <td>切换 Naive / Rerank / 严格证据门，看 Recall@K、MRR、引用准确率、忠实度怎么变化。</td>
+                    <td>你能解释：系统“能回答”不等于“答得准”，必须用固定问题集和指标做回归。</td>
+                  </tr>
+                  <tr>
+                    <td>6</td>
+                    <td><a href="../项目/GraphRAG图谱实验室/前端原型/index.html">Graph RAG 图谱实验室</a></td>
+                    <td>实体、关系、多跳路径、原文证据回填</td>
+                    <td>新增实体和关系，观察问题如何命中图谱路径，再回到原始 chunk 作为证据。</td>
+                    <td>你能解释：Graph RAG 不是替代向量 RAG，而是补充实体关系和多跳推理。</td>
+                  </tr>
+                  <tr>
+                    <td>7</td>
+                    <td><a href="../项目/Agent工程实验室/前端原型/index.html">Agent 工程实验室</a></td>
+                    <td>计划、工具调用、观察、评估、反思</td>
+                    <td>输入学习目标，开关 RAG、Graph RAG、反思检查，看 Agent 轨迹如何变化。</td>
+                    <td>你能解释：Agent 不是聊天框，而是“目标 → 计划 → 工具 → 观察 → 评估 → 行动”的状态流。</td>
+                  </tr>
+                  <tr>
+                    <td>8</td>
+                    <td><a href="../项目/模型调用与Prompt工程实验室/前端原型/index.html">模型调用与 Prompt 工程实验室</a></td>
+                    <td>System Prompt、上下文、JSON 输出、校验、重试、成本</td>
+                    <td>删除 JSON 约束、清空上下文、调高 temperature，看输出稳定性和校验结果怎么变化。</td>
+                    <td>你能解释：真实模型调用要控制格式、引用、拒答、重试、token 成本和日志。</td>
+                  </tr>
+                  <tr>
+                    <td>9</td>
+                    <td><a href="../项目/知行者AI实验室/前端原型/index.html">知行者 AI 实验室</a></td>
+                    <td>RAG 实验室、向量数据库、Agent 实验室</td>
+                    <td>上传自己的文档，跑一次问答，看回答是否有引用，证据不足时系统是否拒答。</td>
+                    <td>你能讲清完整链路：上传文档 → 切分 → embedding → 入库 → 检索 → rerank → 评测 → Agent → 生成 → 引用。</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <h3>每一阶段你要产出什么</h3>
+            <div class="grid">
+              <div class="card">
+                <span class="tag">阶段 1</span>
+                <strong>一份切片观察笔记</strong>
+                <p>记录同一段文档在不同 chunk size、overlap 下被切成几段。重点写清楚：哪个切片最像“可引用证据”，哪个切片太碎或太杂。</p>
+              </div>
+              <div class="card">
+                <span class="tag">阶段 2</span>
+                <strong>一张相似度解释表</strong>
+                <p>任选一个 query，列出 Top 3 候选文本、相似度分数和你自己的判断：它是真的能回答问题，还是只是主题接近。</p>
+              </div>
+              <div class="card">
+                <span class="tag">阶段 3</span>
+                <strong>一份向量库记录说明</strong>
+                <p>写清楚一条向量记录包含哪些字段：id、text、vector、source、page、section、tenant_id。能说出每个字段为什么必要。</p>
+              </div>
+              <div class="card">
+                <span class="tag">阶段 4</span>
+                <strong>一组 Rerank 对比</strong>
+                <p>找一个向量分高但 Rerank 分低的例子，解释它为什么“看起来相关但没有直接回答问题”。这是企业 RAG 提准的关键感觉。</p>
+              </div>
+              <div class="card">
+                <span class="tag">阶段 5</span>
+                <strong>一份 RAG 评测表</strong>
+                <p>准备 5 个问题，写清标准证据、系统命中、回答是否忠实、是否应该拒答。不要只看答案顺不顺。</p>
+              </div>
+              <div class="card">
+                <span class="tag">阶段 6</span>
+                <strong>一张图谱路径说明</strong>
+                <p>选一个多跳问题，画出实体、关系、路径和原文证据。重点说明“图谱路径为什么还要回到原文 chunk”。</p>
+              </div>
+              <div class="card">
+                <span class="tag">阶段 7</span>
+                <strong>一条 Agent 运行轨迹</strong>
+                <p>记录目标、计划、工具输入、工具输出、观察、评估和最终行动。你要能说出每一步为什么存在。</p>
+              </div>
+              <div class="card">
+                <span class="tag">阶段 8</span>
+                <strong>一份 Prompt 调用检查表</strong>
+                <p>写清 system prompt、上下文、输出格式、引用规则、拒答规则、校验和重试策略。</p>
+              </div>
+              <div class="card">
+                <span class="tag">阶段 9</span>
+                <strong>一条完整链路截图</strong>
+                <p>从上传文档到回答引用，把每一步截图或记录下来。你要能从截图里指出 chunk、embedding、向量库命中、rerank、评测和最终引用。</p>
+              </div>
+              <div class="card">
+                <span class="tag">阶段 10</span>
+                <strong>一份排查清单</strong>
+                <p>准备 3 个回答不准的问题，按“解析、切分、embedding、向量库、Rerank、prompt”逐层排查，训练自己的工程判断。</p>
+              </div>
+            </div>
+
+            <h3>建议学习节奏</h3>
+            <div class="deep-dive">
+              <div class="explain-block">
+                <h4>如果你每天学 1 小时</h4>
+                <ol>
+                  <li><b>第 1 天：</b>只学文本切分。不要急着接模型，先看懂 chunk size 和 overlap。</li>
+                  <li><b>第 2 天：</b>只学 Embedding。重点理解“文本变坐标”和“同一个向量空间”。</li>
+                  <li><b>第 3 天：</b>只学向量库。重点看 collection、metadata、Top K、delete/upsert。</li>
+                  <li><b>第 4 天：</b>学 Rerank。重点分清“召回到了”和“排得准”。</li>
+                  <li><b>第 5 天：</b>用知行者跑完整链路。上传自己的文档，观察每一步。</li>
+                  <li><b>第 6 天：</b>故意制造错误。比如切得太短、Top K 太小、问一个知识库没有的问题。</li>
+                  <li><b>第 7 天：</b>整理面试回答。把本页综合面试题用自己的话讲一遍。</li>
+                </ol>
+              </div>
+              <div class="explain-block">
+                <h4>如果你只想先做出项目</h4>
+                <ol>
+                  <li>先用最简单的文本切分跑通：按段落或固定长度切。</li>
+                  <li>先用一个 embedding 模型，不要频繁换模型。</li>
+                  <li>先用本地或轻量向量库，能 upsert、query、delete 就够。</li>
+                  <li>先展示引用来源，哪怕界面简单，也要让用户知道答案来自哪里。</li>
+                  <li>再逐步加 Rerank、Hybrid Search、权限过滤、评测日志。</li>
+                </ol>
+                <p>口语化说：先让证据能稳定找回来，再追求系统更漂亮、更智能。</p>
+              </div>
+            </div>
+
+            <h3>不要跳过这些基础</h3>
+            <div class="why-list">
+              <div class="why-item">
+                <strong>不要一开始就纠结大模型选哪个</strong>
+                <p>RAG 回答准不准，很多时候不是 GPT、DeepSeek、千问谁更强的问题，而是正确证据有没有被找出来。证据错了，再强的模型也只能基于错误上下文回答。</p>
+              </div>
+              <div class="why-item">
+                <strong>不要只看最终回答</strong>
+                <p>学习 RAG 时，最终回答只是最后一层。你更应该看 Top K 命中了什么、Rerank 怎么排序、prompt 里塞了哪些证据。这样才能排查问题。</p>
+              </div>
+              <div class="why-item">
+                <strong>不要把相似度分数当准确率</strong>
+                <p>相似度分数只说明两个向量在空间里接近，不说明这段文字一定能回答问题。真正判断答案是否可信，要读证据文本和引用来源。</p>
+              </div>
+              <div class="why-item">
+                <strong>不要忽略 metadata</strong>
+                <p>metadata 决定来源、页码、章节、权限和过滤。没有 metadata，系统很难展示引用，也很难避免越权召回。</p>
+              </div>
+            </div>
+
+            <h3>知识依赖关系：为什么必须按这个顺序</h3>
+            <div class="mapping-grid">
+              <div class="why-item">
+                <strong>切分是 Embedding 的输入</strong>
+                <p>Embedding 不是直接给“整本 PDF”做，而是给一个个 chunk 做。chunk 切得不好，embedding 再好也只能表示一段混乱文本。</p>
+              </div>
+              <div class="why-item">
+                <strong>Embedding 是向量库的输入</strong>
+                <p>向量库要比较的是向量。如果只有原文，没有 embedding，向量库就无法按语义相似度检索。</p>
+              </div>
+              <div class="why-item">
+                <strong>向量库是 Rerank 的候选来源</strong>
+                <p>Rerank 不负责从全量文档里找东西，它只重排向量库召回出来的候选。如果正确证据没召回，Rerank 很难补救。</p>
+              </div>
+              <div class="why-item">
+                <strong>Rerank 是生成回答前的质量门</strong>
+                <p>大模型最终看到什么证据，决定它能不能答对。Rerank 的作用就是尽量把真正能回答问题的片段放进上下文。</p>
+              </div>
+              <div class="why-item">
+                <strong>引用来源依赖 metadata</strong>
+                <p>用户看到“来自哪个文件第几页”，不是模型自己知道的，而是入库时保存的 source、page、section 等 metadata。</p>
+              </div>
+              <div class="why-item">
+                <strong>拒答依赖证据判断</strong>
+                <p>系统能不能说“知识库没有依据”，取决于你是否检查命中证据是否足够，而不是让大模型自由发挥。</p>
+              </div>
+            </div>
+
+            <h3>路线自测题：答不上来就回到对应章节</h3>
+            <div class="quiz">
+              <details class="question">
+                <summary>1. 用户上传一份 80 页 PDF，为什么不能直接整篇 embedding？</summary>
+                <p>因为整篇文档主题太多，一个向量会非常模糊，检索时很难定位到具体答案。应该先解析文档，再按章节、段落或长度切成 chunk，让每个 chunk 成为相对独立的证据单元。</p>
+              </details>
+              <details class="question">
+                <summary>2. 文档用 A embedding 模型入库，查询时能不能换 B embedding 模型？</summary>
+                <p>通常不能。不同模型生成的是不同向量空间，直接比较没有意义。换模型时，一般要把历史 chunk 重新 embedding 并更新向量库。</p>
+              </details>
+              <details class="question">
+                <summary>3. 向量库命中 Top 1，为什么仍然要读原文？</summary>
+                <p>Top 1 只是向量相似度最高，不等于它一定回答了问题。它可能只是主题接近。你必须读 chunk text，看它是否包含明确依据。</p>
+              </details>
+              <details class="question">
+                <summary>4. Top K 里没有正确证据，Rerank 能不能解决？</summary>
+                <p>不能。Rerank 只能重排已有候选，不能创造没有召回的证据。此时要检查切分、embedding、query rewrite、metadata filter 或 Top K 设置。</p>
+              </details>
+              <details class="question">
+                <summary>5. 为什么企业 RAG 要保存 query log？</summary>
+                <p>query log 能记录用户问题、召回结果、rerank 排序、最终回答和用户反馈。后续排查错误、评测效果、优化 prompt 和调整参数都需要这些日志。</p>
+              </details>
+              <details class="question">
+                <summary>6. 如果用户问“上一条制度是什么意思”，为什么需要 query rewrite？</summary>
+                <p>因为“上一条”是指代，单独拿去检索没有明确语义。系统需要结合对话历史改写成完整问题，比如“某某制度第 3 条是什么意思”，再去向量库检索。</p>
+              </details>
+            </div>
+
+            <h3>先用一句人话理解 RAG</h3>
+            <div class="deep-dive">
+              <div class="explain-block">
+                <h4>RAG 到底在解决什么问题</h4>
+                <p class="plain-talk">
+                  大模型本身像一个很会表达的人，但它不一定知道你公司最新的文档、制度、接口说明。RAG 做的事情就是：用户问问题时，系统先从你的知识库里找证据，再把证据交给大模型，让它“拿着资料回答”。所以 RAG 的重点不是让模型凭记忆回答，而是让模型基于你给它的资料回答。
+                </p>
+              </div>
+              <div class="explain-block">
+                <h4>为什么不是把文档直接丢给大模型</h4>
+                <p>因为企业文档通常很多、很长、经常更新。直接把文档丢给大模型会遇到四个问题。</p>
+                <ul class="check-list">
+                  <li><b>放不下：</b>模型上下文长度有限，几十份 PDF 不可能每次都塞进去。</li>
+                  <li><b>太贵：</b>每次把大量无关内容发给模型，会浪费 token 和接口费用。</li>
+                  <li><b>不准：</b>资料太多时，模型可能被无关段落干扰，反而抓不住答案。</li>
+                  <li><b>不可控：</b>你不知道它到底参考了哪段资料，也就很难展示引用和排查错误。</li>
+                </ul>
+                <p>RAG 的做法更像查书：先定位相关页，再让模型根据这几页回答。</p>
+              </div>
+            </div>
+
+            <h3>每个模块解决的问题</h3>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>模块</th>
+                    <th>输入</th>
+                    <th>输出</th>
+                    <th>核心问题</th>
+                    <th>你要会解释什么</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>文本切分</td>
+                    <td>PDF/Word/网页解析后的长文本</td>
+                    <td>多个 chunk</td>
+                    <td>文档太长，不能整篇直接检索</td>
+                    <td>chunk size、overlap、递归切分</td>
+                  </tr>
+                  <tr>
+                    <td>Embedding</td>
+                    <td>chunk 文本 / 用户问题</td>
+                    <td>向量</td>
+                    <td>文本不能直接做数学匹配</td>
+                    <td>向量、维度、归一化、余弦相似度</td>
+                  </tr>
+                  <tr>
+                    <td>向量库</td>
+                    <td>id、text、vector、metadata</td>
+                    <td>Top K 命中片段</td>
+                    <td>数据多了，必须高效检索</td>
+                    <td>collection、upsert、query、metadata</td>
+                  </tr>
+                  <tr>
+                    <td>Rerank</td>
+                    <td>向量库召回的候选 chunk</td>
+                    <td>更准确的排序</td>
+                    <td>向量召回是粗筛，可能不够精准</td>
+                    <td>召回和精排的区别</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <h3>上篇必须掌握的知识点清单</h3>
+            <div class="grid two">
+              <div class="card">
+                <strong>概念层</strong>
+                <ul>
+                  <li>chunk、chunk size、overlap、递归切分。</li>
+                  <li>embedding、向量维度、归一化、余弦相似度。</li>
+                  <li>collection、metadata、index、Top K。</li>
+                  <li>粗召回、精排序、Rerank、引用来源。</li>
+                </ul>
+              </div>
+              <div class="card">
+                <strong>工程层</strong>
+                <ul>
+                  <li>文档解析后如何切分和入库。</li>
+                  <li>文档更新后如何 upsert 和 delete。</li>
+                  <li>查询时如何做 metadata filter。</li>
+                  <li>召回不准时如何逐层排查。</li>
+                </ul>
+              </div>
+            </div>
+
+            <h3>真实 RAG 的数据流</h3>
+            <div class="code">1. 上传文档：产品手册.pdf
+2. 文档解析：抽取文本、页码、标题
+3. 文本切分：得到 chunk-1, chunk-2, chunk-3...
+4. Embedding：每个 chunk 生成 vector
+5. 入向量库：保存 id + text + vector + metadata
+6. 用户提问：问题生成 query vector
+7. 检索召回：向量库返回 Top K
+8. Rerank：重新排序候选证据
+9. 生成回答：LLM 基于证据回答
+10. 展示引用：source/page/section</div>
+
+            <h3>完整白话例子：用户问“忘记密码怎么办”</h3>
+            <div class="deep-dive">
+              <div class="explain-block">
+                <h4>入库阶段：用户还没提问前，系统先准备资料</h4>
+                <ol>
+                  <li>你上传《账号使用手册.pdf》。</li>
+                  <li>系统把 PDF 解析成文字，并记录每段文字来自第几页、哪个章节。</li>
+                  <li>系统把长文档切成 chunk，比如“登录问题”“忘记密码”“账号冻结”。</li>
+                  <li>每个 chunk 都生成 embedding，变成一串向量数字。</li>
+                  <li>系统把 id、text、embedding、metadata 存进向量库。</li>
+                </ol>
+                <p>这一步像提前把书拆成卡片、贴好标签、放进可搜索的资料柜。</p>
+              </div>
+              <div class="explain-block">
+                <h4>查询阶段：用户提问后，系统开始找证据</h4>
+                <ol>
+                  <li>用户输入：“忘记密码怎么办？”</li>
+                  <li>系统把这个问题也生成 query embedding。</li>
+                  <li>向量库比较 query embedding 和所有 chunk embedding，找出最相似的 Top K。</li>
+                  <li>Rerank 再检查这些候选，确认哪几段真正回答了“忘记密码”。</li>
+                  <li>如果证据足够，大模型基于这些片段回答；如果证据不足，就提示知识库没有依据。</li>
+                </ol>
+                <p>所以 RAG 的回答不是凭空编出来的，而是“先找资料，再组织语言”。</p>
+              </div>
+            </div>
+
+            <h3>上篇学完的验收标准</h3>
+            <div class="why-list">
+              <div class="why-item">
+                <strong>为什么 RAG 不等于“把文档丢给大模型”</strong>
+                <p>把文档丢给大模型，只是让模型临时读一堆资料；RAG 是一套完整系统：先把文档处理成可检索的数据，再按问题找证据，最后让模型基于证据回答。区别就像“把整本书塞给别人”与“先查目录找到相关页再回答”。RAG 更省成本、更容易展示引用，也更容易排查错误。</p>
+              </div>
+              <div class="why-item">
+                <strong>为什么文档要先切片，再向量化，再入库</strong>
+                <p>文档太长时，整篇生成一个向量会很模糊。先切片，是为了把大文档拆成可定位的小证据；再向量化，是为了让每个小证据变成可以计算相似度的数字；最后入库，是为了下次用户提问时能快速查出来。这三个步骤的顺序不能乱：没有 chunk，就不知道该给哪段文字做向量；没有向量，向量库就无法按语义检索。</p>
+              </div>
+              <div class="why-item">
+                <strong>为什么 query 和 chunk 必须进入同一个向量空间</strong>
+                <p>query 是用户问题，chunk 是文档片段。它们要用同一个 embedding 模型变成向量，才像在同一张地图上比较距离。如果文档用 A 模型，问题用 B 模型，就相当于一个点在北京地图上，一个点在上海地图上，距离没有意义。实际工程里，换 embedding 模型通常要把旧文档重新向量化。</p>
+              </div>
+              <div class="why-item">
+                <strong>为什么向量库命中不等于最终答案正确</strong>
+                <p>向量库只说明“这段文字和问题看起来相似”，不代表它一定能回答问题。比如用户问“向量库怎么保存 embedding”，系统可能命中一段“Rerank 会处理向量库结果”，因为里面有“向量库”这个主题，但它并没有回答保存结构。所以命中后还要看证据是否真的支撑答案。</p>
+              </div>
+              <div class="why-item">
+                <strong>为什么 Rerank 是企业 RAG 常见的提准手段</strong>
+                <p>企业文档多、术语多、相似内容多，第一轮向量检索经常只能做到“粗略相关”。Rerank 会拿着用户问题逐条复核候选片段，把真正能回答问题的证据排到前面。它的价值不是替代向量库，而是在向量库召回后提高证据质量。</p>
+              </div>
+            </div>
+
+            <h3>动手时你应该看懂什么</h3>
+            <div class="mapping-grid">
+              <div class="why-item">
+                <strong>上传文档后看 chunk</strong>
+                <p>你要观察文档被拆成了几段，每段是不是语义完整。不是切片越多越好，也不是越少越好。你要看“一个问题需要的答案是否被完整保留在某个 chunk 或相邻 chunk 里”。</p>
+              </div>
+              <div class="why-item">
+                <strong>查看 text、embedding、metadata</strong>
+                <p>text 是原文证据，embedding 是这段原文的语义坐标，metadata 是来源信息，比如文件名、页码、章节、权限。三者缺一不可：没有 text 不能回答，没有 embedding 不能检索，没有 metadata 不能引用和过滤。</p>
+              </div>
+              <div class="why-item">
+                <strong>输入问题后看命中</strong>
+                <p>你输入的问题也会先变成 query vector，然后去向量库里找最相似的 chunk。你要看命中的片段是否真的包含答案，而不是只看分数高不高。</p>
+              </div>
+              <div class="why-item">
+                <strong>判断证据是否足够</strong>
+                <p>如果命中的 chunk 没有明确依据，系统应该拒答或提示知识库不足。可信的 RAG 不是“每问必答”，而是“有证据就答，没有证据就说不知道”。</p>
+              </div>
+              <div class="why-item">
+                <strong>调整 Top K、chunk size、overlap</strong>
+                <p>Top K 控制找回几条候选，chunk size 控制每段多长，overlap 控制相邻片段重复多少。召回漏答案时，可以适当增大 Top K 或优化切分；结果重复太多时，可以降低 overlap 或做去重；片段太杂时，可以减小 chunk size。</p>
+              </div>
+              <div class="why-item">
+                <strong>看懂可视化</strong>
+                <p>页面里的点和连线不是随便画的，它们在帮助你理解“问题 Q”和文档 chunk 之间的远近、命中和排序关系。离 Q 越近，表示系统认为语义越相似；但最终仍要点开文本，看它是否真的能回答问题。</p>
+              </div>
+            </div>
+
+            <h3>常见工程参数参考</h3>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>参数</th>
+                    <th>常见范围</th>
+                    <th>调大后的影响</th>
+                    <th>调小后的影响</th>
+                    <th>新手建议</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>chunk size</td>
+                    <td>中文 300-900 字左右，真实工程更建议按 token</td>
+                    <td>上下文更完整，但主题更容易混杂</td>
+                    <td>片段更聚焦，但容易断句断义</td>
+                    <td>先用 500-800 字，按检索结果再调</td>
+                  </tr>
+                  <tr>
+                    <td>overlap</td>
+                    <td>chunk size 的 10%-25%</td>
+                    <td>边界更安全，但重复数据更多</td>
+                    <td>重复更少，但边界信息可能断掉</td>
+                    <td>先用 80-150 字或 50-100 token</td>
+                  </tr>
+                  <tr>
+                    <td>Top K</td>
+                    <td>5、10、20、50</td>
+                    <td>召回更全，但噪声和成本更高</td>
+                    <td>更干净，但可能漏掉正确证据</td>
+                    <td>无 rerank 用 5-8，有 rerank 可先召回 20</td>
+                  </tr>
+                  <tr>
+                    <td>Rerank Top N</td>
+                    <td>3-8</td>
+                    <td>给模型更多证据，但 prompt 更长</td>
+                    <td>上下文更短，但证据可能不够</td>
+                    <td>企业问答常取 3-5 条高质量证据</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <h3>RAG 不准时怎么排查</h3>
+            <div class="deep-dive">
+              <div class="explain-block">
+                <h4>先看检索，再看生成</h4>
+                <p class="plain-talk">
+                  很多新手看到答案不准，第一反应是“是不是大模型不行”。但 RAG 里更常见的问题是：大模型根本没拿到正确资料。你要先看 Top K 命中了什么，再看 Rerank 排序，再看 prompt 里到底塞了哪些证据，最后才看模型回答。
+                </p>
+              </div>
+              <div class="explain-block">
+                <h4>排查顺序</h4>
+                <ol>
+                  <li>问题是否清楚：用户问得太短时，是否需要 query rewrite。</li>
+                  <li>文档是否解析正确：PDF 表格、图片、换行是否丢失。</li>
+                  <li>切片是否合理：正确答案是否被切断，是否混入太多无关主题。</li>
+                  <li>embedding 是否合适：中文、代码、专业术语是否能召回。</li>
+                  <li>向量库是否过滤正确：权限、文件、业务域是否筛错。</li>
+                  <li>Top K 是否足够：正确证据是否在候选里。</li>
+                  <li>Rerank 是否有效：正确证据是否被排到前面。</li>
+                  <li>prompt 是否约束：证据不足时是否要求模型拒答。</li>
+                </ol>
+              </div>
+            </div>
+          </section>
+
+          <section class="section" id="chunking">
+            <div class="section-head">
+              <span class="eyebrow">01 · Chunking</span>
+              <h2>文本切分：为什么长文档要拆成 chunk</h2>
+              <p>切分是 RAG 的第一道质量关。切得太短，答案上下文断裂；切得太长，一个 chunk 混入多个主题，向量会变模糊。</p>
+            </div>
+
+            <div class="grid">
+              <div class="card">
+                <strong>Chunk 是什么</strong>
+                <p>chunk 是文档切分后的最小检索单元。你可以把它理解成“知识库里可以被单独搜出来的一张小卡片”。后续 embedding、入库、召回，都是以 chunk 为单位进行。</p>
+              </div>
+              <div class="card">
+                <strong>Chunk Size</strong>
+                <p>控制每个 chunk 的总长度上限。它决定每张小卡片能装多少字。太小会装不完整，太大又会把多个主题混在一起。</p>
+              </div>
+              <div class="card">
+                <strong>Overlap</strong>
+                <p>相邻 chunk 重复保留一段文本，像拍照时两张照片有一点重叠，避免重要信息刚好卡在边界处被切断。</p>
+              </div>
+            </div>
+
+            <div class="deep-dive">
+              <div class="explain-block">
+                <h4>0 基础口语化理解</h4>
+                <p class="plain-talk">
+                  你可以把一份企业文档想象成一本很厚的说明书。用户问问题时，我们不希望 AI 把整本书都读一遍，而是先翻目录、找相关章节、拿出几段最可能有答案的内容。chunk 就是“被撕成一页一页的小纸条”。后面做 embedding、存向量库、检索命中，都是围绕这些小纸条来做。
+                </p>
+              </div>
+
+              <div class="explain-block">
+                <h4>为什么不能整篇文档直接 embedding</h4>
+                <p>如果把整篇长文档只生成一个向量，会出现三个问题。</p>
+                <ul class="check-list">
+                  <li><b>主题混在一起：</b>一篇文档同时讲安装、接口、异常、权限，整体向量会变成“平均主题”，用户问具体接口时不够精准。</li>
+                  <li><b>答案定位困难：</b>即使命中整篇文档，也不知道答案在第几段，引用来源也不清楚。</li>
+                  <li><b>上下文成本高：</b>整篇塞给大模型会浪费 token，还容易把无关内容带进去。</li>
+                </ul>
+              </div>
+
+              <div class="explain-block">
+                <h4>三种切分方式怎么选</h4>
+                <div class="table-wrap">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>方式</th>
+                        <th>怎么做</th>
+                        <th>优点</th>
+                        <th>缺点</th>
+                        <th>适合场景</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td>固定字符切分</td>
+                        <td>每隔固定长度切一刀</td>
+                        <td>最简单，容易实现</td>
+                        <td>容易切断句子和段落</td>
+                        <td>入门演示、简单日志</td>
+                      </tr>
+                      <tr>
+                        <td>段落切分</td>
+                        <td>按空行、段落边界合并</td>
+                        <td>语义更完整</td>
+                        <td>段落太长时仍要二次切</td>
+                        <td>产品文档、制度文档</td>
+                      </tr>
+                      <tr>
+                        <td>递归切分</td>
+                        <td>标题、段落、句子、逗号、字符逐级尝试</td>
+                        <td>最接近实际 RAG 工程</td>
+                        <td>结果不一定线性随参数变化</td>
+                        <td>企业知识库、技术文档</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div class="explain-block">
+                <h4>怎么调 Chunk Size 和 Overlap</h4>
+                <p>调参不要靠感觉，要看现象。</p>
+                <ul class="check-list">
+                  <li><b>召回片段太碎：</b>把 chunk size 调大，让一个 chunk 保留更多上下文。</li>
+                  <li><b>召回片段太杂：</b>把 chunk size 调小，减少一个 chunk 里混入多个主题。</li>
+                  <li><b>答案经常断在边界：</b>适当增加 overlap，让边界两侧共享一些上下文。</li>
+                  <li><b>检索结果大量重复：</b>降低 overlap，或者在检索后做去重和上下文压缩。</li>
+                </ul>
+              </div>
+
+              <div class="explain-block">
+                <h4>用一段话看懂“为什么这样切”</h4>
+                <p>假设原文是：“用户忘记密码时，需要进入账号安全页，点击重置密码，输入验证码后完成修改。”</p>
+                <div class="table-wrap">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>切法</th>
+                        <th>切出来的效果</th>
+                        <th>用户问“忘记密码怎么办”时会怎样</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td>切太短</td>
+                        <td>“用户忘记密码时” / “需要进入账号安全页” / “点击重置密码”</td>
+                        <td>每段都只有一部分，模型可能答不完整。</td>
+                      </tr>
+                      <tr>
+                        <td>切太长</td>
+                        <td>把登录、支付、权限、密码规则全放在一段</td>
+                        <td>能召回，但带入很多噪声，模型可能引用错重点。</td>
+                      </tr>
+                      <tr>
+                        <td>切得合适</td>
+                        <td>一段刚好保留“忘记密码 → 安全页 → 重置 → 验证码”</td>
+                        <td>证据完整，回答和引用都更稳定。</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                <p>所以切分不是为了把文档切得漂亮，而是为了让“一个问题需要的答案”尽量完整地落在可检索片段里。</p>
+              </div>
+
+              <div class="explain-block">
+                <h4>真实项目里切分前还要做什么</h4>
+                <p>切分不是拿到文件就直接切。真实系统一般会先做文档解析和清洗。</p>
+                <div class="table-wrap">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>步骤</th>
+                        <th>做什么</th>
+                        <th>为什么重要</th>
+                        <th>常见问题</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td>解析</td>
+                        <td>从 PDF、Word、Markdown、网页里抽取文本</td>
+                        <td>后面所有检索都依赖解析结果</td>
+                        <td>PDF 断行、表格错位、图片文字丢失</td>
+                      </tr>
+                      <tr>
+                        <td>清洗</td>
+                        <td>去页眉页脚、目录噪声、重复空行</td>
+                        <td>减少无意义 chunk，提高召回质量</td>
+                        <td>把有用标题误删，导致上下文丢失</td>
+                      </tr>
+                      <tr>
+                        <td>结构识别</td>
+                        <td>识别标题、章节、表格、代码块、条款编号</td>
+                        <td>让切分更贴近原文结构</td>
+                        <td>只按字符切，破坏语义边界</td>
+                      </tr>
+                      <tr>
+                        <td>元数据补充</td>
+                        <td>记录 source、page、section、doc_id、权限</td>
+                        <td>支持引用、过滤、删除和权限控制</td>
+                        <td>只保存文本，后续找不到来源</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div class="explain-block">
+                <h4>常见坑</h4>
+                <ul class="check-list">
+                  <li>只看 chunk 数量，不看语义是否完整。</li>
+                  <li>overlap 设得太大，导致向量库里重复内容很多。</li>
+                  <li>文档有标题结构，却仍然用固定字符硬切。</li>
+                  <li>没有保存 source、page、section，后续无法展示引用来源。</li>
+                  <li>中英文混合文档只按字符数切，忽略真实模型的 token 限制。</li>
+                </ul>
+              </div>
+            </div>
+
+            <h3>数据演示：调参会怎样影响切片</h3>
+            <div class="note">
+              看这块时不要只盯着“切片数量”。你要看每个块是否保留完整意思。拖动 Chunk Size，相当于改变每张卡片能装多少字；拖动 Overlap，相当于改变相邻卡片重复保留多少边界内容。
+            </div>
+            <div class="control-row">
+              <label>
+                Chunk Size
+                <input id="chunkSize" type="range" min="80" max="260" step="20" value="160" />
+              </label>
+              <label>
+                Overlap
+                <input id="overlap" type="range" min="0" max="80" step="10" value="40" />
+              </label>
+              <label>
+                切分策略
+                <select id="chunkStrategy">
+                  <option value="recursive">递归切分</option>
+                  <option value="character">按字符切分</option>
+                </select>
+              </label>
+            </div>
+            <div class="grid two">
+              <div class="demo">
+                <strong>当前参数</strong>
+                <p id="chunkStats"></p>
+                <div class="note">
+                  递归切分会优先保留标题、段落、句子等自然边界，所以切片数量有时不会随参数线性变化。
+                </div>
+              </div>
+              <div class="demo">
+                <strong>示例文本</strong>
+                <p>RAG 系统入门、为什么需要文本切分、chunk size 和 overlap、常见切分方式、和 Embedding 的关系。</p>
+              </div>
+            </div>
+            <div class="canvas-shell">
+              <canvas id="chunkCanvas"></canvas>
+              <div class="tooltip" id="chunkTip"></div>
+            </div>
+
+            <h3>面试题：文本切分</h3>
+            <div class="quiz">
+              <details class="question">
+                <summary>1. 为什么 RAG 不直接把整篇文档塞给大模型？</summary>
+                <p>因为文档可能超过模型上下文长度，也会带来大量无关内容。RAG 的目标是先找证据，再让模型基于少量高相关证据回答。</p>
+              </details>
+              <details class="question">
+                <summary>2. chunk size 太小和太大分别有什么问题？</summary>
+                <p>太小会丢上下文，答案可能被拆散；太大会混入多个主题，向量表达变模糊，检索命中后也会带入噪声。</p>
+              </details>
+              <details class="question">
+                <summary>3. overlap 的作用是什么？为什么不是越大越好？</summary>
+                <p>overlap 用来保护边界上下文，但过大会制造重复 chunk，增加 embedding 成本、向量库体积和重复召回概率。</p>
+              </details>
+              <details class="question">
+                <summary>4. 递归切分比固定字符切分好在哪里？</summary>
+                <p>递归切分优先保留标题、段落、句子等自然边界，更容易得到语义完整的 chunk。固定字符切分简单，但容易切断句子。</p>
+              </details>
+              <details class="question">
+                <summary>5. 如果检索结果总是重复，切分层面怎么排查？</summary>
+                <p>先看 overlap 是否过大，再看 chunk 是否太短导致很多片段内容高度相似。可以降低 overlap、增大 chunk size，或者在检索后做去重。</p>
+              </details>
+              <details class="question">
+                <summary>6. 为什么切分时要保留 metadata？</summary>
+                <p>metadata 能记录来源文件、页码、章节、权限等信息。没有 metadata，后续即使命中 chunk，也很难展示引用来源和做权限过滤。</p>
+              </details>
+              <details class="question">
+                <summary>7. 什么时候应该按标题层级切分？</summary>
+                <p>当文档结构清晰，比如产品手册、技术方案、合同条款、测试方案时，标题层级能帮助 chunk 保留完整主题。</p>
+              </details>
+              <details class="question">
+                <summary>8. chunk size 应该按字符还是 token？</summary>
+                <p>真实工程更应该按 token，因为模型限制的是 token。字符适合入门演示，但上线时要考虑 tokenizer 和模型上下文限制。</p>
+              </details>
+              <details class="question">
+                <summary>9. 如果一个段落特别长怎么办？</summary>
+                <p>先按段落保留语义，如果段落超过 chunk size，再继续按句子、标点或字符递归拆小。</p>
+              </details>
+              <details class="question">
+                <summary>10. 切分质量如何评估？</summary>
+                <p>看 chunk 是否语义完整、长度是否稳定、边界是否自然、检索是否能召回正确证据，以及回答是否能给出可靠引用。</p>
+              </details>
+              <details class="question">
+                <summary>11. PDF 里有表格，切分时要注意什么？</summary>
+                <p>表格不能简单按行打散。最好保留表头、行列关系和页码来源，否则用户问某个字段含义时，系统可能只召回一半信息。</p>
+              </details>
+              <details class="question">
+                <summary>12. 为什么 chunk 最好带上标题上下文？</summary>
+                <p>标题能告诉模型这段话属于哪个主题。比如单独一句“有效期为 30 天”不清楚说的是什么，加上标题“优惠券规则”后语义更完整。</p>
+              </details>
+              <details class="question">
+                <summary>13. 文档图片里的文字怎么处理？</summary>
+                <p>需要 OCR 或多模态解析，把图片里的文字、图表说明提取成可检索文本，再保存图片来源和位置。否则纯文本 RAG 检索不到图片内容。</p>
+              </details>
+              <details class="question">
+                <summary>14. 切片数量越多越好吗？</summary>
+                <p>不是。切片越多，召回候选更细，但 embedding 成本、存储成本、重复召回和管理复杂度都会上升。关键是语义完整和可召回。</p>
+              </details>
+              <details class="question">
+                <summary>15. 测试工程师怎么测试文本切分？</summary>
+                <p>可以准备边界用例：超长段落、标题层级、表格、编号条款、中英文混合、空白页、重复页眉页脚、图片 OCR，并检查 chunk 内容和 metadata 是否正确。</p>
+              </details>
+            </div>
+          </section>
+
+          <section class="section" id="embedding">
+            <div class="section-head">
+              <span class="eyebrow">02 · Embedding</span>
+              <h2>Embedding：把文本变成可以计算的向量</h2>
+              <p>计算机不能直接理解“这段话和问题语义相似”。Embedding 的作用是把文本映射成一串数字，让语义可以被数学比较。</p>
+            </div>
+
+            <div class="grid">
+              <div class="card">
+                <strong>向量是什么</strong>
+                <p>向量是一组数字。新手可以先理解成“文字的坐标”。真实模型可能有几百到几千维，但你不需要手写这些数字。</p>
+              </div>
+              <div class="card">
+                <strong>相似度是什么</strong>
+                <p>相似度衡量 query vector 和 chunk vector 的接近程度。越接近，系统越认为“这个问题和这段文字语义相关”。</p>
+              </div>
+              <div class="card">
+                <strong>Top K 是什么</strong>
+                <p>把所有 chunk 按相似度排序，取前 K 条作为候选证据。Top 5 就是先拿最像的 5 段给后续流程判断。</p>
+              </div>
+            </div>
+
+            <div class="deep-dive">
+              <div class="explain-block">
+                <h4>0 基础口语化理解</h4>
+                <p class="plain-talk">
+                  人看文字，会觉得“向量库保存 embedding”和“文本向量怎么存”很接近；但电脑看到的只是字符串。Embedding 就像把一句话翻译成一个坐标点：意思接近的句子，在空间里离得近；意思不相关的句子，在空间里离得远。
+                </p>
+              </div>
+
+              <div class="explain-block">
+                <h4>真实 embedding 模型做了什么</h4>
+                <p>真实模型不是简单数关键词，它是在大量文本上训练出来的。输入一句话，模型会输出一个固定长度的向量。</p>
+                <div class="code">输入：向量数据库怎么保存 embedding？
+输出：[0.012, -0.083, 0.441, ...]  可能有 384 / 768 / 1024 / 1536 维</div>
+                <p>你不用手写这些数字。工程里通常调用本地 embedding 模型或 API，让模型帮你生成。</p>
+              </div>
+
+              <div class="explain-block">
+                <h4>新手最容易误会的一点：向量不是翻译结果</h4>
+                <p>Embedding 不是把中文翻译成英文，也不是把一句话压缩成摘要。它输出的是一串数字，这串数字本身人类不容易直接读懂，但机器可以用它来比较语义远近。</p>
+                <div class="table-wrap">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>文本</th>
+                        <th>人类理解</th>
+                        <th>向量空间里的直觉</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td>忘记密码怎么重置</td>
+                        <td>账号安全、密码修改</td>
+                        <td>应该靠近“登录口令重新设置”相关文本</td>
+                      </tr>
+                      <tr>
+                        <td>支付接口怎么验签</td>
+                        <td>支付、安全、签名校验</td>
+                        <td>应该靠近“签名算法、密钥、验签失败”相关文本</td>
+                      </tr>
+                      <tr>
+                        <td>Rerank 有什么用</td>
+                        <td>排序、精排、提升检索质量</td>
+                        <td>应该靠近“重排序模型判断相关性”相关文本</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div class="explain-block">
+                <h4>余弦相似度、点积、欧氏距离怎么理解</h4>
+                <div class="table-wrap">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>方法</th>
+                        <th>看什么</th>
+                        <th>分数含义</th>
+                        <th>RAG 中怎么用</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td>余弦相似度</td>
+                        <td>向量方向是否接近</td>
+                        <td>越接近 1 越相似</td>
+                        <td>最常见，适合语义匹配</td>
+                      </tr>
+                      <tr>
+                        <td>点积</td>
+                        <td>方向和长度共同影响</td>
+                        <td>通常越大越相似</td>
+                        <td>向量归一化后常等价于余弦</td>
+                      </tr>
+                      <tr>
+                        <td>欧氏距离</td>
+                        <td>空间直线距离</td>
+                        <td>越小越相似</td>
+                        <td>部分索引和向量库支持</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div class="explain-block">
+                <h4>归一化是什么</h4>
+                <p>归一化就是把向量长度缩放到统一尺度。这样比较时更关注方向，而不是某个向量数字整体更大。</p>
+                <div class="code">原向量：[3, 4]
+长度：sqrt(3² + 4²) = 5
+归一化：[3/5, 4/5] = [0.6, 0.8]</div>
+                <p>很多 RAG 检索会先把向量归一化，再用点积计算相似度。</p>
+              </div>
+
+              <div class="explain-block">
+                <h4>Embedding 模型怎么选</h4>
+                <ul class="check-list">
+                  <li><b>中文业务：</b>优先选中文或多语言效果好的 embedding 模型。</li>
+                  <li><b>本地学习：</b>可以用 sentence-transformers、BGE、M3E 等本地模型。</li>
+                  <li><b>企业系统：</b>看准确率、延迟、成本、最大输入长度、是否支持批量。</li>
+                  <li><b>代码检索：</b>最好选对代码语义更友好的模型，不要直接套普通文本模型。</li>
+                </ul>
+              </div>
+
+              <div class="explain-block">
+                <h4>Embedding 入库和查询为什么必须用同一个模型</h4>
+                <p class="plain-talk">
+                  你可以把 embedding 模型想象成一套地图坐标系统。文档用 A 地图标坐标，问题也必须用 A 地图标坐标，两个点的距离才有意义。如果文档用 A 模型，问题用 B 模型，就像一个人拿北京地图、另一个人拿上海地图，然后比较“谁离谁近”，结果会乱。
+                </p>
+                <ul class="check-list">
+                  <li>同一个 collection 里尽量使用同一个 embedding 模型。</li>
+                  <li>换 embedding 模型后，旧文档通常要重新向量化。</li>
+                  <li>向量维度必须一致，否则向量库无法计算相似度。</li>
+                  <li>模型版本也要记录到 metadata 或系统配置里，方便后续排查。</li>
+                </ul>
+              </div>
+
+              <div class="explain-block">
+                <h4>语义相似和关键词相同不是一回事</h4>
+                <div class="table-wrap">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>用户问题</th>
+                        <th>候选文本</th>
+                        <th>关键词角度</th>
+                        <th>语义角度</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td>怎么重置密码？</td>
+                        <td>忘记登录口令时，可以通过账号安全页重新设置。</td>
+                        <td>关键词不完全相同</td>
+                        <td>语义很接近，embedding 应该能召回</td>
+                      </tr>
+                      <tr>
+                        <td>错误码 E102 是什么？</td>
+                        <td>E102：证书过期，请重新上传证书。</td>
+                        <td>关键词非常关键</td>
+                        <td>纯语义可能不如关键词稳定</td>
+                      </tr>
+                      <tr>
+                        <td>Rerank 怎么提升准确率？</td>
+                        <td>重排序模型会逐条判断候选片段与问题的相关性。</td>
+                        <td>关键词不同</td>
+                        <td>语义接近，embedding 有优势</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                <p>所以企业里常见做法是 Hybrid Search：向量检索负责语义，BM25/关键词负责精确术语，两路结果再融合。</p>
+              </div>
+
+              <div class="explain-block">
+                <h4>常见误解</h4>
+                <ul class="check-list">
+                  <li>误解：embedding 越大越好。实际要看业务评测，不只看维度。</li>
+                  <li>误解：相似度最高一定能回答问题。实际可能只是主题接近，所以还要 Rerank 和引用检查。</li>
+                  <li>误解：所有文本都适合同一个模型。法律、代码、医学、客服文档可能需要不同模型或评测。</li>
+                  <li>误解：embedding 能替代大模型。embedding 负责检索，不负责生成自然语言答案。</li>
+                </ul>
+              </div>
+            </div>
+
+            <h3>数据演示：一个查询如何匹配候选文本</h3>
+            <div class="note">
+              左边的柱子不是“真实模型的全部维度”，而是教学版的可解释维度，帮你看懂 query 被转成了哪些语义特征。右边的 Top 结果表示：系统把 query 向量和每个候选 chunk 向量做相似度计算后，按分数排序。
+            </div>
+            <div class="grid two">
+              <div class="demo">
+                <strong>查询文本</strong>
+                <p id="embedQuery">向量数据库怎么保存 embedding？</p>
+                <div class="bars" id="queryBars"></div>
+              </div>
+              <div class="demo">
+                <strong>候选文本相似度</strong>
+                <div id="similarityList"></div>
+              </div>
+            </div>
+            <div class="canvas-shell">
+              <canvas id="embeddingCanvas"></canvas>
+              <div class="tooltip" id="embeddingTip"></div>
+            </div>
+
+            <h3>面试题：Embedding 与相似度</h3>
+            <div class="quiz">
+              <details class="question">
+                <summary>1. Embedding 在 RAG 中起什么作用？</summary>
+                <p>它把用户问题和文档 chunk 变成向量，使系统可以通过相似度计算找到相关证据。</p>
+              </details>
+              <details class="question">
+                <summary>2. 为什么常用余弦相似度？</summary>
+                <p>余弦相似度关注向量方向，适合比较语义是否接近。向量归一化后，点积和余弦相似度可以等价使用。</p>
+              </details>
+              <details class="question">
+                <summary>3. 真实 embedding 和本学习站的教学 embedding 有什么区别？</summary>
+                <p>教学 embedding 用少量可解释维度帮助理解。真实 embedding 由模型学习得到，维度更多，语义表达更强，但单个维度通常不可解释。</p>
+              </details>
+              <details class="question">
+                <summary>4. 为什么相似度高也不一定是最终正确答案？</summary>
+                <p>向量检索是粗召回，可能被主题相似但答案无关的片段干扰，所以企业 RAG 常在召回后加 Rerank。</p>
+              </details>
+              <details class="question">
+                <summary>5. embedding 维度越高越好吗？</summary>
+                <p>不一定。维度高可能表达能力更强，但也可能带来更高存储、计算成本。是否更好要用业务数据评测。</p>
+              </details>
+              <details class="question">
+                <summary>6. 什么是向量归一化？为什么要做？</summary>
+                <p>归一化把向量长度变成统一尺度，减少长度差异影响，让相似度更关注方向。归一化后点积常可直接表示余弦相似度。</p>
+              </details>
+              <details class="question">
+                <summary>7. 中文 RAG 选 embedding 模型要注意什么？</summary>
+                <p>要关注中文语义效果、最大输入长度、是否支持批量、延迟、成本，以及在自己业务问题上的召回准确率。</p>
+              </details>
+              <details class="question">
+                <summary>8. query embedding 和 document embedding 是同一个模型生成的吗？</summary>
+                <p>多数 RAG 系统会用同一个 embedding 模型生成 query 和 document 向量，这样它们处在同一个向量空间里，才能比较相似度。</p>
+              </details>
+              <details class="question">
+                <summary>9. 为什么要批量生成 embedding？</summary>
+                <p>批量可以减少接口请求次数，提高吞吐，降低整体耗时。大量文档入库时通常会批处理。</p>
+              </details>
+              <details class="question">
+                <summary>10. embedding 失败或为空会导致什么问题？</summary>
+                <p>对应 chunk 无法正确入库或检索，查询时可能永远命不中。所以工程里要记录失败、重试，并检查向量维度是否正确。</p>
+              </details>
+              <details class="question">
+                <summary>11. 为什么换 embedding 模型后通常要重建索引？</summary>
+                <p>因为新模型生成的是另一套向量空间，旧向量和新 query 向量不可直接比较。正确做法是重新生成文档向量并更新向量库。</p>
+              </details>
+              <details class="question">
+                <summary>12. embedding 模型最大输入长度有什么影响？</summary>
+                <p>如果 chunk 超过模型最大输入长度，可能被截断，导致后半段信息没进入向量。切分策略要和 embedding 模型长度限制配合。</p>
+              </details>
+              <details class="question">
+                <summary>13. 为什么专业术语、编号、错误码有时向量检索不稳？</summary>
+                <p>这些内容更像精确匹配，语义模型可能觉得多个错误码都差不多。可以加入关键词检索、metadata filter 或 query rewrite。</p>
+              </details>
+              <details class="question">
+                <summary>14. 怎么评测一个 embedding 模型适不适合你的业务？</summary>
+                <p>准备真实问题和标准证据，比较不同模型的 Recall@K、MRR、命中正确片段比例、中文术语召回效果、延迟和成本。</p>
+              </details>
+              <details class="question">
+                <summary>15. 本地 embedding 和 API embedding 怎么选？</summary>
+                <p>本地模型隐私和成本可控，适合学习和内网；API 模型维护简单、效果可能更强。企业要综合数据安全、成本、延迟、稳定性和效果评测。</p>
+              </details>
+            </div>
+          </section>
+
+          <section class="section" id="vectordb">
+            <div class="section-head">
+              <span class="eyebrow">03 · Vector DB</span>
+              <h2>向量库：保存 chunk、向量和 metadata</h2>
+              <p>向量库不是大模型，它不负责生成答案。它负责保存向量记录，并在用户提问时返回最相似的 Top K chunk。</p>
+            </div>
+
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>字段</th>
+                    <th>示例</th>
+                    <th>作用</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>id</td>
+                    <td>chunk-2</td>
+                    <td>唯一标识，用于覆盖、删除和引用。你可以把它理解成每张知识卡片的编号。</td>
+                  </tr>
+                  <tr>
+                    <td>text</td>
+                    <td>向量数据库负责存储 chunk embedding...</td>
+                    <td>最终给大模型作为证据的原文。回答时引用的就是这类内容。</td>
+                  </tr>
+                  <tr>
+                    <td>embedding</td>
+                    <td>[0.31, 0.46, 0.74, ...]</td>
+                    <td>用于相似度检索的向量。用户问题也会变成一串类似的数字，然后和它比较。</td>
+                  </tr>
+                  <tr>
+                    <td>metadata</td>
+                    <td>{source: "vector_db.md", page: 2}</td>
+                    <td>用于过滤、权限、引用来源和删除管理。它告诉系统“这段话来自哪里、谁能看”。</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="deep-dive">
+              <div class="explain-block">
+                <h4>0 基础口语化理解</h4>
+                <p class="plain-talk">
+                  向量库可以理解成“专门存语义坐标的仓库”。普通数据库问的是“id 等于多少、状态是不是成功”；向量库问的是“哪个内容和这个问题最像”。它不写作文、不生成答案，只负责把最相关的资料找出来。
+                </p>
+              </div>
+
+              <div class="explain-block">
+                <h4>一条向量记录到底长什么样</h4>
+                <div class="code">{
+  "id": "chunk-2",
+  "text": "向量数据库负责存储 chunk embedding...",
+  "embedding": [0.31, 0.46, 0.74, ...],
+  "metadata": {
+    "source": "vector_db.md",
+    "page": 2,
+    "section": "向量库",
+    "permission": "internal",
+    "model": "bge-small-zh-v1.5"
+  }
+}</div>
+                <p>这四类信息都很重要：id 管生命周期，text 给大模型引用，embedding 用来检索，metadata 用来过滤和追溯来源。</p>
+              </div>
+
+              <div class="explain-block">
+                <h4>为什么向量库里不能只存 embedding</h4>
+                <p>很多新手会以为向量库只需要保存一串数字。其实只保存 embedding 是不够的，因为数字只能用来比较相似度，不能直接拿来回答用户。</p>
+                <ul class="check-list">
+                  <li><b>没有 text：</b>命中了也不知道原文是什么，大模型没有证据可以读。</li>
+                  <li><b>没有 metadata：</b>不知道来自哪个文件、哪一页、哪个用户有权限看。</li>
+                  <li><b>没有 id：</b>文档更新或删除时，不知道该覆盖或删除哪条记录。</li>
+                </ul>
+                <p>所以真实 RAG 里，一条向量记录通常是“原文 + 向量 + 来源信息 + 唯一编号”的组合。</p>
+              </div>
+
+              <div class="explain-block">
+                <h4>Collection、Index、Metadata 的区别</h4>
+                <div class="table-wrap">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>概念</th>
+                        <th>像什么</th>
+                        <th>解决什么问题</th>
+                        <th>例子</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td>Collection</td>
+                        <td>一个知识库或一张向量表</td>
+                        <td>把同一类向量放在一起管理</td>
+                        <td>product_docs、test_docs、policy_docs</td>
+                      </tr>
+                      <tr>
+                        <td>Index</td>
+                        <td>查询加速结构</td>
+                        <td>数据量大时避免全量暴力比较</td>
+                        <td>HNSW、IVF、Flat、pgvector ivfflat/hnsw</td>
+                      </tr>
+                      <tr>
+                        <td>Metadata</td>
+                        <td>向量的身份证和标签</td>
+                        <td>过滤、权限、引用、删除和追踪</td>
+                        <td>source、page、doc_id、tenant_id、created_at</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div class="explain-block">
+                <h4>常见向量库怎么选</h4>
+                <div class="table-wrap">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>方案</th>
+                        <th>适合谁</th>
+                        <th>优点</th>
+                        <th>注意点</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td>Chroma</td>
+                        <td>入门学习、原型 Demo</td>
+                        <td>上手快，Python 生态友好</td>
+                        <td>企业级权限、运维能力要评估</td>
+                      </tr>
+                      <tr>
+                        <td>FAISS</td>
+                        <td>本地高性能向量检索</td>
+                        <td>速度快，算法能力强</td>
+                        <td>它更像检索库，不是完整数据库</td>
+                      </tr>
+                      <tr>
+                        <td>Milvus</td>
+                        <td>大规模企业向量检索</td>
+                        <td>分布式、索引丰富、吞吐强</td>
+                        <td>部署和运维复杂度更高</td>
+                      </tr>
+                      <tr>
+                        <td>PostgreSQL + pgvector</td>
+                        <td>已有 PG，希望业务数据和向量统一管理</td>
+                        <td>SQL、事务、metadata 管理方便</td>
+                        <td>超大规模场景要认真压测和设计索引</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div class="explain-block">
+                <h4>查询过程一步步看</h4>
+                <ol>
+                  <li>用户输入问题，比如“Embedding 在 RAG 里起什么作用”。</li>
+                  <li>系统用同一个 embedding 模型把问题变成 query vector。</li>
+                  <li>向量库先按 metadata 过滤，比如只查当前知识库、当前用户有权限的文档。</li>
+                  <li>向量库计算 query vector 和候选 chunk vector 的相似度。</li>
+                  <li>返回 Top K 片段，包含 text、score、source、page 等信息。</li>
+                  <li>如果有 Rerank，再对 Top K 做精排，最后把高质量证据交给大模型。</li>
+                </ol>
+              </div>
+
+              <div class="explain-block">
+                <h4>向量库常见坑</h4>
+                <ul class="check-list">
+                  <li>只存向量，不存原文，导致最后无法给大模型提供证据。</li>
+                  <li>只存原文，不存 metadata，导致无法做引用、权限和删除。</li>
+                  <li>文档删除后没有同步删除向量，旧知识继续被召回。</li>
+                  <li>把不同 embedding 模型的向量混在同一个 collection 里。</li>
+                  <li>没有记录 doc_id 和 chunk_id，后续无法定位问题数据。</li>
+                  <li>Top K 设置过大，把大量无关片段塞进 prompt，反而让回答变差。</li>
+                </ul>
+              </div>
+            </div>
+
+            <h3>数据演示：向量库查询过程</h3>
+            <div class="note">
+              左边的 Collection 记录表示“已经存进向量库的知识卡片”。右边的 Query 结果表示“用户问题变成 query vector 后，向量库找出来的 Top 结果”。分数高代表语义更像，但你仍然要读 text，判断它是否真的能支撑回答。
+            </div>
+            <div class="grid two">
+              <div class="demo">
+                <strong>Collection 记录</strong>
+                <div class="code" id="collectionCode"></div>
+              </div>
+              <div class="demo">
+                <strong>Query 结果</strong>
+                <div id="vectorResults"></div>
+              </div>
+            </div>
+            <div class="canvas-shell">
+              <canvas id="vectorCanvas"></canvas>
+              <div class="tooltip" id="vectorTip"></div>
+            </div>
+
+            <h3>面试题：向量库</h3>
+            <div class="quiz">
+              <details class="question">
+                <summary>1. 向量库和普通数据库有什么区别？</summary>
+                <p>普通数据库擅长精确条件查询，比如 id、状态、时间范围。向量库擅长按语义相似度查找最接近的向量。</p>
+              </details>
+              <details class="question">
+                <summary>2. metadata 为什么重要？</summary>
+                <p>metadata 用于记录来源、页码、章节、权限等信息。它能支持过滤、引用来源、权限控制和删除同步。</p>
+              </details>
+              <details class="question">
+                <summary>3. Upsert 是什么？</summary>
+                <p>Upsert = Update + Insert。如果 id 不存在就新增，如果 id 已存在就覆盖，适合文档更新后的向量重写。</p>
+              </details>
+              <details class="question">
+                <summary>4. 为什么删除文档时也要删除向量？</summary>
+                <p>如果只删业务文档，不删向量库里的 chunk，用户仍然可能检索到旧内容，这会造成脏数据。</p>
+              </details>
+              <details class="question">
+                <summary>5. Collection 应该怎么划分？</summary>
+                <p>可以按业务域、权限边界、数据类型划分。比如产品手册、测试文档、制度文档可以分开。不要把权限完全不同的数据混在一个无过滤 collection 里。</p>
+              </details>
+              <details class="question">
+                <summary>6. 向量库里的 index 是什么？</summary>
+                <p>index 是为了加速相似向量搜索的数据结构。数据少时可以暴力比较，数据多时需要索引在速度、内存和召回率之间做取舍。</p>
+              </details>
+              <details class="question">
+                <summary>7. pgvector 和 Chroma 怎么选？</summary>
+                <p>入门 Demo 可以先用 Chroma；如果你已经用 PostgreSQL 管业务数据，想把向量和业务字段一起管理，pgvector 很实用。</p>
+              </details>
+              <details class="question">
+                <summary>8. metadata filter 和向量相似度谁先执行？</summary>
+                <p>通常会先用 metadata 缩小候选范围，再做向量相似度检索。这样能减少无关数据，也能做权限控制。</p>
+              </details>
+              <details class="question">
+                <summary>9. Top K 应该设多少？</summary>
+                <p>没有固定答案。K 太小容易漏证据，太大容易带入噪声。常见做法是向量库多召回一些，再用 Rerank 精排后取少量进入 prompt。</p>
+              </details>
+              <details class="question">
+                <summary>10. 为什么不能混用不同 embedding 模型的向量？</summary>
+                <p>不同模型生成的向量处在不同语义空间里，直接混在一起比较没有意义。换模型时通常要重新生成文档向量。</p>
+              </details>
+              <details class="question">
+                <summary>11. 向量库是否可以替代业务数据库？</summary>
+                <p>通常不替代。业务数据库管用户、订单、权限、文档状态等结构化数据；向量库管语义检索。很多系统会同时使用 PostgreSQL 和向量库。</p>
+              </details>
+              <details class="question">
+                <summary>12. 为什么向量记录要保存 doc_id 和 chunk_id？</summary>
+                <p>doc_id 用来关联原始文档，chunk_id 用来定位具体片段。文档更新、删除、引用展示和问题排查都依赖它们。</p>
+              </details>
+              <details class="question">
+                <summary>13. 向量索引会不会影响召回准确率？</summary>
+                <p>会。近似索引为了速度可能牺牲一点召回率。数据量大时要在查询速度、内存占用和召回质量之间平衡。</p>
+              </details>
+              <details class="question">
+                <summary>14. 多租户知识库怎么做权限隔离？</summary>
+                <p>可以按租户拆 collection，也可以在 metadata 里保存 tenant_id、permission，并在查询前强制过滤。高安全场景更偏向物理或逻辑隔离。</p>
+              </details>
+              <details class="question">
+                <summary>15. 如何验证向量库里存的是真实可用数据？</summary>
+                <p>检查记录数量、向量维度、metadata 完整性、随机抽样原文、用标准问题查询 Top K，看是否能命中预期 chunk。</p>
+              </details>
+            </div>
+          </section>
+
+          <section class="section" id="rerank">
+            <div class="section-head">
+              <span class="eyebrow">04 · Rerank</span>
+              <h2>Rerank：把粗召回结果重新排准</h2>
+              <p>向量库 Top K 是粗筛，速度快但不一定最精确。Rerank 会逐条判断“问题和候选 chunk 是否真正相关”，再重新排序。</p>
+            </div>
+
+            <div class="grid two">
+              <div class="card">
+                <strong>向量召回</strong>
+                <p>适合从大量 chunk 中快速找候选，像第一轮海选。它目标是“别漏掉可能相关的片段”。</p>
+              </div>
+              <div class="card">
+                <strong>Rerank</strong>
+                <p>适合对候选做精细判断，像第二轮复审。它目标是“把真正能回答问题的片段排前面”。</p>
+              </div>
+            </div>
+
+            <div class="deep-dive">
+              <div class="explain-block">
+                <h4>0 基础口语化理解</h4>
+                <p class="plain-talk">
+                  向量检索像“粗略找相似主题”，Rerank 像“拿着问题逐条复核”。比如用户问“向量库怎么保存 embedding”，向量检索可能把“Rerank 会处理向量库召回结果”也找出来，因为里面有“向量库”；但 Rerank 会发现它并没有直接回答“怎么保存”，于是把它排低。
+                </p>
+              </div>
+
+              <div class="explain-block">
+                <h4>Rerank 的输入和输出</h4>
+                <div class="code">输入：
+query = "向量数据库怎么保存 embedding？"
+candidates = [chunk-1, chunk-2, chunk-3, ...]
+
+输出：
+[
+  { id: "chunk-2", rerank_score: 0.97 },
+  { id: "chunk-1", rerank_score: 0.58 },
+  { id: "chunk-4", rerank_score: 0.22 }
+]</div>
+                <p>它不负责从全量文档中找候选，而是对已经召回的一小批候选重新排序。</p>
+              </div>
+
+              <div class="explain-block">
+                <h4>为什么向量召回会“不够准”</h4>
+                <p>向量召回看的是整体语义相似，所以它很擅长找“主题相近”的内容，但有时不擅长判断“这段是否直接回答了问题”。</p>
+                <div class="table-wrap">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>用户问题</th>
+                        <th>可能被向量召回的片段</th>
+                        <th>问题在哪里</th>
+                        <th>Rerank 会怎么做</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td>向量库怎么保存 embedding？</td>
+                        <td>Rerank 会处理向量库召回结果。</td>
+                        <td>主题相关，但没有讲“怎么保存”。</td>
+                        <td>降低排序。</td>
+                      </tr>
+                      <tr>
+                        <td>向量库怎么保存 embedding？</td>
+                        <td>一条记录包含 id、text、embedding、metadata。</td>
+                        <td>直接回答保存结构。</td>
+                        <td>提高排序。</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                <p>所以 Rerank 的价值是把“看起来相关”进一步筛成“真的有用”。</p>
+              </div>
+
+              <div class="explain-block">
+                <h4>为什么 Rerank 更准但更贵</h4>
+                <p>向量检索只需要比较向量数字，速度快；Rerank 往往需要模型同时看 query 和 chunk 文本，判断相关性，所以更准但更慢、更贵。</p>
+                <ul class="check-list">
+                  <li><b>正确用法：</b>向量库先召回 Top 20，再 Rerank 选前 3 到 8 条。</li>
+                  <li><b>错误用法：</b>对全量几十万 chunk 做 Rerank，成本和延迟都会爆炸。</li>
+                </ul>
+              </div>
+
+              <div class="explain-block">
+                <h4>什么时候必须考虑 Rerank</h4>
+                <ul class="check-list">
+                  <li>企业文档很多，主题相近，向量检索经常召回“看起来相关但答不上问题”的片段。</li>
+                  <li>用户问题比较细，比如问某个配置项、某个规则、某个异常处理。</li>
+                  <li>你发现大模型回答时引用了不够准确的证据。</li>
+                  <li>Top K 里正确答案经常不是第一名，但在前 10 或前 20 里。</li>
+                </ul>
+              </div>
+
+              <div class="explain-block">
+                <h4>Rerank 后还要做什么</h4>
+                <p>Rerank 不是终点。重排后还要做上下文选择。</p>
+                <ul class="check-list">
+                  <li>去掉分数太低的候选。</li>
+                  <li>去重，避免重复 chunk 占用 prompt。</li>
+                  <li>控制总 token 数，避免上下文太长。</li>
+                  <li>保留引用来源，方便展示证据。</li>
+                </ul>
+              </div>
+
+              <div class="explain-block">
+                <h4>Rerank 和 Hybrid Search 的关系</h4>
+                <p>它们不是二选一，经常一起用。</p>
+                <div class="code">用户问题
+  ↓
+query rewrite（可选）
+  ↓
+向量检索 + 关键词检索（Hybrid，多路召回）
+  ↓
+合并候选、去重
+  ↓
+Rerank 精排
+  ↓
+取前 N 条证据给大模型</div>
+                <p>口语化说：Hybrid 负责“尽量别漏”，Rerank 负责“把真正有用的排前面”。</p>
+              </div>
+
+              <div class="explain-block">
+                <h4>Rerank 常见模型形态</h4>
+                <div class="table-wrap">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>形态</th>
+                        <th>输入</th>
+                        <th>输出</th>
+                        <th>特点</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td>Cross Encoder Reranker</td>
+                        <td>query + chunk 文本对</td>
+                        <td>相关性分数</td>
+                        <td>准确但慢，适合小候选集精排</td>
+                      </tr>
+                      <tr>
+                        <td>LLM 打分</td>
+                        <td>问题 + 多个候选片段</td>
+                        <td>排序或选择理由</td>
+                        <td>可解释强，但成本高、延迟高</td>
+                      </tr>
+                      <tr>
+                        <td>规则辅助</td>
+                        <td>分数、关键词、metadata</td>
+                        <td>加权排序</td>
+                        <td>简单稳定，适合和模型分数混合</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <h3>数据演示：粗召回与重排前后对比</h3>
+            <div class="note">
+              这张表要看“向量分”和“Rerank 分”的差异。向量分高说明主题像；Rerank 分高说明更能回答当前问题。如果一个片段向量分不低，但 Rerank 分下降，说明它只是相关，不够有用。
+            </div>
+            <div class="table-wrap">
+              <table id="rerankTable">
+                <thead>
+                  <tr>
+                    <th>候选</th>
+                    <th>向量分</th>
+                    <th>Rerank 分</th>
+                    <th>说明</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+            <div class="note">
+              这章先讲到概念。后续可以单独做 Rerank 实验室，加入真实 rerank 模型、召回数量对比和引用质量评测。
+            </div>
+
+            <h3>面试题：Rerank</h3>
+            <div class="quiz">
+              <details class="question">
+                <summary>1. 为什么有了向量检索还要 Rerank？</summary>
+                <p>向量检索速度快但属于粗召回，可能召回主题相近但不能回答问题的片段。Rerank 能更精细地判断 query 和 chunk 的相关性。</p>
+              </details>
+              <details class="question">
+                <summary>2. Rerank 放在 RAG 的哪个位置？</summary>
+                <p>通常放在向量库召回之后、大模型生成之前：query → 向量库 Top K → rerank → 取前几条证据 → LLM 回答。</p>
+              </details>
+              <details class="question">
+                <summary>3. Rerank 的代价是什么？</summary>
+                <p>它通常比向量相似度计算更慢、更贵，所以不会对全量文档做，而是只对向量库召回出来的候选做。</p>
+              </details>
+              <details class="question">
+                <summary>4. Rerank 如何降低幻觉？</summary>
+                <p>它提高进入 prompt 的证据质量，让大模型看到更相关的上下文，从而减少基于错误或无关资料回答的概率。</p>
+              </details>
+              <details class="question">
+                <summary>5. Rerank 和向量检索的核心区别是什么？</summary>
+                <p>向量检索用向量快速粗筛，Rerank 用模型对 query 和候选文本做更细的相关性判断。前者快，后者准但贵。</p>
+              </details>
+              <details class="question">
+                <summary>6. Rerank 应该对多少候选做？</summary>
+                <p>通常对向量库召回出的 Top 20、Top 50 这类小候选集做，而不是对全量文档做。具体数量要按延迟和准确率评测。</p>
+              </details>
+              <details class="question">
+                <summary>7. Rerank 分数能直接当答案置信度吗？</summary>
+                <p>不能完全等同。它是 query 和 chunk 的相关性分数，不等于最终回答正确率。最终还要看证据是否支持答案。</p>
+              </details>
+              <details class="question">
+                <summary>8. 什么情况下 Rerank 帮助不大？</summary>
+                <p>如果向量召回阶段根本没有把正确证据召回来，Rerank 无法凭空创造正确候选。这时应该先优化切分、embedding 或召回策略。</p>
+              </details>
+              <details class="question">
+                <summary>9. Rerank 会增加哪些工程成本？</summary>
+                <p>会增加模型调用成本、延迟、批处理复杂度和失败重试逻辑。高并发场景要特别关注吞吐和缓存。</p>
+              </details>
+              <details class="question">
+                <summary>10. 怎么评测 Rerank 是否有效？</summary>
+                <p>准备一批问题和标准证据，看加入 Rerank 后正确证据是否更常排到前几名，比如 Recall@K、MRR、人工引用质量评分。</p>
+              </details>
+              <details class="question">
+                <summary>11. Rerank 和 Hybrid Search 谁更重要？</summary>
+                <p>它们解决的问题不同。Hybrid 提高候选召回覆盖，Rerank 提高候选排序质量。企业系统通常先保证召回，再用 Rerank 提准。</p>
+              </details>
+              <details class="question">
+                <summary>12. Rerank 前为什么要去重？</summary>
+                <p>重复 chunk 会浪费 rerank 调用，也可能让相同内容挤掉其他有价值证据。多路召回后尤其要按 doc_id、chunk_id 或文本相似度去重。</p>
+              </details>
+              <details class="question">
+                <summary>13. Rerank 后为什么还要控制 token？</summary>
+                <p>即使排序正确，全部塞进 prompt 也会增加成本和噪声。通常只取前 N 条，并做上下文压缩或相邻片段合并。</p>
+              </details>
+              <details class="question">
+                <summary>14. 如果 Rerank 把正确片段排低怎么办？</summary>
+                <p>检查 rerank 模型是否适合中文和业务领域，候选 chunk 是否太短或缺标题，query 是否表达清楚，以及是否需要加入关键词、标题或 metadata 特征。</p>
+              </details>
+              <details class="question">
+                <summary>15. 测试工程师如何测试 Rerank？</summary>
+                <p>准备标准问题、候选列表和期望排序，比较 rerank 前后正确证据排名、错误引用率、延迟、异常降级和分数阈值效果。</p>
+              </details>
+            </div>
+          </section>
+
+          <section class="section" id="rageval">
+            <div class="section-head">
+              <span class="eyebrow">05 · RAG Evaluation</span>
+              <h2>RAG 评测：不要凭感觉判断系统准不准</h2>
+              <p>RAG 最容易骗新手的地方是：答案看起来很顺，但证据可能没支撑。评测就是用固定问题集和指标，把“感觉不错”变成“可以量化比较”。</p>
+            </div>
+
+            <div class="grid two">
+              <div class="card">
+                <strong>检索指标</strong>
+                <p>看标准证据有没有被找回来、排得靠不靠前。常见指标有 Recall@K、Hit@K、MRR、NDCG。</p>
+              </div>
+              <div class="card">
+                <strong>回答指标</strong>
+                <p>看答案是否基于证据、引用是否准确、该拒答时有没有拒答。常见指标有忠实度、引用准确率、答案覆盖率、拒答正确率。</p>
+              </div>
+            </div>
+
+            <div class="deep-dive">
+              <div class="explain-block">
+                <h4>0 基础口语化理解</h4>
+                <p class="plain-talk">评测就像考试。不能只问一个问题，也不能只看模型说得像不像。你要提前准备“标准问题、标准答案、标准证据”，然后看系统每次改参数后，是不是更容易把正确证据找回来、引用对、回答不乱编。</p>
+              </div>
+              <div class="explain-block">
+                <h4>一条评测样本应该长什么样</h4>
+                <div class="code">{
+  question: "Rerank 为什么能提升 RAG 准确率？",
+  gold_docs: ["rerank.md#chunk-03"],
+  gold_answer: "Rerank 会重新排序候选证据，把更能回答问题的 chunk 放前面。",
+  should_answer: true
+}</div>
+                <p>如果是不可回答问题，gold_docs 可以为空，should_answer=false。这样才能测试系统是否会正确拒答。</p>
+              </div>
+              <div class="explain-block">
+                <h4>核心指标怎么理解</h4>
+                <div class="table-wrap">
+                  <table>
+                    <thead><tr><th>指标</th><th>看什么</th><th>口语化理解</th><th>低了怎么办</th></tr></thead>
+                    <tbody>
+                      <tr><td>Recall@K</td><td>标准证据是否在 Top K 里</td><td>答案资料有没有找回来</td><td>调切分、embedding、Top K、Hybrid</td></tr>
+                      <tr><td>MRR</td><td>第一个正确证据排第几</td><td>正确资料是不是靠前</td><td>加 Rerank、去重、优化 query</td></tr>
+                      <tr><td>引用准确率</td><td>引用是否真的支持答案</td><td>别引用错文档</td><td>检查 metadata、证据拼接、prompt</td></tr>
+                      <tr><td>忠实度</td><td>回答是否只基于证据</td><td>有没有编证据里没有的内容</td><td>加证据门、拒答规则、输出校验</td></tr>
+                      <tr><td>拒答正确率</td><td>无证据时是否拒答</td><td>不知道就说不知道</td><td>设置证据阈值和不可回答评测集</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+              <div class="explain-block">
+                <h4>排查顺序</h4>
+                <ol>
+                  <li>Recall@K 低：先看正确 chunk 有没有被召回。</li>
+                  <li>Recall 高但 MRR 低：正确 chunk 找到了，但排得靠后，优先看 Rerank。</li>
+                  <li>检索指标好但回答错：看 prompt、上下文顺序、证据门和模型输出。</li>
+                  <li>拒答差：说明系统没有正确识别证据不足，容易幻觉。</li>
+                </ol>
+              </div>
+            </div>
+
+            <h3>面试题：RAG 评测</h3>
+            <div class="quiz">
+              <details class="question"><summary>1. 为什么 RAG 必须做评测？</summary><p>因为 RAG 不是回答出来就算对。评测能判断正确证据有没有被找回、引用是否准确、回答是否忠实、证据不足时是否拒答。</p></details>
+              <details class="question"><summary>2. Recall@K 和 MRR 有什么区别？</summary><p>Recall@K 看正确证据有没有出现在 Top K；MRR 看第一个正确证据排在第几名。前者关注有没有找回，后者关注排得靠不靠前。</p></details>
+              <details class="question"><summary>3. 如果 Recall@K 高但答案仍然错，说明什么？</summary><p>说明检索可能已经找到正确证据，但生成环节、上下文拼接、引用约束或证据门有问题。</p></details>
+              <details class="question"><summary>4. 如何设计不可回答问题？</summary><p>准备知识库里没有依据的问题，标注 should_answer=false。系统应该拒答或提示依据不足，而不是编造。</p></details>
+              <details class="question"><summary>5. 评测集应该包含哪些类型？</summary><p>事实问答、术语解释、长文档边界、表格问题、无答案问题、权限问题、冲突文档、多跳问题和口语化问题。</p></details>
+              <details class="question"><summary>6. 怎么证明一次 Rerank 优化真的有效？</summary><p>用同一套评测集对比优化前后，看 MRR、引用准确率、答案正确率是否提升，延迟和成本是否可接受。</p></details>
+              <details class="question"><summary>7. 用户反馈能不能替代评测集？</summary><p>不能完全替代。用户反馈有价值，但不稳定、不完整。评测集适合回归测试，用户反馈适合发现真实失败样本。</p></details>
+              <details class="question"><summary>8. RAG 评测和普通软件测试有什么相似之处？</summary><p>都需要固定用例、预期结果、回归检查和失败定位。区别是 RAG 还要评估语义相关、证据忠实和模型输出稳定性。</p></details>
+            </div>
+          </section>
+
+          <section class="section" id="graphrag">
+            <div class="section-head">
+              <span class="eyebrow">06 · Graph RAG</span>
+              <h2>Graph RAG：让系统看懂实体和关系</h2>
+              <p>普通向量 RAG 擅长找语义相似片段，但遇到多跳关系、实体关联、上下游依赖时容易不稳。Graph RAG 会把文档里的实体和关系抽出来，形成可查询的知识图谱。</p>
+            </div>
+
+            <div class="grid two">
+              <div class="card"><strong>普通 RAG</strong><p>问一句话，找相似 chunk。适合 FAQ、制度解释、产品手册问答。</p></div>
+              <div class="card"><strong>Graph RAG</strong><p>先找实体和关系路径，再回到原文证据。适合多跳推理、关联分析、复杂业务知识。</p></div>
+            </div>
+
+            <div class="deep-dive">
+              <div class="explain-block">
+                <h4>0 基础口语化理解</h4>
+                <p class="plain-talk">向量 RAG 像“找相似段落”，Graph RAG 像“查关系网”。比如你问“功能 A 影响哪些模块”，答案可能不在一个段落里，而是散落在多个文档的实体关系中：功能 A 依赖服务 B，服务 B 调用接口 C，接口 C 影响页面 D。</p>
+              </div>
+              <div class="explain-block">
+                <h4>Graph RAG 的基本流程</h4>
+                <div class="code">文档 chunk
+  ↓
+实体抽取：产品、接口、模块、人员、规则
+  ↓
+关系抽取：依赖、调用、属于、影响、负责
+  ↓
+构建图谱：节点 + 边 + 来源 chunk
+  ↓
+问题命中实体
+  ↓
+查多跳路径
+  ↓
+回填原文证据
+  ↓
+LLM 基于路径和证据回答</div>
+              </div>
+              <div class="explain-block">
+                <h4>为什么图谱路径还要回到原文 chunk</h4>
+                <p>图谱路径只是结构化线索，比如 “A 调用 B，B 影响 C”。最终回答仍然要有原文证据支撑，否则就变成图谱自己说了算。可信回答应该展示：路径是什么、每条关系来自哪段原文。</p>
+              </div>
+              <div class="explain-block">
+                <h4>适用和不适用</h4>
+                <ul class="check-list">
+                  <li><b>适合：</b>法律条文关联、金融风控关系、医疗知识关联、代码依赖、企业组织和权限关系。</li>
+                  <li><b>不适合：</b>简单 FAQ、单段文档问答、纯定义类问题。用普通 RAG 更轻。</li>
+                </ul>
+              </div>
+            </div>
+
+            <h3>面试题：Graph RAG</h3>
+            <div class="quiz">
+              <details class="question"><summary>1. Graph RAG 解决普通 RAG 的什么问题？</summary><p>它解决实体关系、多跳推理和复杂关联检索问题。普通向量检索只看语义相似，Graph RAG 可以沿着实体和关系路径找证据。</p></details>
+              <details class="question"><summary>2. Graph RAG 的核心数据是什么？</summary><p>节点、边、关系类型、属性和来源证据。节点是实体，边是关系，来源证据用于证明这条关系从哪里来。</p></details>
+              <details class="question"><summary>3. Graph RAG 是否替代向量 RAG？</summary><p>通常不是替代，而是补充。图谱负责结构化关系和多跳路径，向量检索负责语义召回原文证据。</p></details>
+              <details class="question"><summary>4. 图谱抽取错了会怎样？</summary><p>会导致错误路径和错误推理，所以需要保留来源 chunk、人工校验重要关系，并在回答时回到原文证据。</p></details>
+              <details class="question"><summary>5. 什么问题适合用 Graph RAG？</summary><p>包含“谁影响谁、A 和 B 什么关系、从 A 到 C 的路径、某规则关联哪些实体”等关系型问题。</p></details>
+              <details class="question"><summary>6. Graph RAG 的成本在哪里？</summary><p>实体抽取、关系抽取、图谱维护、消歧、增量更新和关系质量评估都比普通 RAG 更复杂。</p></details>
+            </div>
+          </section>
+
+          <section class="section" id="agent">
+            <div class="section-head">
+              <span class="eyebrow">07 · Agent</span>
+              <h2>Agent：让大模型围绕目标调用工具</h2>
+              <p>Agent 不是“更会聊天的大模型”，而是一套可观察的执行流程：理解目标、制定计划、调用工具、观察结果、评估证据、生成行动、必要时反思。</p>
+            </div>
+
+            <div class="deep-dive">
+              <div class="explain-block">
+                <h4>0 基础口语化理解</h4>
+                <p class="plain-talk">普通 RAG 像“你问一句，我查一次资料回答一句”。Agent 像“你给我一个目标，我先计划怎么做，再决定查知识库、查图谱、重排证据，最后给你结果和下一步任务”。</p>
+              </div>
+              <div class="explain-block">
+                <h4>Agent 的六个核心部件</h4>
+                <div class="table-wrap">
+                  <table>
+                    <thead><tr><th>部件</th><th>作用</th><th>例子</th></tr></thead>
+                    <tbody>
+                      <tr><td>Goal</td><td>目标</td><td>我想学习 Graph RAG，下一步做什么</td></tr>
+                      <tr><td>Planner</td><td>拆计划</td><td>先检索资料，再生成学习任务</td></tr>
+                      <tr><td>Tool</td><td>执行动作</td><td>RAG 检索、Graph 查询、Rerank、计算器</td></tr>
+                      <tr><td>Observation</td><td>读取工具结果</td><td>命中了哪些文档、证据够不够</td></tr>
+                      <tr><td>Evaluator</td><td>评估是否可靠</td><td>证据不足时不能硬答</td></tr>
+                      <tr><td>Reflector</td><td>反思和收敛</td><td>任务太大时拆成最小行动</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+              <div class="explain-block">
+                <h4>Agent 为什么要有停止条件</h4>
+                <p>没有停止条件，Agent 可能一直检索、一直反思、一直调用工具。真实系统要限制最大步数、最大成本、最大时间，并在证据不足时明确结束。</p>
+              </div>
+              <div class="explain-block">
+                <h4>Agent 和 RAG 的关系</h4>
+                <p>RAG 可以作为 Agent 的一个工具。Agent 不一定每次都检索，它可以根据目标决定是否调用 RAG、Graph RAG、Rerank 或其他工具。</p>
+              </div>
+            </div>
+
+            <h3>面试题：Agent</h3>
+            <div class="quiz">
+              <details class="question"><summary>1. Agent 和普通聊天机器人有什么区别？</summary><p>普通聊天机器人主要生成回复；Agent 会围绕目标做计划、调用工具、读取观察结果、评估证据，并保留执行轨迹。</p></details>
+              <details class="question"><summary>2. Agent 为什么需要工具？</summary><p>大模型本身不能访问实时知识库、数据库或计算环境，工具让它能检索资料、查图谱、计算、创建任务。</p></details>
+              <details class="question"><summary>3. Agent 的状态里应该保存什么？</summary><p>目标、计划、已调用工具、工具输入输出、观察结果、证据评分、当前结论、成本、步数和最终结果。</p></details>
+              <details class="question"><summary>4. Agent 失败常见原因有哪些？</summary><p>目标不清、工具描述不清、证据不足仍硬答、循环调用、没有停止条件、工具输出未校验、成本失控。</p></details>
+              <details class="question"><summary>5. 如何测试 Agent？</summary><p>准备目标用例，检查计划是否合理、工具是否调用正确、证据不足是否拒答、最大步数是否生效、最终结果是否可追溯。</p></details>
+              <details class="question"><summary>6. Agentic RAG 是什么？</summary><p>它让 Agent 动态决定是否检索、检索几次、用向量还是图谱、是否重排、证据不足是否继续检索或拒答。</p></details>
+            </div>
+          </section>
+
+          <section class="section" id="prompt">
+            <div class="section-head">
+              <span class="eyebrow">08 · Prompt Engineering</span>
+              <h2>模型调用与 Prompt 工程：把输出变得可控</h2>
+              <p>真实 AI 应用不是把一句话发给模型就结束。你要控制角色、上下文、输出格式、引用规则、拒答规则、校验、重试、成本和日志。</p>
+            </div>
+
+            <div class="deep-dive">
+              <div class="explain-block">
+                <h4>Prompt 的四层结构</h4>
+                <div class="code">System：你是谁，必须遵守什么边界
+Context：检索到的证据、工具结果、用户资料
+User：用户本轮问题或目标
+Output Schema：必须输出什么 JSON / 字段 / 引用格式</div>
+              </div>
+              <div class="explain-block">
+                <h4>为什么要结构化输出</h4>
+                <p>如果系统后续要读取模型结果，比如创建任务、展示引用、判断证据是否足够，就不能只拿一段自由文本。结构化输出能让程序稳定解析。</p>
+              </div>
+              <div class="explain-block">
+                <h4>为什么要校验和重试</h4>
+                <p>模型可能输出格式不对、引用不存在、答案脱离证据。真实系统要校验 JSON、引用 ID、必填字段和证据一致性；失败时重试、降级或拒答。</p>
+              </div>
+              <div class="explain-block">
+                <h4>温度、token、成本怎么理解</h4>
+                <ul class="check-list">
+                  <li><b>temperature：</b>越高越发散，越低越稳定。知识库问答一般偏低。</li>
+                  <li><b>max tokens：</b>限制输出长度，避免成本失控。</li>
+                  <li><b>上下文长度：</b>塞太多证据会贵，也会带来噪声。</li>
+                  <li><b>日志：</b>要记录输入、命中证据、输出、成本和错误，便于排查。</li>
+                </ul>
+              </div>
+            </div>
+
+            <h3>面试题：模型调用与 Prompt 工程</h3>
+            <div class="quiz">
+              <details class="question"><summary>1. System Prompt 和 User Prompt 有什么区别？</summary><p>System Prompt 定义角色、规则和边界；User Prompt 是用户本轮任务。系统规则应该比用户输入更稳定。</p></details>
+              <details class="question"><summary>2. 为什么 RAG 回答要要求“只基于证据”？</summary><p>这是为了降低幻觉。模型不能把自己记忆里的内容和检索证据混在一起，证据不足时应拒答。</p></details>
+              <details class="question"><summary>3. 为什么要用 JSON Schema？</summary><p>结构化输出方便程序解析和校验，适合任务生成、引用展示、工具调用和自动化流程。</p></details>
+              <details class="question"><summary>4. temperature 怎么选？</summary><p>知识问答、RAG、结构化输出通常用较低 temperature；创意写作可以适当提高。选择要看稳定性和创造性的取舍。</p></details>
+              <details class="question"><summary>5. 模型输出格式错了怎么办？</summary><p>先做解析校验，失败后可以带错误信息重试；多次失败则降级为普通文本或提示失败，不能让错误结构继续进入业务流程。</p></details>
+              <details class="question"><summary>6. 为什么要记录模型调用日志？</summary><p>日志能帮助排查答案错误、引用错误、成本异常、重试失败和提示词回归问题，也是后续评测优化的数据来源。</p></details>
+            </div>
+          </section>
+
+          <section class="section" id="interview">
+            <div class="section-head">
+              <span class="eyebrow">05 · Interview</span>
+              <h2>综合面试题：上篇必须会答</h2>
+              <p>下面这些问题覆盖 RAG 基础链路。你能用自己的话答出来，就说明前半段已经比较稳了。</p>
+            </div>
+            <div class="interview-grid">
+              <details class="question">
+                <summary>1. 请完整说一遍 RAG 从文档到回答的流程。</summary>
+                <p>文档解析 → 文本切分 → chunk embedding → 写入向量库 → 用户问题 embedding → 向量检索 Top K → rerank → 取证据拼上下文 → 大模型基于证据回答 → 展示引用来源。</p>
+              </details>
+              <details class="question">
+                <summary>2. 如果用户问的问题没有命中文档，系统应该怎么做？</summary>
+                <p>应该提示知识库依据不足，或者询问用户是否扩大检索范围，而不是让大模型瞎编。</p>
+              </details>
+              <details class="question">
+                <summary>3. 如何排查 RAG 回答不准？</summary>
+                <p>先看切分是否合理，再看 embedding 是否适合中文和业务语义，再看向量库召回 Top K 是否命中正确证据，再看 rerank 和 prompt 是否正确使用引用。</p>
+              </details>
+              <details class="question">
+                <summary>4. 什么情况下要调 chunk size？</summary>
+                <p>如果召回片段语义太碎，就增大 chunk size；如果片段混入多个主题，就减小 chunk size；如果答案常在边界断掉，就适当增加 overlap。</p>
+              </details>
+              <details class="question">
+                <summary>5. 为什么 RAG 最好展示引用来源？</summary>
+                <p>引用来源能让用户判断答案是否可信，也方便回到原始文档排查，是企业知识库非常重要的可信机制。</p>
+              </details>
+              <details class="question">
+                <summary>6. 向量库查询出来的 score 能不能直接当准确率？</summary>
+                <p>不能。score 只是向量相似度或距离，不等于答案正确率。还要看证据是否真正支持回答，因此需要人工评测、Rerank 和引用检查。</p>
+              </details>
+              <details class="question">
+                <summary>7. 设计一个企业制度问答 RAG，你会怎么做？</summary>
+                <p>先解析制度文档，按标题和条款切分，生成 embedding，写入向量库并保存 source/page/section/permission。查询时做权限过滤、向量召回、Rerank、拼接引用上下文，再让大模型只基于证据回答。</p>
+              </details>
+              <details class="question">
+                <summary>8. 如果回答引用了错误文档，你怎么排查？</summary>
+                <p>先看向量库 Top K 是否召回错了；如果召回错，看切分、embedding 和 metadata 过滤；如果召回对但最终引用错，看 rerank、上下文拼接和 prompt。</p>
+              </details>
+              <details class="question">
+                <summary>9. 用户问“这个合同能不能签”，RAG 应该直接回答吗？</summary>
+                <p>不应该草率回答。高风险问题应该给出依据、风险点和建议咨询专业人员。RAG 只能基于文档辅助分析，不能替代法律判断。</p>
+              </details>
+              <details class="question">
+                <summary>10. Hybrid Search 是什么？为什么常用？</summary>
+                <p>Hybrid Search 是向量检索加关键词检索。向量适合语义相似，关键词适合精确术语、编号、错误码，两者结合更稳。</p>
+              </details>
+              <details class="question">
+                <summary>11. 为什么文档更新后要重新 embedding？</summary>
+                <p>因为 embedding 是根据文本生成的。文本变了，旧向量就不能代表新内容，必须重新切分或重新向量化并 upsert。</p>
+              </details>
+              <details class="question">
+                <summary>12. 什么是召回率？什么是精确率？</summary>
+                <p>召回率关注正确证据有没有被找回来；精确率关注找回来的证据里有多少是真的有用。RAG 检索要兼顾两者。</p>
+              </details>
+              <details class="question">
+                <summary>13. 如果 Top K 里没有正确答案，Rerank 能解决吗？</summary>
+                <p>不能。Rerank 只能重排候选，不能从没有召回的文档里创造正确答案。这时要优化切分、embedding、query rewrite 或 hybrid search。</p>
+              </details>
+              <details class="question">
+                <summary>14. Query Rewrite 在 RAG 里有什么用？</summary>
+                <p>它把用户问题改写成更适合检索的表达，比如补全上下文、扩展同义词、拆成多个子问题。它属于检索前优化。</p>
+              </details>
+              <details class="question">
+                <summary>15. 为什么要做上下文压缩？</summary>
+                <p>因为召回片段可能太长或重复。上下文压缩可以保留关键信息，减少 token 成本，也降低噪声。</p>
+              </details>
+              <details class="question">
+                <summary>16. RAG 系统怎么避免幻觉？</summary>
+                <p>核心是只让模型基于检索证据回答，证据不足时拒答；同时展示引用来源、加入 rerank、评测检索质量，并限制模型不要编造。</p>
+              </details>
+              <details class="question">
+                <summary>17. 你会如何测试一个 RAG 系统？</summary>
+                <p>准备标准问题集，标注正确证据和期望答案。分别测试解析、切分、召回、rerank、生成、引用、拒答、权限、延迟和异常处理。</p>
+              </details>
+              <details class="question">
+                <summary>18. RAG 和微调有什么区别？</summary>
+                <p>RAG 把知识放在外部知识库里，更新快、可引用；微调改变模型参数，更适合风格、格式、特定能力，不适合频繁更新大量事实知识。</p>
+              </details>
+              <details class="question">
+                <summary>19. 如果向量库越来越大，性能下降怎么办？</summary>
+                <p>可以建立合适索引、按业务分 collection、用 metadata 过滤、做冷热数据分层、优化 Top K、缓存高频查询，并评估 Milvus 或 pgvector 索引方案。</p>
+              </details>
+              <details class="question">
+                <summary>20. 简历上写“会 RAG”，面试官最可能追问什么？</summary>
+                <p>通常会追问切分策略、embedding 模型选择、向量库选型、metadata 设计、召回不准怎么排查、Rerank 是否使用、如何评测、如何处理无答案问题。</p>
+              </details>
+              <details class="question">
+                <summary>21. 如果用户说“上一条制度是什么意思”，RAG 怎么处理多轮上下文？</summary>
+                <p>需要把对话历史里的指代补全成独立问题，比如改写成“某某制度第几条是什么意思”，再去检索。否则 query 太短，向量库不知道“上一条”指什么。</p>
+              </details>
+              <details class="question">
+                <summary>22. RAG 里为什么要做拒答？</summary>
+                <p>拒答是可信系统的底线。检索不到证据、证据冲突、权限不足或问题超出知识库范围时，系统应该说明依据不足，而不是生成看似合理的答案。</p>
+              </details>
+              <details class="question">
+                <summary>23. 如果知识库有两份文档互相矛盾怎么办？</summary>
+                <p>要展示冲突来源，优先使用更新时间更近、权威等级更高或指定业务域的文档。必要时提示“资料存在冲突”，不要强行合成一个确定答案。</p>
+              </details>
+              <details class="question">
+                <summary>24. 文档里有图片、流程图、截图，纯文本 RAG 会漏什么？</summary>
+                <p>会漏图片里的文字、布局关系、图表含义和视觉信息。可以用 OCR 提取文字，用多模态模型生成图片说明，并把图片位置、页码、说明存入 metadata。</p>
+              </details>
+              <details class="question">
+                <summary>25. 怎么设计 RAG 的数据表或存储结构？</summary>
+                <p>至少要有 document 表保存文件信息，chunk 表保存片段和 metadata，embedding/向量库保存向量，query_log 保存用户问题、命中、回答和反馈，便于评测和排查。</p>
+              </details>
+              <details class="question">
+                <summary>26. RAG 系统上线后要监控哪些指标？</summary>
+                <p>监控解析失败率、embedding 失败率、检索延迟、Top K 命中率、拒答率、引用准确率、用户反馈、模型成本、向量库容量和慢查询。</p>
+              </details>
+              <details class="question">
+                <summary>27. 为什么说 RAG 是“工程系统”，不是一个提示词？</summary>
+                <p>因为它包含文档处理、切分、向量化、存储、检索、重排、生成、引用、权限、评测、监控和更新机制。提示词只是最后生成环节的一部分。</p>
+              </details>
+              <details class="question">
+                <summary>28. 如果用户问得很口语化，检索不到专业文档怎么办？</summary>
+                <p>可以做 query rewrite，把口语问题改写成专业表达；也可以做同义词扩展、关键词补充、Hybrid Search，或者沉淀业务词典。</p>
+              </details>
+              <details class="question">
+                <summary>29. 如何给 RAG 做自动化测试？</summary>
+                <p>建立问题集，每个问题标注标准答案、标准证据和拒答条件。每次改切分、embedding、Top K、rerank 或 prompt 后跑回归，对比命中率、引用和答案质量。</p>
+              </details>
+              <details class="question">
+                <summary>30. 面试官问“你做的 RAG 最大难点是什么”，怎么回答更真实？</summary>
+                <p>可以回答“难点不是调用模型，而是让正确证据稳定进入上下文”。然后展开讲解析质量、切分策略、embedding 选型、metadata 权限、Rerank、拒答和评测闭环。</p>
+              </details>
+            </div>
+
+            <h3>大厂风格面试题：更接近真实追问</h3>
+            <div class="interview-grid">
+              <details class="question">
+                <summary>1. 如果让你从 0 到 1 设计一个企业级 RAG，你会怎么拆架构？</summary>
+                <p>我会拆成离线入库链路和在线问答链路。离线链路负责文档上传、解析、清洗、切分、embedding、写入向量库和元数据表；在线链路负责问题改写、权限过滤、召回、Rerank、上下文组装、LLM 生成、引用展示和日志评测。</p>
+                <p>这样拆的原因是两条链路的压力完全不同：入库更关注批处理、失败重试和数据一致性；问答更关注低延迟、证据质量和安全拒答。</p>
+              </details>
+              <details class="question">
+                <summary>2. RAG 召回慢，你会从哪些层面优化？</summary>
+                <p>我会先看慢在哪里：embedding 慢、向量库查询慢、metadata filter 慢、rerank 慢，还是 LLM 生成慢。向量库慢可以优化索引、减少候选范围、按业务拆 collection、增加缓存和批量查询；rerank 慢可以降低候选数、并发批处理或做降级。</p>
+                <p>举例：如果 Top K 设成 100，rerank 每条都调用模型，就会非常慢。更合理的是先召回 20-50 条，去重后 rerank，再取前 3-5 条进入 prompt。</p>
+              </details>
+              <details class="question">
+                <summary>3. RAG 出现错误答案，你如何判断是检索问题还是生成问题？</summary>
+                <p>先看检索日志。如果 Top K 里根本没有正确证据，就是检索问题，要查解析、切分、embedding、Top K、Hybrid、metadata filter。 如果 Top K 有正确证据，但模型回答错了，就是生成或上下文组织问题，要查 prompt、证据顺序、上下文噪声、模型能力和引用约束。</p>
+                <p>面试里可以说一句很关键的话：RAG 排障不要先怪大模型，先看证据有没有进入上下文。</p>
+              </details>
+              <details class="question">
+                <summary>4. 如果公司有权限隔离要求，RAG 怎么避免越权召回？</summary>
+                <p>权限不能只靠 prompt，必须在检索前做硬过滤。向量记录要带 tenant_id、department、role、permission、doc_id 等 metadata，查询时先根据用户身份过滤候选范围，再做向量检索和 Rerank。</p>
+                <p>示例：销售只能查销售知识库，不能查财务合同。即使向量相似度很高，没有权限的 chunk 也不能进入候选，更不能进入大模型上下文。</p>
+              </details>
+              <details class="question">
+                <summary>5. 文档更新频繁时，RAG 数据一致性怎么保证？</summary>
+                <p>要有 doc_id、version、chunk_id 和入库状态。文档更新后重新解析切分，生成新 chunk 和 embedding，用 upsert 覆盖新版本，同时删除旧版本 chunk。入库过程要记录 pending、processing、ready、failed 状态。</p>
+                <p>如果不做版本管理，用户可能同时检索到新旧两版制度，答案会冲突。企业场景里这是很常见的坑。</p>
+              </details>
+              <details class="question">
+                <summary>6. 你怎么设计 RAG 的评测集？</summary>
+                <p>评测集不能只写几个简单问题。应该包含事实问答、术语问答、多跳问题、无答案问题、权限问题、冲突文档问题、长文档边界问题、表格问题和口语化问题。每个问题要标注标准证据、期望答案、是否应该拒答。</p>
+                <p>指标可以看 Recall@K、MRR、引用准确率、答案正确率、拒答准确率、延迟和成本。测试工程师做这个很有优势。</p>
+              </details>
+              <details class="question">
+                <summary>7. 什么时候 RAG 不适合，应该考虑微调或规则系统？</summary>
+                <p>如果需求是学习固定输出风格、格式转换、分类标签或稳定工具调用，微调或规则可能更合适。如果需求是频繁更新的事实知识、企业文档问答、可引用答案，RAG 更合适。</p>
+                <p>举例：让模型永远按公司客服话术输出，可以考虑微调；让模型回答最新产品手册内容，就应该优先 RAG。</p>
+              </details>
+              <details class="question">
+                <summary>8. 如果用户问的是一个复杂目标，不是单个问题，RAG 怎么升级？</summary>
+                <p>可以升级成 Agentic RAG。Agent 先理解目标，再决定是否检索、检索几次、调用什么工具、是否需要反思和生成任务。它不是一次问答，而是“计划 → 检索 → 观察 → 判断 → 行动 → 反思”的过程。</p>
+                <p>示例：用户说“帮我制定 Graph RAG 学习计划”，系统不应该只回答定义，而是检索资料、判断学习阶段、拆任务、给出下一步行动。</p>
+              </details>
+              <details class="question">
+                <summary>9. 如何处理 RAG 中的表格、图片和扫描件？</summary>
+                <p>表格要保留行列关系，图片和扫描件要 OCR 或多模态理解，图表最好生成文字说明并保留 page、bbox、image_id。检索时可以先检索文字说明，再回到原图展示引用。</p>
+                <p>如果只是把 PDF 当纯文本抽取，很多表格会乱，图片里的文字也会丢。企业文档里这会直接影响答案质量。</p>
+              </details>
+              <details class="question">
+                <summary>10. RAG 上线后如何持续迭代？</summary>
+                <p>要收集 query、命中 chunk、rerank 排序、最终答案、引用、用户反馈和人工标注。根据失败样本反推问题：是解析错、切片错、召回漏、排序错、prompt 弱，还是模型能力不足。</p>
+                <p>成熟的做法是建立评测集和回归测试。每次改 chunk size、embedding 模型、rerank 或 prompt，都跑一遍评测，防止一个地方变好，另一个地方变差。</p>
+              </details>
+            </div>
+
+            <h3>混合面试题：把多个知识点放在一起考</h3>
+            <div class="interview-grid">
+              <details class="question">
+                <summary>1. 用户问错误码 E102，但向量检索没命中，怎么办？</summary>
+                <p>这类问题通常关键词更重要。可以加入 BM25/关键词检索，做 Hybrid Search；同时保证切分不要把错误码和解释分开，metadata 里可以记录 error_code 字段。</p>
+                <p>示例回答：我不会只调 embedding，而会让关键词检索召回 E102 精确片段，再和向量召回结果融合，最后 rerank。</p>
+              </details>
+              <details class="question">
+                <summary>2. Top K 命中了正确文档，但答案还是错，可能是什么原因？</summary>
+                <p>可能是 chunk 太长混入噪声、正确 chunk 排名太靠后、prompt 没要求基于证据、模型忽略引用、多个证据冲突，或者上下文顺序不合理。解决时可以加 rerank、压缩上下文、把关键证据放前面，并要求模型证据不足时拒答。</p>
+              </details>
+              <details class="question">
+                <summary>3. 用户问题很短，比如“怎么配置”，RAG 为什么容易失败？</summary>
+                <p>因为问题缺少对象，embedding 无法判断配置什么。可以结合对话历史做 query rewrite，把它改写成“某某系统如何配置 API Key”，再检索。没有上下文时应该追问用户。</p>
+              </details>
+              <details class="question">
+                <summary>4. 文档切片后检索结果重复很多，怎么综合解决？</summary>
+                <p>先看 overlap 是否太大、chunk 是否太短，再看是否重复入库。检索后可以按 chunk_id、文本相似度或相邻片段合并去重。Rerank 前去重能降低成本，Rerank 后再控制进入 prompt 的数量。</p>
+              </details>
+              <details class="question">
+                <summary>5. 向量库里数据很多，但有些问题总召回旧文档，怎么办？</summary>
+                <p>可能旧文档没删除，或 metadata 没有版本字段。解决方法是文档更新时删除旧 chunk，metadata 保存 version、effective_date、status，查询时过滤 status=active，必要时新版本加权更高。</p>
+              </details>
+              <details class="question">
+                <summary>6. 如果 RAG 要支持多轮对话、权限、引用和评测，最少要存哪些日志？</summary>
+                <p>要存用户问题、改写后的 query、用户权限、召回 Top K、rerank 结果、进入 prompt 的证据、模型答案、引用来源、拒答状态、用户反馈和耗时成本。没有日志，后续很难排查和优化。</p>
+              </details>
+              <details class="question">
+                <summary>7. 一个 RAG 系统回答慢，你如何设计降级策略？</summary>
+                <p>可以先降低 Top K、跳过 rerank、使用缓存答案、改用更快模型、限制上下文长度，或者先返回“正在检索”。但降级不能突破权限，也不能在证据不足时瞎答。</p>
+              </details>
+              <details class="question">
+                <summary>8. 如何向非技术同事解释 embedding、向量库、rerank 三者关系？</summary>
+                <p>可以这样说：embedding 把文字变成坐标；向量库按坐标找附近资料；rerank 拿着问题逐条复核，决定哪些资料最值得给 AI 看。它们分别对应“表示、召回、精排”。</p>
+              </details>
+              <details class="question">
+                <summary>9. 如果公司文档既有制度 PDF，又有数据库表，RAG 怎么做？</summary>
+                <p>PDF 适合 Text RAG，数据库表适合 Structured RAG。可以让 Agent 或路由器判断问题类型：问制度走文档检索，问实时数据走 SQL 查询，最后把结果统一给大模型生成。</p>
+              </details>
+              <details class="question">
+                <summary>10. 你作为测试工程师，怎么证明 RAG 真的变好了？</summary>
+                <p>不能只看主观感觉。要用固定问题集跑前后对比，记录正确证据命中率、答案正确率、引用准确率、拒答准确率、平均延迟和成本。还要保留失败样本，说明每次优化解决了哪类问题。</p>
+              </details>
+            </div>
+          </section>
+        </div>
+      </main>
+    </div>
+
+    <script>
+      const sampleText = `# RAG 系统入门
+
+RAG 是检索增强生成。它先从知识库中检索相关资料，再让大模型基于资料生成回答。
+
+## 为什么需要文本切分
+
+企业文档通常很长，可能是 PDF、Word、网页、接口文档或测试方案。
+
+好的 chunk 应该语义完整，长度适中，并且能被用户问题准确召回。
+
+## chunk size 和 overlap
+
+chunk size 控制每个切片最大长度。overlap 控制相邻切片之间保留多少重复文本。
+
+## 和 Embedding 的关系
+
+文本切分之后，每个 chunk 会单独做 embedding，并写入向量数据库。`;
+
+      const dims = [
+        { label: "RAG 检索", keys: ["rag", "检", "索", "知", "识", "库", "召", "回"] },
+        { label: "Embedding", keys: ["embedding", "向", "量", "vector"] },
+        { label: "向量库", keys: ["数", "据", "库", "存", "储", "collection", "metadata"] },
+        { label: "切分", keys: ["切", "分", "chunk", "片", "段"] },
+        { label: "Rerank", keys: ["rerank", "重", "排", "排序"] },
+        { label: "回答", keys: ["回", "答", "大", "模", "型", "生成"] },
+      ];
+
+      const docs = [
+        { id: "chunk-1", text: "RAG 使用 embedding 把用户问题和文档 chunk 变成向量，再用相似度检索相关证据。", source: "rag_intro.md" },
+        { id: "chunk-2", text: "向量数据库负责存储 chunk embedding，并支持 Top K 相似向量查询和 metadata 过滤。", source: "vector_db.md" },
+        { id: "chunk-3", text: "文本切分会把长文档拆成多个 chunk，chunk size 和 overlap 会影响召回质量。", source: "chunking.md" },
+        { id: "chunk-4", text: "Rerank 会对向量库初步召回的结果重新排序，让最相关的证据片段排在前面。", source: "rerank.md" },
+      ];
+
+      const state = {
+        chunkNodes: [],
+        embeddingNodes: [],
+        vectorNodes: [],
+        rotations: {
+          chunk: { x: -0.55, y: 0.7, zoom: 145, drag: false, lastX: 0, lastY: 0 },
+          embedding: { x: -0.42, y: 0.65, zoom: 150, drag: false, lastX: 0, lastY: 0 },
+          vector: { x: -0.38, y: 0.72, zoom: 150, drag: false, lastX: 0, lastY: 0 },
+        },
+      };
+
+      function tokenize(text) {
+        return (text.match(/[a-zA-Z0-9_]+|[\u4e00-\u9fff]/g) || []).map((item) => item.toLowerCase());
+      }
+
+      function embed(text) {
+        const tokens = tokenize(text);
+        const vector = dims.map((dim) => tokens.reduce((sum, token) => sum + (dim.keys.includes(token) ? 1 : 0), 0));
+        const length = Math.sqrt(vector.reduce((sum, value) => sum + value * value, 0)) || 1;
+        return vector.map((value) => Number((value / length).toFixed(4)));
+      }
+
+      function dot(a, b) {
+        return a.reduce((sum, value, index) => sum + value * b[index], 0);
+      }
+
+      function splitText(text, size, overlap, strategy) {
+        const clean = text.trim();
+        const safeOverlap = Math.min(overlap, size - 1);
+        if (strategy === "character") {
+          const chunks = [];
+          const step = Math.max(1, size - safeOverlap);
+          for (let start = 0; start < clean.length; start += step) {
+            const end = Math.min(clean.length, start + size);
+            const value = clean.slice(start, end);
+            if (value.trim()) chunks.push({ id: `chunk-${chunks.length + 1}`, text: value, start, end, overlap: chunks.length ? safeOverlap : 0 });
+            if (end >= clean.length) break;
+          }
+          return chunks;
+        }
+        const parts = clean.split(/\n\s*\n/).filter(Boolean);
+        const chunks = [];
+        let previous = "";
+        let cursor = 0;
+        parts.forEach((part) => {
+          let rest = part.trim();
+          while (rest) {
+            const prefix = previous ? previous.slice(-safeOverlap) : "";
+            const body = rest.slice(0, Math.max(1, size - prefix.length));
+            rest = rest.slice(body.length);
+            const textValue = `${prefix}${body}`;
+            chunks.push({ id: `chunk-${chunks.length + 1}`, text: textValue, start: cursor, end: cursor + body.length, overlap: prefix.length });
+            previous = textValue;
+            cursor += body.length;
+          }
+          cursor += 2;
+        });
+        return chunks;
+      }
+
+      function project(point, width, height, rot) {
+        const cy = Math.cos(rot.y);
+        const sy = Math.sin(rot.y);
+        const cx = Math.cos(rot.x);
+        const sx = Math.sin(rot.x);
+        const x1 = point.x * cy - point.z * sy;
+        const z1 = point.x * sy + point.z * cy;
+        const y1 = point.y * cx - z1 * sx;
+        const z2 = point.y * sx + z1 * cx;
+        const scale = rot.zoom / (rot.zoom + z2 * 50 + 120);
+        return { x: width / 2 + x1 * rot.zoom * scale, y: height / 2 + y1 * rot.zoom * scale, depth: z2, scale };
+      }
+
+      function setupCanvas(id, tooltipId, key, draw) {
+        const canvas = document.getElementById(id);
+        const tip = document.getElementById(tooltipId);
+        const rot = state.rotations[key];
+        canvas.addEventListener("pointerdown", (event) => {
+          rot.drag = true;
+          rot.lastX = event.clientX;
+          rot.lastY = event.clientY;
+          canvas.setPointerCapture(event.pointerId);
+        });
+        canvas.addEventListener("pointerup", () => {
+          rot.drag = false;
+        });
+        canvas.addEventListener("mousemove", (event) => {
+          if (rot.drag) {
+            rot.y += (event.clientX - rot.lastX) * 0.008;
+            rot.x += (event.clientY - rot.lastY) * 0.008;
+            rot.lastX = event.clientX;
+            rot.lastY = event.clientY;
+            draw();
+            return;
+          }
+          const rect = canvas.getBoundingClientRect();
+          const x = event.clientX - rect.left;
+          const y = event.clientY - rect.top;
+          const node = state[`${key}Nodes`].find((item) => x >= item.x && x <= item.x + item.w && y >= item.y && y <= item.y + item.h);
+          if (!node) {
+            tip.classList.remove("is-visible");
+            return;
+          }
+          tip.innerHTML = `<strong>${node.title}</strong><span>${node.desc}</span>`;
+          tip.style.left = `${Math.min(rect.width - 292, Math.max(10, x + 14))}px`;
+          tip.style.top = `${Math.min(rect.height - 110, Math.max(10, y + 14))}px`;
+          tip.classList.add("is-visible");
+        });
+        canvas.addEventListener("mouseleave", () => tip.classList.remove("is-visible"));
+        canvas.addEventListener("wheel", (event) => {
+          event.preventDefault();
+          rot.zoom = Math.max(90, Math.min(250, rot.zoom - event.deltaY * 0.12));
+          draw();
+        }, { passive: false });
+      }
+
+      function canvasContext(canvas) {
+        const rect = canvas.getBoundingClientRect();
+        const ratio = window.devicePixelRatio || 1;
+        canvas.width = Math.floor(rect.width * ratio);
+        canvas.height = Math.floor(rect.height * ratio);
+        const ctx = canvas.getContext("2d");
+        ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+        ctx.clearRect(0, 0, rect.width, rect.height);
+        return { ctx, w: rect.width, h: rect.height };
+      }
+
+      function roundRect(ctx, x, y, w, h, r) {
+        const radius = Math.min(r, w / 2, h / 2);
+        ctx.beginPath();
+        ctx.moveTo(x + radius, y);
+        ctx.arcTo(x + w, y, x + w, y + h, radius);
+        ctx.arcTo(x + w, y + h, x, y + h, radius);
+        ctx.arcTo(x, y + h, x, y, radius);
+        ctx.arcTo(x, y, x + w, y, radius);
+        ctx.closePath();
+      }
+
+      function drawChunkDemo() {
+        const size = Number(document.getElementById("chunkSize").value);
+        const overlap = Number(document.getElementById("overlap").value);
+        const strategy = document.getElementById("chunkStrategy").value;
+        const chunks = splitText(sampleText, size, overlap, strategy);
+        document.getElementById("chunkStats").innerHTML = `Chunk Size：<b>${size}</b>，Overlap：<b>${overlap}</b>，策略：<b>${strategy === "recursive" ? "递归切分" : "按字符切分"}</b>，当前得到 <b>${chunks.length}</b> 个 chunk。`;
+
+        const canvas = document.getElementById("chunkCanvas");
+        const { ctx, w, h } = canvasContext(canvas);
+        ctx.fillStyle = "#fbfdfb";
+        ctx.fillRect(0, 0, w, h);
+        ctx.fillStyle = "#173820";
+        ctx.font = "900 13px sans-serif";
+        ctx.fillText("3D chunk 轨道：块越宽表示覆盖原文越多，深色表示 overlap", 20, 28);
+
+        const max = sampleText.length;
+        const rot = state.rotations.chunk;
+        state.chunkNodes = chunks.map((chunk, index) => {
+          const progress = (chunk.start + chunk.end) / 2 / max;
+          const point = { x: (progress - 0.5) * 4.6, y: (index / Math.max(1, chunks.length - 1) - 0.5) * 1.8, z: chunk.overlap ? 0.35 : -0.05 };
+          const screen = project(point, w, h, rot);
+          const nodeW = Math.max(46, ((chunk.end - chunk.start) / max) * (w - 180)) * screen.scale;
+          const nodeH = 42 * screen.scale;
+          return { ...chunk, x: screen.x - nodeW / 2, y: screen.y - nodeH / 2, w: nodeW, h: nodeH, depth: screen.depth, title: chunk.id, desc: `长度 ${chunk.text.length}，overlap ${chunk.overlap}。${chunk.text.slice(0, 90)}` };
+        }).sort((a, b) => a.depth - b.depth);
+
+        state.chunkNodes.forEach((node) => {
+          ctx.strokeStyle = "rgba(47,111,72,0.15)";
+          ctx.beginPath();
+          ctx.moveTo(40, h - 44);
+          ctx.lineTo(node.x + node.w / 2, node.y + node.h / 2);
+          ctx.lineTo(w - 40, h - 44);
+          ctx.stroke();
+        });
+
+        state.chunkNodes.forEach((node) => {
+          ctx.fillStyle = node.overlap ? "#fff1e8" : "#edf3ef";
+          ctx.strokeStyle = node.overlap ? "#b45f2a" : "#2f6f48";
+          ctx.lineWidth = 2;
+          roundRect(ctx, node.x, node.y, node.w, node.h, 8);
+          ctx.fill();
+          ctx.stroke();
+          if (node.overlap) {
+            ctx.fillStyle = "rgba(180,95,42,0.28)";
+            roundRect(ctx, node.x, node.y, Math.min(node.w * 0.5, 28), node.h, 8);
+            ctx.fill();
+          }
+          ctx.fillStyle = "#173820";
+          ctx.font = "900 12px sans-serif";
+          ctx.fillText(node.title, node.x + 8, node.y + 16);
+          ctx.fillStyle = "#68716a";
+          ctx.font = "800 11px sans-serif";
+          ctx.fillText(`${node.text.length} 字`, node.x + 8, node.y + node.h - 10);
+        });
+      }
+
+      function renderBars(container, vector) {
+        const max = Math.max(0.001, ...vector);
+        container.innerHTML = vector.map((value, index) => `
+          <div class="bar">
+            <span>${dims[index].label}</span>
+            <div class="bar-track"><i style="width:${Math.max(2, value / max * 100)}%"></i></div>
+            <b>${value.toFixed(2)}</b>
+          </div>
+        `).join("");
+      }
+
+      function drawEmbeddingDemo() {
+        const query = "向量数据库怎么保存 embedding？";
+        const qv = embed(query);
+        renderBars(document.getElementById("queryBars"), qv);
+        const rows = docs.map((doc) => ({ ...doc, vector: embed(doc.text), score: dot(qv, embed(doc.text)) }))
+          .sort((a, b) => b.score - a.score);
+        document.getElementById("similarityList").innerHTML = rows.map((row, index) => `
+          <div class="card" style="margin-bottom:8px">
+            <span class="tag">Top ${index + 1}</span>
+            <strong>${row.id} · ${row.score.toFixed(4)}</strong>
+            <p>${row.text}</p>
+          </div>
+        `).join("");
+
+        const canvas = document.getElementById("embeddingCanvas");
+        const { ctx, w, h } = canvasContext(canvas);
+        ctx.fillStyle = "#fbfdfb";
+        ctx.fillRect(0, 0, w, h);
+        ctx.fillStyle = "#173820";
+        ctx.font = "900 13px sans-serif";
+        ctx.fillText("3D 相似度空间：Q 是查询，越靠近 Q 分数越高", 20, 28);
+        const rot = state.rotations.embedding;
+        const qScreen = project({ x: 0, y: 0, z: 0 }, w, h, rot);
+        state.embeddingNodes = [];
+        rows.forEach((row, index) => {
+          const radius = 1.65 - row.score * 1.2;
+          const angle = index * 1.4 + 0.6;
+          const screen = project({ x: Math.cos(angle) * radius, y: (index - 1.5) * 0.32, z: Math.sin(angle) * radius }, w, h, rot);
+          ctx.strokeStyle = index === 0 ? "rgba(180,95,42,0.65)" : "rgba(47,111,72,0.22)";
+          ctx.lineWidth = index === 0 ? 3 : 1.4;
+          ctx.beginPath();
+          ctx.moveTo(qScreen.x, qScreen.y);
+          ctx.lineTo(screen.x, screen.y);
+          ctx.stroke();
+          const r = index === 0 ? 16 : 12;
+          ctx.fillStyle = index === 0 ? "#b45f2a" : "#2f6f48";
+          ctx.beginPath();
+          ctx.arc(screen.x, screen.y, r, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = "#ffffff";
+          ctx.font = "900 11px sans-serif";
+          ctx.textAlign = "center";
+          ctx.fillText(row.id.replace("chunk-", ""), screen.x, screen.y + 4);
+          state.embeddingNodes.push({ x: screen.x - r, y: screen.y - r, w: r * 2, h: r * 2, title: `${row.id} · ${row.score.toFixed(4)}`, desc: row.text });
+        });
+        ctx.fillStyle = "#173820";
+        ctx.beginPath();
+        ctx.arc(qScreen.x, qScreen.y, 18, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "900 12px sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText("Q", qScreen.x, qScreen.y + 4);
+        state.embeddingNodes.push({ x: qScreen.x - 18, y: qScreen.y - 18, w: 36, h: 36, title: "查询向量 Q", desc: query });
+        ctx.textAlign = "left";
+      }
+
+      function drawVectorDemo() {
+        const query = "向量数据库怎么保存 embedding？";
+        const qv = embed(query);
+        const rows = docs.map((doc) => ({ ...doc, vector: embed(doc.text), score: dot(qv, embed(doc.text)) }))
+          .sort((a, b) => b.score - a.score);
+        document.getElementById("collectionCode").textContent = JSON.stringify(docs.slice(0, 2).map((doc) => ({ id: doc.id, text: doc.text.slice(0, 26) + "...", embedding: embed(doc.text), metadata: { source: doc.source } })), null, 2);
+        document.getElementById("vectorResults").innerHTML = rows.slice(0, 3).map((row, index) => `
+          <div class="card" style="margin-bottom:8px">
+            <span class="tag">Top ${index + 1}</span>
+            <strong>${row.id} · ${row.source}</strong>
+            <p>score=${row.score.toFixed(4)}。${row.text}</p>
+          </div>
+        `).join("");
+
+        const canvas = document.getElementById("vectorCanvas");
+        const { ctx, w, h } = canvasContext(canvas);
+        ctx.fillStyle = "#fbfdfb";
+        ctx.fillRect(0, 0, w, h);
+        ctx.fillStyle = "#173820";
+        ctx.font = "900 13px sans-serif";
+        ctx.fillText("向量库查询：collection 中的点按相似度连接到 Q", 20, 28);
+        const rot = state.rotations.vector;
+        const qScreen = project({ x: 0, y: 0, z: 0 }, w, h, rot);
+        state.vectorNodes = [];
+        rows.forEach((row, index) => {
+          const angle = (index / rows.length) * Math.PI * 2;
+          const radius = 1.25 - Math.min(row.score, 1) * 0.55;
+          const screen = project({ x: Math.cos(angle) * radius, y: Math.sin(angle) * 0.9, z: Math.sin(angle * 1.5) * 0.45 }, w, h, rot);
+          ctx.strokeStyle = index === 0 ? "rgba(180,95,42,0.66)" : "rgba(31,111,132,0.24)";
+          ctx.lineWidth = index === 0 ? 3 : 1.4;
+          ctx.beginPath();
+          ctx.moveTo(qScreen.x, qScreen.y);
+          ctx.lineTo(screen.x, screen.y);
+          ctx.stroke();
+          const r = index === 0 ? 17 : 12;
+          ctx.fillStyle = index === 0 ? "#b45f2a" : "#1f6f84";
+          ctx.beginPath();
+          ctx.arc(screen.x, screen.y, r, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = "#ffffff";
+          ctx.font = "900 11px sans-serif";
+          ctx.textAlign = "center";
+          ctx.fillText(row.id.replace("chunk-", ""), screen.x, screen.y + 4);
+          state.vectorNodes.push({ x: screen.x - r, y: screen.y - r, w: r * 2, h: r * 2, title: `${row.id} · ${row.score.toFixed(4)}`, desc: `${row.source}：${row.text}` });
+        });
+        ctx.fillStyle = "#173820";
+        ctx.beginPath();
+        ctx.arc(qScreen.x, qScreen.y, 18, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "900 12px sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText("Q", qScreen.x, qScreen.y + 4);
+        state.vectorNodes.push({ x: qScreen.x - 18, y: qScreen.y - 18, w: 36, h: 36, title: "Query Vector", desc: query });
+        ctx.textAlign = "left";
+      }
+
+      function renderRerank() {
+        const rows = [
+          ["chunk-2", 0.93, 0.97, "直接回答“向量库怎么保存 embedding”，重排后仍第一。"],
+          ["chunk-1", 0.47, 0.58, "讲 RAG 和 embedding，有帮助但不是最直接。"],
+          ["chunk-4", 0.42, 0.22, "提到向量库，但主题是 Rerank，重排后下降。"],
+        ];
+        document.querySelector("#rerankTable tbody").innerHTML = rows.map((row) => `
+          <tr>
+            <td>${row[0]}</td>
+            <td>${row[1]}</td>
+            <td><b>${row[2]}</b></td>
+            <td>${row[3]}</td>
+          </tr>
+        `).join("");
+      }
+
+      const interviewDepth = {
+        "文本切分": {
+          expand: "面试时不要只说“把文档切短”。更完整的回答是：切分决定了后续检索的最小证据单元，影响召回率、引用质量、上下文噪声和成本。好的 chunk 应该语义完整、长度适中、带标题和来源 metadata。",
+          example: "比如一份产品手册里有“登录配置”和“支付配置”。如果整段混在一个 chunk 里，用户问支付配置时可能带入登录内容；如果切得太碎，又可能把“配置项”和“解释”拆开，导致模型答不全。",
+          follow: "常见追问：chunk size 怎么选？overlap 为什么不能太大？表格和图片怎么切？如何测试切分质量？",
+        },
+        "Embedding 与相似度": {
+          expand: "面试时要讲清楚：embedding 是把 query 和 chunk 映射到同一个语义空间，后面才能用余弦相似度、点积或距离来比较。它负责“找相似”，不负责“生成答案”。",
+          example: "用户问“怎么重置密码”，文档写的是“忘记登录口令后进入账号安全页重新设置”，关键词不完全一样，但 embedding 应该能识别语义接近并召回。",
+          follow: "常见追问：为什么不能混用不同模型？为什么相似度高不等于答案正确？专业编号为什么要加关键词检索？怎么评测 embedding 模型？",
+        },
+        "向量库": {
+          expand: "面试时要把向量库说成一个工程组件：它存 id、text、embedding 和 metadata，支持 upsert、delete、query、filter 和索引加速。它不是大模型，只负责召回候选证据。",
+          example: "比如每个 chunk 记录 source、page、section、tenant_id。用户提问时先按 tenant_id 和权限过滤，再做向量检索，这样不会把没有权限的文档召回。",
+          follow: "常见追问：pgvector 和 Milvus 怎么选？metadata 为什么重要？文档更新怎么处理？索引会不会影响召回率？",
+        },
+        Rerank: {
+          expand: "面试时要强调：向量检索是粗召回，Rerank 是精排。Rerank 不从全量文档找答案，只对 Top K 候选逐条判断相关性，让真正能回答问题的片段排到前面。",
+          example: "用户问“向量库怎么保存 embedding”，向量召回可能找出“Rerank 处理向量库结果”的片段，因为主题相近；Rerank 会发现它没回答保存结构，于是把它排低。",
+          follow: "常见追问：Rerank 为什么贵？Top K 取多少？如果正确证据没召回，Rerank 能不能救？怎么评测 Rerank？",
+        },
+        综合: {
+          expand: "综合题不要背定义，要按链路回答：文档解析、切分、embedding、入库、召回、rerank、上下文组装、生成、引用、评测、监控。回答时最好能说明每一步为什么存在。",
+          example: "例如企业制度问答：上传制度 PDF 后抽取文本和页码，按条款切分，生成向量并保存权限 metadata；用户提问时先按权限过滤，再召回、重排、生成带引用的答案。",
+          follow: "常见追问：答案错了怎么排查？没有证据怎么办？权限怎么做？文档更新怎么办？如何证明系统效果变好了？",
+        },
+        "大厂风格": {
+          expand: "这类题看的是工程完整性。回答要有架构拆分、取舍理由、故障排查、指标评测和上线后的迭代闭环，不能只停留在概念解释。",
+          example: "如果问企业级 RAG 架构，可以拆成离线入库链路和在线问答链路，再分别讲解析、切分、embedding、向量库、权限、召回、重排、生成、日志和评测。",
+          follow: "常见追问：为什么这样拆？瓶颈在哪里？怎么降级？怎么保证权限？怎么用数据证明优化有效？",
+        },
+        混合: {
+          expand: "混合题通常把多个模块绑在一起考。你要先定位问题发生在哪一层，再给组合方案，而不是只调一个参数。",
+          example: "比如错误码 E102 召回失败，不能只说换 embedding。更完整方案是：保证错误码和解释不被切开，加入 BM25 精确检索，metadata 记录 error_code，再做 hybrid + rerank。",
+          follow: "常见追问：如果 Top K 有正确证据但答案错怎么办？如果 query 太短怎么办？如果重复召回怎么办？如果回答慢怎么降级？",
+        },
+      };
+
+      function enhanceInterviewAnswers() {
+        const headingFor = (question) => {
+          let node = question.previousElementSibling;
+          let parent = question.parentElement;
+          while (!node && parent) {
+            node = parent.previousElementSibling;
+            parent = parent.parentElement;
+          }
+          while (node) {
+            if (node.tagName === "H3") return node.textContent;
+            node = node.previousElementSibling;
+          }
+          return "";
+        };
+
+        document.querySelectorAll("details.question").forEach((question) => {
+          if (question.querySelector(".answer-depth")) return;
+          const title = headingFor(question);
+          let type = "综合";
+          if (title.includes("文本切分")) type = "文本切分";
+          else if (title.includes("Embedding")) type = "Embedding 与相似度";
+          else if (title.includes("向量库")) type = "向量库";
+          else if (title.includes("Rerank")) type = "Rerank";
+          else if (title.includes("大厂")) type = "大厂风格";
+          else if (title.includes("混合")) type = "混合";
+          const detail = interviewDepth[type] || interviewDepth.综合;
+          question.insertAdjacentHTML("beforeend", `
+            <div class="answer-depth">
+              <div class="answer-block">
+                <b>面试展开</b>
+                <p>${detail.expand}</p>
+              </div>
+              <div class="answer-block example">
+                <b>举个例子</b>
+                <p>${detail.example}</p>
+              </div>
+              <div class="answer-block follow">
+                <b>可能继续追问</b>
+                <p>${detail.follow}</p>
+              </div>
+            </div>
+          `);
+        });
+      }
+
+      function bindNav() {
+        const links = Array.from(document.querySelectorAll(".nav a"));
+        const sections = links.map((link) => document.querySelector(link.getAttribute("href")));
+        window.addEventListener("scroll", () => {
+          const current = sections.findLast((section) => section && section.getBoundingClientRect().top < 150);
+          links.forEach((link) => link.classList.toggle("is-active", current && link.getAttribute("href") === `#${current.id}`));
+        }, { passive: true });
+      }
+
+      function init() {
+        setupCanvas("chunkCanvas", "chunkTip", "chunk", drawChunkDemo);
+        setupCanvas("embeddingCanvas", "embeddingTip", "embedding", drawEmbeddingDemo);
+        setupCanvas("vectorCanvas", "vectorTip", "vector", drawVectorDemo);
+        document.getElementById("chunkSize").addEventListener("input", drawChunkDemo);
+        document.getElementById("overlap").addEventListener("input", drawChunkDemo);
+        document.getElementById("chunkStrategy").addEventListener("change", drawChunkDemo);
+        window.addEventListener("resize", () => {
+          drawChunkDemo();
+          drawEmbeddingDemo();
+          drawVectorDemo();
+        });
+        bindNav();
+        drawChunkDemo();
+        drawEmbeddingDemo();
+        drawVectorDemo();
+        renderRerank();
+        enhanceInterviewAnswers();
+      }
+
+      init();
+    </script>
+  </body>
+</html>

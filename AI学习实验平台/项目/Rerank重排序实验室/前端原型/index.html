@@ -1,0 +1,292 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Rerank 重排序实验室</title>
+    <link rel="icon" href="data:," />
+    <link rel="stylesheet" href="./styles.css?v=20260512-rerank-v2" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="project-switcher">
+          <button class="brand project-trigger" id="projectTrigger" aria-expanded="false">
+            <div class="brand-mark">排</div>
+            <div>
+              <strong>Rerank 重排序实验室</strong>
+              <span>召回之后再提准</span>
+            </div>
+            <i>切换</i>
+          </button>
+          <div class="project-menu" id="projectMenu">
+            <button data-project="chunking">
+              <strong>01 文本切分实验室</strong>
+              <span>先把长文档拆成 chunk</span>
+            </button>
+            <button data-project="embedding">
+              <strong>02 Embedding 与相似度</strong>
+              <span>把文本变向量并计算相似度</span>
+            </button>
+            <button data-project="vectordb">
+              <strong>03 向量库实验室</strong>
+              <span>保存向量并查询 Top K</span>
+            </button>
+            <button class="is-active" data-project="rerank">
+              <strong>04 Rerank 重排序实验室</strong>
+              <span>把初筛证据重新排序</span>
+            </button>
+            <button data-project="rageval">
+              <strong>05 RAG 评测实验室</strong>
+              <span>评估检索、引用和回答质量</span>
+            </button>
+            <button data-project="graphrag">
+              <strong>06 Graph RAG 图谱实验室</strong>
+              <span>实体关系和多跳推理</span>
+            </button>
+            <button data-project="agent">
+              <strong>07 Agent 工程实验室</strong>
+              <span>目标如何变成工具调用</span>
+            </button>
+            <button data-project="modelprompt">
+              <strong>08 模型调用与 Prompt 工程</strong>
+              <span>真实模型接入前必学</span>
+            </button>
+            <button data-project="zhixingzhe">
+              <strong>09 知行者 AI 实验室</strong>
+              <span>完整 RAG、Agent、大模型应用</span>
+            </button>
+            <button data-project="itemcf">
+              <strong>10 ItemCF 实验室</strong>
+              <span>物品共现如何推荐</span>
+            </button>
+            <button data-project="tagrec">
+              <strong>11 标签推荐实验室</strong>
+              <span>标签画像如何推荐</span>
+            </button>
+            <button data-project="usercf">
+              <strong>12 UserCF 实验室</strong>
+              <span>相似用户如何贡献推荐</span>
+            </button>
+            <button data-project="svd">
+              <strong>13 SVD 矩阵分解实验室</strong>
+              <span>隐向量如何预测喜欢</span>
+            </button>
+            <button data-project="recsys">
+              <strong>14 推荐系统总览</strong>
+              <span>四类推荐算法对比</span>
+            </button>
+          </div>
+        </div>
+
+        <nav class="nav">
+          <button class="nav-item is-active" data-view="overview"><span>01</span><b>项目总览</b></button>
+          <button class="nav-item" data-view="lab"><span>02</span><b>Rerank 实验台</b></button>
+          <button class="nav-item" data-view="visual"><span>03</span><b>排序可视化</b></button>
+          <button class="nav-item" data-view="roadmap"><span>04</span><b>学习路线</b></button>
+          <button class="nav-item" data-view="interview"><span>05</span><b>面试题</b></button>
+        </nav>
+
+        <div class="side-note">
+          <span>当前阶段</span>
+          <strong>向量召回后的提准</strong>
+          <p>先用教学版规则模拟 reranker，看懂为什么 Top K 初筛不等于最终证据。</p>
+        </div>
+      </aside>
+
+      <main class="main">
+        <header class="topbar">
+          <div>
+            <span class="eyebrow">Rerank Lab</span>
+            <h1 id="pageTitle">项目总览</h1>
+          </div>
+          <div class="top-actions">
+            <span class="status-pill is-ok">本地教学版</span>
+            <button class="primary-btn" data-view-link="lab">开始实验</button>
+          </div>
+        </header>
+
+        <section class="view is-active" id="overview">
+          <div class="hero-panel">
+            <div>
+              <span class="eyebrow">为什么召回后还要重新排序</span>
+              <h2>向量库负责找一批可能相关的证据，Rerank 负责把最能回答问题的证据排到前面。</h2>
+              <p>
+                向量相似度擅长大范围召回，但它可能把“主题相似但没回答问题”的片段排前面。
+                Rerank 会重新阅读 query 和 chunk 的匹配关系，综合问题词、答案词、来源质量和噪声惩罚，决定哪些证据真正值得进入 prompt。
+              </p>
+              <div class="hero-actions">
+                <button class="primary-btn" data-view-link="lab">打开 Rerank 实验台</button>
+                <button class="secondary-btn" data-view-link="visual">看排序前后变化</button>
+              </div>
+            </div>
+            <div class="flow-card">
+              <div><span>01</span><strong>Vector Recall</strong><p>向量库先召回 Top K 候选证据。</p></div>
+              <div><span>02</span><strong>Rerank</strong><p>逐条判断 query 和 chunk 是否真的匹配。</p></div>
+              <div><span>03</span><strong>Evidence Gate</strong><p>低分证据不进入 prompt，证据不足时拒答。</p></div>
+              <div><span>04</span><strong>Generate</strong><p>大模型只基于最终证据回答。</p></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="view" id="lab">
+          <div class="lab-grid rerank-grid">
+            <section class="panel query-panel">
+              <div class="panel-head">
+                <div>
+                  <h2>实验参数</h2>
+                  <p>同一批候选，观察向量分和重排序分的差异。</p>
+                </div>
+              </div>
+              <label class="field">
+                问题
+                <textarea id="queryInput">Rerank 在 RAG 里起什么作用？</textarea>
+              </label>
+              <div class="control-pair">
+                <label class="field">
+                  向量召回 Top K
+                  <select id="recallKSelect">
+                    <option value="4">4 条</option>
+                    <option value="6" selected>6 条</option>
+                    <option value="8">8 条</option>
+                  </select>
+                </label>
+                <label class="field">
+                  最终保留 Top N
+                  <select id="finalNSelect">
+                    <option value="2">2 条</option>
+                    <option value="3" selected>3 条</option>
+                    <option value="4">4 条</option>
+                  </select>
+                </label>
+              </div>
+              <label class="field">
+                Rerank 策略
+                <select id="strategySelect">
+                  <option value="balanced" selected>平衡：相关性 + 可回答性 + 来源质量</option>
+                  <option value="strict">严格：更看重能否直接回答</option>
+                  <option value="semantic">语义：更接近向量召回</option>
+                </select>
+              </label>
+              <button class="primary-btn" id="runBtn">运行 Rerank</button>
+              <div class="plain-card">
+                <strong>教学版说明</strong>
+                <p>这里不用真实 cross-encoder，而是用可解释规则模拟 reranker。真实生产里可以换成 BGE Reranker、Cohere Rerank、Jina Reranker 或大模型打分。</p>
+              </div>
+            </section>
+
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <h2>向量库初筛</h2>
+                  <p>按 embedding 相似度得到第一版 Top K。</p>
+                </div>
+                <span class="status-pill" id="recallStatus">0 条</span>
+              </div>
+              <div class="result-list" id="recallList"></div>
+            </section>
+
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <h2>Rerank 后证据</h2>
+                  <p>最终进入 prompt 的证据应更少、更准。</p>
+                </div>
+                <span class="status-pill" id="rerankStatus">0 条</span>
+              </div>
+              <div class="result-list" id="rerankList"></div>
+            </section>
+          </div>
+
+          <div class="grid two">
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <h2>当前证据详情</h2>
+                  <p>点击任意候选，看它为什么升高或下降。</p>
+                </div>
+              </div>
+              <div id="detailPanel"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <h2>Prompt 证据门</h2>
+                  <p>低质量证据进入 prompt，会增加幻觉风险。</p>
+                </div>
+              </div>
+              <div id="gatePanel"></div>
+            </section>
+          </div>
+        </section>
+
+        <section class="view" id="visual">
+          <div class="visual-grid">
+            <section class="panel visual-main">
+              <div class="panel-head">
+                <div>
+                  <h2>排序前后可视化</h2>
+                  <p>这是动态排序流向图，不是 3D 向量空间。左边是向量召回顺序，右边是 Rerank 后顺序，移动点展示每个候选怎么换位。</p>
+                </div>
+              </div>
+              <div class="space-stage">
+                <canvas id="rankCanvas" width="980" height="520"></canvas>
+                <div class="canvas-tooltip" id="canvasTooltip"></div>
+              </div>
+            </section>
+            <section class="panel explain-panel">
+              <div class="panel-head">
+                <div>
+                  <h2>怎么看这张图</h2>
+                  <p>它展示排序变化，不展示 embedding 坐标。</p>
+                </div>
+              </div>
+              <div class="plain-card">
+                <strong>移动点</strong>
+                <p>小圆点会从左侧初筛名次移动到右侧重排名次，表示同一个 chunk 的名次变化。</p>
+              </div>
+              <div class="plain-card">
+                <strong>上升</strong>
+                <p>如果 chunk 在右侧位置更靠上，说明 reranker 认为它更能回答问题。</p>
+              </div>
+              <div class="plain-card">
+                <strong>下降</strong>
+                <p>如果 chunk 主题相似但没说到答案，它可能被降权。</p>
+              </div>
+              <div class="plain-card">
+                <strong>被过滤</strong>
+                <p>最终 Top N 之外的候选通常不进入 prompt，避免上下文噪声。</p>
+              </div>
+            </section>
+          </div>
+        </section>
+
+        <section class="view" id="roadmap">
+          <section class="panel">
+            <div class="panel-head">
+              <div>
+                <h2>学习路线</h2>
+                <p>Rerank 学完后，你就能解释企业 RAG 为什么不是只靠向量库。</p>
+              </div>
+            </div>
+            <div class="roadmap-list" id="roadmapList"></div>
+          </section>
+        </section>
+
+        <section class="view" id="interview">
+          <section class="panel">
+            <div class="panel-head">
+              <div>
+                <h2>Rerank 面试题</h2>
+                <p>按“为什么需要、怎么做、怎么评估、有什么代价”来准备。</p>
+              </div>
+            </div>
+            <div class="roadmap-list" id="interviewList"></div>
+          </section>
+        </section>
+      </main>
+    </div>
+
+    <script src="./app.js?v=20260512-rerank-v2"></script>
+  </body>
+</html>

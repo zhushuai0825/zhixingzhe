@@ -1,11 +1,14 @@
 from __future__ import annotations
 
 import json
+import os
 import re
 import time
+import zipfile
 from collections import Counter
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
+from xml.etree import ElementTree
 
 import requests
 
@@ -13,7 +16,7 @@ from .security import decrypt_secret, is_encrypted, mask_secret
 from .storage import connect, new_id, now_iso
 
 
-SUPPORTED_EXTENSIONS = {".txt", ".md", ".markdown"}
+SUPPORTED_EXTENSIONS = {".txt", ".md", ".markdown", ".pdf", ".docx"}
 STOP_WORDS = {
     "的",
     "了",
@@ -37,7 +40,26 @@ STOP_WORDS = {
     "目前",
     "当前",
     "文档",
+    "文档里",
+    "有没有",
+    "没有",
+    "什么",
+    "是否",
     "知识",
+    "说明",
+    "如何",
+    "模型",
+    "大模型",
+    "大模",
+    "参数",
+    "设计",
+    "训练",
+    "提到",
+    "给出",
+    "完整",
+    "复现",
+    "资料",
+    "这份",
     "一下",
     "这些",
     "两个",
@@ -49,6 +71,10 @@ OVERVIEW_KEYWORDS = (
     "分析",
     "梳理",
     "介绍",
+    "主要介绍",
+    "全称",
+    "英文全称",
+    "是什么",
     "这两个文档",
     "这些文档",
     "当前文档",
@@ -71,13 +97,19 @@ def ensure_supported_file(filename: str) -> str:
     if ext not in SUPPORTED_EXTENSIONS:
         raise AppError(
             "UNSUPPORTED_FILE_TYPE",
-            "MVP 当前支持 txt、md、markdown 文件。PDF 和 Word 会在后续版本加入。",
+            "当前支持 txt、md、markdown、pdf、docx 文件。PDF 需为文本型，暂不支持扫描件 OCR。",
             400,
         )
     return ext.lstrip(".")
 
 
 def read_text_file(path: Path) -> str:
+    ext = path.suffix.lower()
+    if ext == ".pdf":
+        return read_pdf_file(path)
+    if ext == ".docx":
+        return read_docx_file(path)
+
     raw = path.read_bytes()
     for encoding in ("utf-8", "utf-8-sig", "gb18030"):
         try:
@@ -85,6 +117,60 @@ def read_text_file(path: Path) -> str:
         except UnicodeDecodeError:
             continue
     raise AppError("FILE_DECODE_FAILED", "文件编码无法识别，请先转为 UTF-8 文本。", 400)
+
+
+def read_pdf_file(path: Path) -> str:
+    try:
+        from pypdf import PdfReader
+    except ImportError as exc:
+        raise AppError("PDF_PARSER_MISSING", "缺少 pypdf 依赖，请先执行 pip install -r requirements.txt。", 500) from exc
+
+    try:
+        reader = PdfReader(str(path))
+        if reader.is_encrypted:
+            raise AppError("ENCRYPTED_PDF", "暂不支持加密 PDF，请先解除密码后再上传。", 400)
+        pages = []
+        for index, page in enumerate(reader.pages, start=1):
+            text = page.extract_text() or ""
+            if text.strip():
+                pages.append(f"[第 {index} 页]\n{text.strip()}")
+    except AppError:
+        raise
+    except Exception as exc:
+        raise AppError("PDF_PARSE_FAILED", f"PDF 解析失败：{exc}", 400) from exc
+
+    extracted = "\n\n".join(pages).strip()
+    if not extracted:
+        raise AppError("EMPTY_DOCUMENT", "PDF 没有提取到文本。扫描件需要先做 OCR。", 400)
+    return extracted
+
+
+def read_docx_file(path: Path) -> str:
+    try:
+        with zipfile.ZipFile(path) as archive:
+            xml = archive.read("word/document.xml")
+    except KeyError as exc:
+        raise AppError("DOCX_PARSE_FAILED", "Word 文档缺少正文内容。", 400) from exc
+    except zipfile.BadZipFile as exc:
+        raise AppError("DOCX_PARSE_FAILED", "Word 文档格式损坏或不是有效 docx 文件。", 400) from exc
+
+    try:
+        root = ElementTree.fromstring(xml)
+    except ElementTree.ParseError as exc:
+        raise AppError("DOCX_PARSE_FAILED", "Word 文档正文 XML 解析失败。", 400) from exc
+
+    paragraphs: List[str] = []
+    namespace = "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}"
+    for paragraph in root.iter(f"{namespace}p"):
+        texts = [node.text or "" for node in paragraph.iter(f"{namespace}t")]
+        line = "".join(texts).strip()
+        if line:
+            paragraphs.append(line)
+
+    extracted = "\n\n".join(paragraphs).strip()
+    if not extracted:
+        raise AppError("EMPTY_DOCUMENT", "Word 文档没有提取到文本。", 400)
+    return extracted
 
 
 def clean_text(text: str) -> str:
@@ -98,6 +184,7 @@ def split_text(text: str, chunk_size: int = 900, overlap: int = 120) -> List[str
     text = clean_text(text)
     if not text:
         return []
+    overlap = min(overlap, max(chunk_size - 1, 0))
     chunks: List[str] = []
     start = 0
     while start < len(text):
@@ -157,7 +244,23 @@ def summarize_text(text: str) -> str:
 def tokenize(text: str) -> set[str]:
     text = text.lower()
     words = re.findall(r"[\u4e00-\u9fff]{2,}|[a-zA-Z0-9_]{2,}", text)
-    return {word for word in words if word not in STOP_WORDS}
+    tokens: set[str] = set()
+    for word in words:
+        if word in STOP_WORDS:
+            continue
+        tokens.add(word)
+        if re.fullmatch(r"[\u4e00-\u9fff]{3,}", word):
+            for index in range(len(word) - 1):
+                gram = word[index : index + 2]
+                if gram not in STOP_WORDS:
+                    tokens.add(gram)
+    return tokens
+
+
+def strip_model_artifacts(text: str) -> str:
+    text = re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL | re.IGNORECASE)
+    text = re.sub(r"<thinking>.*?</thinking>", "", text, flags=re.DOTALL | re.IGNORECASE)
+    return clean_text(text)
 
 
 def score_chunk(question: str, content: str) -> float:
@@ -169,8 +272,75 @@ def score_chunk(question: str, content: str) -> float:
     return len(overlap) / max(len(q_words), 1)
 
 
+def evidence_thresholds(question: str) -> Dict[str, float]:
+    if is_strict_absence_question(question):
+        return {"min_score": 0.32, "min_coverage": 0.35}
+    if is_overview_question(question):
+        return {"min_score": 0.08, "min_coverage": 0.05}
+    return {"min_score": 0.18, "min_coverage": 0.18}
+
+
+def enough_evidence_to_answer(question: str, chunks: List[Dict[str, Any]]) -> bool:
+    return evaluate_rag_answer(question, chunks, "").get("verdict") != "no_evidence"
+
+
 def is_overview_question(question: str) -> bool:
+    if any(keyword in question for keyword in ("有没有", "是否", "有没有介绍", "有没有说明", "有没有提到")):
+        return False
     return any(keyword in question for keyword in OVERVIEW_KEYWORDS)
+
+
+def is_strict_absence_question(question: str) -> bool:
+    strict_markers = (
+        "有没有",
+        "是否",
+        "有没有给出",
+        "有没有说明",
+        "有没有介绍",
+        "有没有提到",
+        "有没有完整",
+    )
+    evidence_markers = (
+        "yaml",
+        "api key",
+        "deepseek",
+        "langgraph",
+        "kubernetes",
+        "训练大模型",
+        "节点",
+        "配置文件",
+        "部署方案",
+        "主从复制",
+        "训练数据",
+        "mirage",
+        "下载地址",
+        "完整复现",
+        "未公开",
+        "内部",
+    )
+    lower = question.lower()
+    return any(marker in question for marker in strict_markers) and any(marker in lower for marker in evidence_markers)
+
+
+def has_direct_evidence_for_strict_question(question: str, chunks: List[Dict[str, Any]]) -> bool:
+    merged = "\n".join(chunk.get("content", "") for chunk in chunks).lower()
+    lower = question.lower()
+    if "api key" in lower:
+        return bool(re.search(r"(sk-[a-z0-9]{12,}|密钥[:：]\\s*\\S{12,}|api[_ -]?key[:：=]\\s*\\S{12,})", merged))
+    if "yaml" in lower or "kubernetes" in lower:
+        return "apiversion:" in merged or re.search(r"(^|\\n)kind:\\s*\\w+", merged) is not None
+    if "配置文件" in lower or "docker compose" in lower:
+        return "docker-compose" in merged or "services:" in merged or "version:" in merged
+    if "下载地址" in lower:
+        return re.search(r"下载地址[:：]\\s*https?://\\S+", merged) is not None
+    if "完整复现" in lower or "代码" in lower:
+        has_code_block = re.search(r"```(python|bash|javascript|typescript)", merged) is not None
+        return "完整代码" in merged or "复现步骤" in merged or has_code_block
+    if "部署方案" in lower or "主从复制" in lower or "训练大模型" in lower or "langgraph" in lower:
+        return "部署步骤" in merged or "配置步骤" in merged or "主从复制" in merged
+    if "内部" in lower or "未公开" in lower:
+        return False
+    return False
 
 
 def fetch_overview_chunks(knowledge_base_id: str, top_k: int = 8) -> List[Dict[str, Any]]:
@@ -228,10 +398,10 @@ def fetch_overview_chunks(knowledge_base_id: str, top_k: int = 8) -> List[Dict[s
     return selected
 
 
-def retrieve_chunks(knowledge_base_id: str, question: str, top_k: int = 5) -> List[Dict[str, Any]]:
+def retrieve_chunks(knowledge_base_id: str, question: str, top_k: int = 5, hybrid: bool = True) -> List[Dict[str, Any]]:
     from .vector_store import search_similar_chunks
 
-    vector_results = search_similar_chunks(knowledge_base_id, question, top_k)
+    vector_results = search_similar_chunks(knowledge_base_id, question, top_k, hybrid)
     if vector_results and not is_overview_question(question):
         return vector_results
 
@@ -530,10 +700,11 @@ def call_chat_model(
         "Authorization": f"Bearer {api_key_plain_for_bearer(config['api_key'])}",
         "Content-Type": "application/json",
     }
-    response = requests.post(url, headers=headers, json=payload, timeout=45)
+    timeout_seconds = float(os.getenv("ZHIXINGZHE_CHAT_TIMEOUT_SECONDS", "15"))
+    response = requests.post(url, headers=headers, json=payload, timeout=timeout_seconds)
     raise_for_openai_compatible_response(response)
     data = response.json()
-    return data["choices"][0]["message"]["content"]
+    return strip_model_artifacts(str(data["choices"][0]["message"]["content"]))
 
 
 def test_chat_model(provider: str, base_url: str, api_key: str, model_name: str) -> str:
@@ -568,6 +739,12 @@ def answer_question(
     config = get_enabled_model_config(provider)
     used_fallback = False
     warning = None
+    preliminary_evaluation = evaluate_rag_answer(question, chunks, "")
+
+    if preliminary_evaluation["verdict"] == "no_evidence":
+        latency_ms = int((time.time() - started) * 1000)
+        warning = "当前知识库没有找到足够依据。"
+        return build_local_answer(question, []), [], latency_ms, used_fallback, warning
 
     if config and chunks:
         try:
@@ -584,6 +761,91 @@ def answer_question(
 
     latency_ms = int((time.time() - started) * 1000)
     return answer, chunks, latency_ms, used_fallback, warning
+
+
+def evaluate_rag_answer(question: str, chunks: List[Dict[str, Any]], answer: str = "") -> Dict[str, Any]:
+    question_terms = tokenize(question)
+    evidence_terms = set()
+    for chunk in chunks:
+        evidence_terms.update(tokenize(chunk.get("content", "")))
+    covered_terms = sorted(question_terms & evidence_terms)
+    missing_terms = sorted(question_terms - evidence_terms)
+    top_score = max((float(chunk.get("score") or 0) for chunk in chunks), default=0.0)
+    coverage_ratio = len(covered_terms) / max(len(question_terms), 1)
+    thresholds = evidence_thresholds(question)
+    has_citations = bool(chunks)
+    if not chunks:
+        verdict = "no_evidence"
+        suggestion = "没有检索到引用。正确行为是拒答或提示当前知识库依据不足。"
+    elif is_overview_question(question) and top_score >= thresholds["min_score"]:
+        verdict = "grounded"
+        suggestion = "当前是概览或定义类问题，已检索到可用于概括的资料片段。"
+    elif is_strict_absence_question(question) and not has_direct_evidence_for_strict_question(question, chunks):
+        verdict = "no_evidence"
+        suggestion = "这是要求确认具体证据是否存在的问题，当前没有找到直接证据，应拒答或提示没有找到依据。"
+    elif not covered_terms:
+        verdict = "no_evidence"
+        suggestion = "虽然检索到了片段，但没有覆盖问题中的关键概念，应拒答或补充资料。"
+    elif top_score < thresholds["min_score"] and coverage_ratio < thresholds["min_coverage"]:
+        verdict = "no_evidence"
+        suggestion = "相似度和问题覆盖都不足，应拒答或提示当前知识库依据不足。"
+    elif top_score < thresholds["min_score"] or coverage_ratio < thresholds["min_coverage"] or len(covered_terms) <= 1:
+        verdict = "weak_evidence"
+        suggestion = "检索依据偏弱，建议补充文档、改写问题，或调高召回数量后再回答。"
+    else:
+        verdict = "grounded"
+        suggestion = "已检索到可引用片段，回答应只围绕这些片段展开。"
+
+    return {
+        "retrieved_count": len(chunks),
+        "has_citations": has_citations,
+        "top_score": round(top_score, 4),
+        "coverage_ratio": round(coverage_ratio, 4),
+        "min_score": thresholds["min_score"],
+        "min_coverage": thresholds["min_coverage"],
+        "covered_terms": covered_terms[:12],
+        "missing_terms": missing_terms[:12],
+        "verdict": verdict,
+        "suggestion": suggestion,
+        "answer_length": len(answer or ""),
+    }
+
+
+def build_rag_learning_notes(params: Dict[str, Any], chunks: List[Dict[str, Any]], evaluation: Dict[str, Any]) -> List[str]:
+    notes = []
+    chunk_size = int(params.get("chunk_size") or 0)
+    overlap = int(params.get("overlap") or 0)
+    top_k = int(params.get("top_k") or 0)
+    hybrid = bool(params.get("hybrid", True))
+    if chunk_size < 500:
+        notes.append("当前切片偏短，适合精准事实问答，但可能丢失上下文。")
+    elif chunk_size > 1200:
+        notes.append("当前切片偏长，适合总结类问题，但可能让相似度变钝。")
+    else:
+        notes.append("当前切片长度适中，适合作为 RAG 入门实验基线。")
+    if overlap == 0:
+        notes.append("当前没有重叠，边界处的信息可能被切开。")
+    elif overlap > chunk_size * 0.3:
+        notes.append("当前重叠比例偏高，召回可能更稳，但向量数量和成本会上升。")
+    else:
+        notes.append("当前有少量重叠，有助于保留跨片段上下文。")
+    if top_k <= 3:
+        notes.append("当前 Top K 较小，回答更聚焦，但可能漏掉补充证据。")
+    elif top_k >= 8:
+        notes.append("当前 Top K 较大，召回更多，但 Prompt 更容易混入弱相关片段。")
+    else:
+        notes.append("当前 Top K 适中，适合观察检索片段质量。")
+    if hybrid:
+        notes.append("当前启用了 BM25 + 向量混合检索：向量看语义相似，BM25 看关键词命中。")
+    else:
+        notes.append("当前关闭了混合检索：结果主要依赖向量相似度，适合和混合检索做对照。")
+    if not chunks:
+        notes.append("这次没有检索到片段，请换问题、补文档，或调大切片和 Top K。")
+    elif evaluation.get("verdict") == "weak_evidence":
+        notes.append("这次依据偏弱，建议对比更大的 chunk_size 或更高质量的 embedding 模型。")
+    else:
+        notes.append("这次有可引用片段，下一步重点检查引用内容是否真的回答了问题。")
+    return notes
 
 
 def save_chat(

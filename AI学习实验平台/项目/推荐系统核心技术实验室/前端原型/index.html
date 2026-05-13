@@ -1,0 +1,525 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>推荐系统核心技术实验室</title>
+    <link rel="stylesheet" href="./styles.css?v=20260512-data-v1" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="project-switcher">
+          <button class="brand project-trigger" id="projectTrigger" aria-expanded="false">
+            <div class="brand-mark">推</div>
+            <div>
+              <strong>推荐系统核心技术</strong>
+              <span>四类推荐算法分模块学习</span>
+            </div>
+            <i>切换</i>
+          </button>
+          <div class="project-menu" id="projectMenu">
+            <button data-project="chunking">
+              <strong>01 文本切分实验室</strong>
+              <span>先把长文档拆成 chunk</span>
+            </button>
+            <button data-project="embedding">
+              <strong>02 Embedding 与相似度</strong>
+              <span>把文本变向量并计算相似度</span>
+            </button>
+            <button data-project="vectordb">
+              <strong>03 向量库实验室</strong>
+              <span>保存向量并查询 Top K</span>
+            </button>
+            <button data-project="rerank">
+              <strong>04 Rerank 重排序实验室</strong>
+              <span>把初筛证据重新排序</span>
+            </button>
+            <button data-project="rageval">
+              <strong>05 RAG 评测实验室</strong>
+              <span>评估检索、引用和回答质量</span>
+            </button>
+            <button data-project="graphrag">
+              <strong>06 Graph RAG 图谱实验室</strong>
+              <span>实体关系和多跳推理</span>
+            </button>
+            <button data-project="agent">
+              <strong>07 Agent 工程实验室</strong>
+              <span>目标如何变成工具调用</span>
+            </button>
+            <button data-project="modelprompt">
+              <strong>08 模型调用与 Prompt 工程</strong>
+              <span>真实模型接入前必学</span>
+            </button>
+            <button data-project="zhixingzhe">
+              <strong>09 知行者 AI 实验室</strong>
+              <span>完整 RAG、Agent、大模型应用</span>
+            </button>
+            <button data-project="itemcf">
+              <strong>10 ItemCF 实验室</strong>
+              <span>物品共现如何推荐</span>
+            </button>
+            <button data-project="tagrec">
+              <strong>11 标签推荐实验室</strong>
+              <span>标签画像如何推荐</span>
+            </button>
+            <button data-project="usercf">
+              <strong>12 UserCF 实验室</strong>
+              <span>相似用户如何贡献推荐</span>
+            </button>
+            <button data-project="svd">
+              <strong>13 SVD 矩阵分解实验室</strong>
+              <span>隐向量如何预测喜欢</span>
+            </button>
+            <button class="is-active" data-project="recsys">
+              <strong>14 推荐系统总览</strong>
+              <span>四类推荐算法对比</span>
+            </button>
+          </div>
+        </div>
+
+        <nav class="nav">
+          <button class="nav-item is-active" data-view="overview"><span>01</span><b>总览</b></button>
+          <button class="nav-item" data-view="tag"><span>02</span><b>标签推荐模块</b></button>
+          <button class="nav-item" data-view="itemcf"><span>03</span><b>ItemCF 模块</b></button>
+          <button class="nav-item" data-view="usercf"><span>04</span><b>UserCF 模块</b></button>
+          <button class="nav-item" data-view="svd"><span>05</span><b>SVD 模块</b></button>
+          <button class="nav-item" data-view="playground"><span>06</span><b>算法对比台</b></button>
+          <button class="nav-item" data-view="interview"><span>07</span><b>面试题</b></button>
+        </nav>
+
+        <div class="side-note">
+          <span>学习目标</span>
+          <strong>看懂推荐从哪里来</strong>
+          <p>每个算法独立成章：先讲清楚，再看数据怎么算。</p>
+        </div>
+      </aside>
+
+      <main class="main">
+        <header class="topbar">
+          <div>
+            <span class="eyebrow">Recommendation Learning Lab</span>
+            <h1 id="pageTitle">总览</h1>
+          </div>
+          <div class="top-actions">
+            <select id="globalUserSelect" aria-label="选择用户"></select>
+            <button class="primary-btn" data-view-link="playground">打开算法对比台</button>
+          </div>
+        </header>
+
+        <section class="view is-active" id="overview">
+          <div class="hero-panel">
+            <div>
+              <span class="eyebrow">从“相似”走向“推荐”</span>
+              <h2>推荐系统不是一个算法，而是一组召回、排序和解释方法。</h2>
+              <p>
+                这一站先学四个最核心的入门模块：标签/内容推荐、ItemCF、UserCF、SVD。
+                它们都会输出 Top N 推荐，但“相似”的定义完全不同。
+              </p>
+              <div class="hero-actions">
+                <button class="primary-btn" data-view-link="tag">从标签推荐开始</button>
+                <button class="secondary-btn" data-view-link="playground">直接对比算法</button>
+              </div>
+            </div>
+            <div class="flow-card">
+              <article><span>Tag</span><strong>内容像</strong><small>看物品标签和属性</small></article>
+              <article><span>ItemCF</span><strong>物品共现</strong><small>喜欢 A 的人也喜欢 B</small></article>
+              <article><span>UserCF</span><strong>用户相似</strong><small>和你相似的人喜欢什么</small></article>
+              <article><span>SVD</span><strong>隐向量</strong><small>学习用户和物品的潜在兴趣</small></article>
+            </div>
+          </div>
+
+          <div class="grid two">
+            <section class="panel">
+              <h2>0 基础先记住这句话</h2>
+              <p class="plain-talk">
+                推荐系统做的事是：根据用户、物品和行为，猜“用户接下来可能喜欢什么”。标签推荐看内容，协同过滤看行为，SVD 把行为压缩成潜在兴趣空间。
+              </p>
+            </section>
+            <section class="panel">
+              <h2>和 RAG 的相似点</h2>
+              <p>RAG 找“和问题最相关的证据”，推荐系统找“和用户兴趣最相关的物品”。它们都会用到相似度、Top N、召回、排序、解释和评估。</p>
+            </section>
+          </div>
+
+          <section class="panel">
+            <div class="panel-head">
+              <div>
+                <h2>学习顺序</h2>
+                <p>先从最容易解释的标签推荐开始，再进入协同过滤，最后看 SVD。</p>
+              </div>
+            </div>
+            <div class="timeline">
+              <article><span>01</span><strong>标签/内容推荐</strong><p>不需要用户群体，只要知道物品标签，就能做冷启动推荐。</p></article>
+              <article><span>02</span><strong>ItemCF</strong><p>用用户行为统计物品相似度，是工业界非常经典的召回方法。</p></article>
+              <article><span>03</span><strong>UserCF</strong><p>找相似用户，再看相似用户喜欢过什么，适合理解“人群相似”。</p></article>
+              <article><span>04</span><strong>SVD</strong><p>把用户和物品映射到隐向量空间，理解矩阵分解和深度推荐的基础。</p></article>
+            </div>
+          </section>
+        </section>
+
+        <section class="view" id="tag">
+          <section class="panel">
+            <div class="panel-head">
+              <div>
+                <span class="eyebrow">Tag / Content Based</span>
+                <h2>标签/内容推荐：根据物品内容相似来推荐</h2>
+                <p>它不看“别人喜欢了什么”，而是看“这个物品本身有什么标签”。</p>
+              </div>
+            </div>
+            <div class="grid two">
+              <div class="explain-card">
+                <h3>白话理解</h3>
+                <p>如果你喜欢“RAG 入门”和“向量数据库”，系统会发现你偏好 AI、检索、工程这些标签，于是推荐同样带这些标签的内容。</p>
+              </div>
+              <div class="explain-card">
+                <h3>适合场景</h3>
+                <p>新物品刚上线、行为数据很少时，ItemCF/UserCF 很难工作，但标签推荐可以立刻根据内容推荐。</p>
+              </div>
+            </div>
+            <div class="formula">用户画像 = 已喜欢物品的标签累加；候选得分 = 用户画像标签 与 候选物品标签 的重合程度</div>
+          </section>
+          <section class="panel">
+            <h2>标签/内容推荐完整拆解</h2>
+            <div class="module-map">
+              <article>
+                <strong>这一模块你要学会什么</strong>
+                <p>你要能从“物品有什么标签”推导到“用户喜欢什么标签”，再从用户画像推导出候选物品的推荐分。</p>
+              </article>
+              <article>
+                <strong>最小数据结构</strong>
+                <p>物品表至少要有 id、title、tags；用户行为表至少要有 user_id、item_id、behavior。没有行为也可以先用用户主动选择的兴趣标签。</p>
+              </article>
+              <article>
+                <strong>手算顺序</strong>
+                <p>先列出用户已喜欢物品，再把标签计数累加，然后逐个候选物品算标签命中，最后按分数排序。</p>
+              </article>
+            </div>
+            <div class="lesson-grid">
+              <article class="lesson-card">
+                <span>01</span>
+                <strong>数据从哪里来</strong>
+                <p>每个物品要先有标签、分类、标题、正文、作者、难度等内容信息。这里先用标签做演示，真实系统还可以用文本 embedding、图片 embedding 或人工标签。</p>
+              </article>
+              <article class="lesson-card">
+                <span>02</span>
+                <strong>用户画像怎么来</strong>
+                <p>把用户喜欢过的物品标签累加起来。喜欢过 3 个 AI 内容，AI 标签权重就更高；喜欢过 2 个推荐内容，推荐标签权重也会上升。</p>
+              </article>
+              <article class="lesson-card">
+                <span>03</span>
+                <strong>推荐分怎么来</strong>
+                <p>候选物品的标签和用户画像越重合，分数越高。比如用户画像里 AI=3，候选物品也有 AI 标签，那它就能拿到较高贡献。</p>
+              </article>
+              <article class="lesson-card">
+                <span>04</span>
+                <strong>最大优点</strong>
+                <p>新物品没有任何点击行为也能推荐，因为它只依赖内容。课程、文章、商品刚上线时，标签/内容推荐非常有用。</p>
+              </article>
+              <article class="lesson-card">
+                <span>05</span>
+                <strong>主要缺点</strong>
+                <p>容易越推越窄。用户喜欢 AI，就一直推 AI，可能发现不了新兴趣。标签质量差时，推荐也会跟着变差。</p>
+              </article>
+              <article class="lesson-card">
+                <span>06</span>
+                <strong>你应该怎么看页面</strong>
+                <p>先看当前用户喜欢了哪些物品，再看这些物品累加出了哪些标签，最后看推荐结果命中了哪些标签。</p>
+              </article>
+            </div>
+          </section>
+          <section class="panel">
+            <h2>本模块动手验证：标签如何变成推荐</h2>
+            <p>看当前用户喜欢过的物品，再看这些物品的标签如何变成用户画像，最后看候选物品为什么被推荐。</p>
+            <div id="tagDemo"></div>
+          </section>
+        </section>
+
+        <section class="view" id="itemcf">
+          <section class="panel">
+            <div class="panel-head">
+              <div>
+                <span class="eyebrow">Item Collaborative Filtering</span>
+                <h2>ItemCF：根据物品共现相似来推荐</h2>
+                <p>ItemCF 的核心不是物品内容，而是用户行为：很多人同时喜欢 A 和 B，就认为 A 和 B 相似。</p>
+              </div>
+            </div>
+            <div class="grid two">
+              <div class="explain-card">
+                <h3>白话理解</h3>
+                <p>很多学过“Embedding”的人也学“向量库”，那这两个物品就有共现关系。你喜欢 Embedding，系统可能推荐向量库。</p>
+              </div>
+              <div class="explain-card">
+                <h3>关键公式</h3>
+                <p>sim(i, j) = 喜欢 i 和 j 的用户数 / sqrt(喜欢 i 的用户数 * 喜欢 j 的用户数)</p>
+              </div>
+            </div>
+          </section>
+          <section class="panel">
+            <h2>ItemCF 完整拆解</h2>
+            <div class="module-map">
+              <article>
+                <strong>这一模块你要学会什么</strong>
+                <p>你要能从用户行为表算出物品共现，再把共现变成物品相似度，最后用用户历史喜欢物品给候选物品累加推荐分。</p>
+              </article>
+              <article>
+                <strong>最小数据结构</strong>
+                <p>只需要 user_id、item_id、behavior。ItemCF 不关心标题语义，关键是“哪些物品被同一批用户一起喜欢”。</p>
+              </article>
+              <article>
+                <strong>手算顺序</strong>
+                <p>统计 count(A)、count(B)、co_count(A,B)，计算 sim(A,B)，再对目标用户的多个历史物品贡献求和。</p>
+              </article>
+            </div>
+            <div class="lesson-grid">
+              <article class="lesson-card">
+                <span>01</span>
+                <strong>数据从哪里来</strong>
+                <p>ItemCF 只需要用户行为表：谁喜欢了什么、谁点击了什么、谁购买了什么。它不依赖物品标题，也不需要理解文本。</p>
+              </article>
+              <article class="lesson-card">
+                <span>02</span>
+                <strong>共现是什么意思</strong>
+                <p>如果很多用户同时喜欢 A 和 B，就说 A 和 B 共现多。共现越多，通常表示两个物品越相似。</p>
+              </article>
+              <article class="lesson-card">
+                <span>03</span>
+                <strong>为什么要归一化</strong>
+                <p>热门物品天然会和很多东西共现，如果不归一化，所有东西都像热门物品。除以 sqrt(count(A) * count(B)) 可以削弱热门物品的霸榜影响。</p>
+              </article>
+              <article class="lesson-card">
+                <span>04</span>
+                <strong>推荐分怎么来</strong>
+                <p>看用户已喜欢物品，找到每个历史物品相似的候选，把相似度累加成推荐分。推荐分越高，候选越靠前。</p>
+              </article>
+              <article class="lesson-card">
+                <span>05</span>
+                <strong>最大优点</strong>
+                <p>推荐理由清楚，工程实现稳定，适合物品相对稳定、用户行为较多的系统，比如课程、文章、商品推荐。</p>
+              </article>
+              <article class="lesson-card">
+                <span>06</span>
+                <strong>主要缺点</strong>
+                <p>新物品没人喜欢过，就没有共现关系；新用户没有行为，也无法知道他喜欢什么。这就是冷启动问题。</p>
+              </article>
+            </div>
+          </section>
+          <section class="panel">
+            <h2>本模块动手验证：共现如何变成推荐</h2>
+            <p>看用户历史喜欢物品如何通过物品相似度，把候选物品推上推荐榜。</p>
+            <div id="itemcfDemo"></div>
+          </section>
+        </section>
+
+        <section class="view" id="usercf">
+          <section class="panel">
+            <div class="panel-head">
+              <div>
+                <span class="eyebrow">User Collaborative Filtering</span>
+                <h2>UserCF：根据相似用户来推荐</h2>
+                <p>UserCF 先找“和你兴趣相似的人”，再把他们喜欢但你没看过的东西推荐给你。</p>
+              </div>
+            </div>
+            <div class="grid two">
+              <div class="explain-card">
+                <h3>白话理解</h3>
+                <p>如果你和小林都喜欢 RAG、Embedding、向量库，而小林还喜欢 Rerank，那么系统可能把 Rerank 推荐给你。</p>
+              </div>
+              <div class="explain-card">
+                <h3>和 ItemCF 的区别</h3>
+                <p>ItemCF 问“物品和物品像不像”；UserCF 问“用户和用户像不像”。两者都来自行为，不直接理解内容。</p>
+              </div>
+            </div>
+          </section>
+          <section class="panel">
+            <h2>UserCF 完整拆解</h2>
+            <div class="module-map">
+              <article>
+                <strong>这一模块你要学会什么</strong>
+                <p>你要能从用户行为表算出用户相似度，再看相似用户喜欢过但当前用户没喜欢过的物品，把它们变成推荐候选。</p>
+              </article>
+              <article>
+                <strong>最小数据结构</strong>
+                <p>每个用户都可以表示成一个喜欢物品集合。两个集合重合越多，用户兴趣越相似。</p>
+              </article>
+              <article>
+                <strong>手算顺序</strong>
+                <p>列出目标用户喜欢集合，列出其他用户喜欢集合，算相似度，找相似用户贡献候选物品。</p>
+              </article>
+            </div>
+            <div class="lesson-grid">
+              <article class="lesson-card">
+                <span>01</span>
+                <strong>数据从哪里来</strong>
+                <p>UserCF 也使用用户行为表，但它先比较用户和用户，而不是物品和物品。</p>
+              </article>
+              <article class="lesson-card">
+                <span>02</span>
+                <strong>用户相似怎么计算</strong>
+                <p>如果两个用户喜欢过很多相同物品，就认为他们兴趣相似。这里用集合余弦相似度演示。</p>
+              </article>
+              <article class="lesson-card">
+                <span>03</span>
+                <strong>推荐分怎么来</strong>
+                <p>找到相似用户后，看这些相似用户喜欢过、当前用户没喜欢过的物品。相似用户越相似，贡献越高。</p>
+              </article>
+              <article class="lesson-card">
+                <span>04</span>
+                <strong>和 ItemCF 的区别</strong>
+                <p>ItemCF 更像“你喜欢的东西相似的东西”；UserCF 更像“和你相似的人还喜欢什么”。</p>
+              </article>
+              <article class="lesson-card">
+                <span>05</span>
+                <strong>最大优点</strong>
+                <p>容易理解人群兴趣，适合社区、社交、兴趣圈层明显的场景。</p>
+              </article>
+              <article class="lesson-card">
+                <span>06</span>
+                <strong>主要缺点</strong>
+                <p>用户数量很大时，计算用户两两相似会很重；用户兴趣变化快时，相似用户也容易过期。</p>
+              </article>
+            </div>
+          </section>
+          <section class="panel">
+            <h2>本模块动手验证：相似用户如何贡献推荐</h2>
+            <p>先看谁和当前用户相似，再看这些相似用户喜欢过什么候选物品。</p>
+            <div id="usercfDemo"></div>
+          </section>
+        </section>
+
+        <section class="view" id="svd">
+          <section class="panel">
+            <div class="panel-head">
+              <div>
+                <span class="eyebrow">Matrix Factorization</span>
+                <h2>SVD / 矩阵分解：学习用户和物品的隐向量</h2>
+                <p>SVD 不直接数标签或共现，而是把用户和物品都压缩到一个低维兴趣空间里。</p>
+              </div>
+            </div>
+            <div class="grid two">
+              <div class="explain-card">
+                <h3>白话理解</h3>
+                <p>它会尝试学出一些看不见的维度，比如“偏 AI 工程”“偏算法数学”“偏产品应用”。用户和物品在这些维度上越匹配，推荐分越高。</p>
+              </div>
+              <div class="explain-card">
+                <h3>核心直觉</h3>
+                <p>用户向量 · 物品向量 = 预测喜欢程度。点积越大，表示这个物品越符合用户的潜在兴趣。</p>
+              </div>
+            </div>
+          </section>
+          <section class="panel">
+            <h2>SVD / 矩阵分解完整拆解</h2>
+            <div class="module-map">
+              <article>
+                <strong>这一模块你要学会什么</strong>
+                <p>你要理解用户-物品行为矩阵很稀疏，SVD 会把用户和物品压缩成低维隐向量，再用点积预测喜欢程度。</p>
+              </article>
+              <article>
+                <strong>最小数据结构</strong>
+                <p>需要用户-物品评分或行为矩阵。学习阶段可以用喜欢=1、未发生=0，真实系统会区分点击、收藏、购买、评分权重。</p>
+              </article>
+              <article>
+                <strong>手算顺序</strong>
+                <p>先理解矩阵每一行是用户、每一列是物品，再理解用户向量和物品向量点积越大，预测兴趣越强。</p>
+              </article>
+            </div>
+            <div class="lesson-grid">
+              <article class="lesson-card">
+                <span>01</span>
+                <strong>它和 CF 最大区别</strong>
+                <p>ItemCF/UserCF 直接基于共现或相似用户；SVD 会学习一组隐含维度，把用户和物品都变成低维向量。</p>
+              </article>
+              <article class="lesson-card">
+                <span>02</span>
+                <strong>隐向量是什么</strong>
+                <p>隐向量不是人工写的标签，而是算法从行为矩阵里学出来的潜在兴趣。真实系统里这些维度通常不能直接命名。</p>
+              </article>
+              <article class="lesson-card">
+                <span>03</span>
+                <strong>推荐分怎么来</strong>
+                <p>用户向量和物品向量做点积。点积越大，表示用户的潜在兴趣和物品的潜在属性越匹配。</p>
+              </article>
+              <article class="lesson-card">
+                <span>04</span>
+                <strong>为什么能处理稀疏</strong>
+                <p>用户不可能看过所有物品，行为矩阵非常稀疏。矩阵分解能用少量维度概括用户和物品，预测没发生过的行为。</p>
+              </article>
+              <article class="lesson-card">
+                <span>05</span>
+                <strong>最大优点</strong>
+                <p>能发现标签和共现之外的潜在关系，是很多经典推荐模型和深度推荐模型的基础。</p>
+              </article>
+              <article class="lesson-card">
+                <span>06</span>
+                <strong>主要缺点</strong>
+                <p>解释性比标签推荐和 ItemCF 弱；训练、调参、更新也更复杂。新手先理解点积和隐向量即可。</p>
+              </article>
+            </div>
+          </section>
+          <section class="panel">
+            <h2>本模块动手验证：隐向量如何产生推荐分</h2>
+            <p>看当前用户隐向量，再看候选物品隐向量，理解点积为什么能表示匹配程度。</p>
+            <div id="svdDemo"></div>
+          </section>
+        </section>
+
+        <section class="view" id="playground">
+          <section class="panel">
+            <div class="panel-head">
+              <div>
+                <span class="eyebrow">Compare</span>
+                <h2>算法对比台：同一个用户，不同算法推荐什么</h2>
+                <p>切换用户和算法，观察推荐来源、分数和可视化链路。</p>
+              </div>
+              <div class="inline-controls">
+                <select id="algorithmSelect">
+                  <option value="tag">标签/内容推荐</option>
+                  <option value="itemcf">ItemCF</option>
+                  <option value="usercf">UserCF</option>
+                  <option value="svd">SVD</option>
+                </select>
+                <select id="topNSelect">
+                  <option value="3">Top 3</option>
+                  <option value="5" selected>Top 5</option>
+                  <option value="8">Top 8</option>
+                </select>
+              </div>
+            </div>
+            <div class="playground-grid">
+              <div>
+                <div id="dataWorkbench"></div>
+                <h3>当前用户画像</h3>
+                <div id="userProfile"></div>
+                <h3>推荐结果</h3>
+                <div id="recommendationList"></div>
+              </div>
+              <div>
+                <h3>匹配过程画布</h3>
+                <div class="canvas-shell">
+                  <canvas id="recCanvas"></canvas>
+                  <div class="tooltip" id="canvasTip"></div>
+                </div>
+                <div id="algorithmExplain" class="plain-card"></div>
+              </div>
+            </div>
+          </section>
+        </section>
+
+        <section class="view" id="interview">
+          <section class="panel">
+            <div class="panel-head">
+              <div>
+                <span class="eyebrow">Interview</span>
+                <h2>推荐系统面试题</h2>
+                <p>先会讲清区别，再会结合场景选算法。</p>
+              </div>
+            </div>
+            <div class="interview-grid" id="interviewList"></div>
+          </section>
+        </section>
+      </main>
+    </div>
+    <script src="./recommendation-shared.js?v=20260512-data-v1"></script>
+    <script src="./app.js?v=20260512-data-v1"></script>
+  </body>
+</html>

@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>UserCF 实验室</title>
+    <link rel="icon" href="data:," />
+    <link rel="stylesheet" href="./styles.css?v=20260512-data-v1" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="project-switcher">
+          <button class="brand project-trigger" id="projectTrigger" aria-expanded="false">
+            <div class="brand-mark">人</div>
+            <div>
+              <strong>UserCF 实验室</strong>
+              <span>相似用户 + 推荐贡献</span>
+            </div>
+            <i>切换</i>
+          </button>
+          <div class="project-menu" id="projectMenu"></div>
+        </div>
+        <nav class="nav">
+          <button class="nav-item is-active" data-view="overview"><span>01</span><b>项目总览</b></button>
+          <button class="nav-item" data-view="lab"><span>02</span><b>UserCF 实验台</b></button>
+          <button class="nav-item" data-view="visual"><span>03</span><b>3D 用户相似</b></button>
+          <button class="nav-item" data-view="roadmap"><span>04</span><b>学习路线</b></button>
+        </nav>
+        <div class="side-note">
+          <span>当前阶段</span>
+          <strong>看懂相似用户</strong>
+          <p>先找和你兴趣相似的人，再推荐他们喜欢而你没看过的内容。</p>
+        </div>
+      </aside>
+
+      <main class="main">
+        <header class="topbar">
+          <div>
+            <span class="eyebrow">User Collaborative Filtering Lab</span>
+            <h1 id="pageTitle">项目总览</h1>
+          </div>
+          <div class="top-actions">
+            <select id="userSelect"></select>
+            <button class="primary-btn" data-view-link="lab">开始实验</button>
+          </div>
+        </header>
+
+        <section class="view is-active" id="overview">
+          <div class="hero-panel">
+            <div>
+              <span class="eyebrow">从相似用户产生推荐</span>
+              <h2>UserCF：找到和当前用户兴趣相似的人，再推荐他们喜欢的物品。</h2>
+              <p>UserCF 的思路非常像现实生活：你和某个朋友口味很像，那么他喜欢而你没看过的东西，可能也值得推荐给你。</p>
+              <div class="hero-actions">
+                <button class="primary-btn" data-view-link="lab">打开 UserCF 实验台</button>
+                <button class="secondary-btn" data-view-link="visual">看 3D 用户相似</button>
+              </div>
+            </div>
+            <div class="flow-card">
+              <article><span>01</span><strong>用户行为集合</strong><small>每个用户喜欢过什么</small></article>
+              <article><span>02</span><strong>用户相似度</strong><small>行为集合重合越多越相似</small></article>
+              <article><span>03</span><strong>候选物品</strong><small>相似用户喜欢而当前用户没喜欢</small></article>
+              <article><span>04</span><strong>推荐贡献</strong><small>相似度越高贡献越大</small></article>
+            </div>
+          </div>
+          <section class="panel">
+            <h2>UserCF 知识拆解</h2>
+            <div class="lesson-grid">
+              <article class="lesson-card"><span>01</span><strong>用户怎么表示</strong><p>把用户表示成喜欢物品集合，比如小周 = {RAG, Embedding, 向量库}。</p></article>
+              <article class="lesson-card"><span>02</span><strong>用户相似度</strong><p>两个集合重合越多，相似度越高。这里用余弦相似度。</p></article>
+              <article class="lesson-card"><span>03</span><strong>候选怎么来</strong><p>相似用户喜欢过、当前用户没喜欢过的物品，就是候选。</p></article>
+              <article class="lesson-card"><span>04</span><strong>推荐分怎么来</strong><p>多个相似用户都喜欢同一个候选，它的推荐分会累加。</p></article>
+              <article class="lesson-card"><span>05</span><strong>优点</strong><p>容易解释人群兴趣，适合社区、社交和兴趣圈层明显的场景。</p></article>
+              <article class="lesson-card"><span>06</span><strong>缺点</strong><p>用户多时计算压力大，用户兴趣变化快时相似关系容易过期。</p></article>
+            </div>
+          </section>
+        </section>
+
+        <section class="view" id="lab">
+          <section class="panel">
+            <div id="dataWorkbench"></div>
+            <div class="demo-grid">
+              <div>
+                <h2>相似用户</h2>
+                <div id="similarUsers"></div>
+                <h3>手算公式</h3>
+                <div class="formula">sim(u, v) = 共同喜欢数量 / sqrt(u 喜欢数量 * v 喜欢数量)</div>
+              </div>
+              <div>
+                <h2>Top N 推荐</h2>
+                <div id="resultPanel"></div>
+              </div>
+            </div>
+            <h3>计算过程拆解</h3>
+            <div id="tracePanel" class="lesson-grid"></div>
+          </section>
+        </section>
+
+        <section class="view" id="visual">
+          <section class="panel">
+            <h2>3D 用户相似空间</h2>
+            <p>中心是当前用户，周围是其他用户。越靠近中心，相似度越高；右侧候选由相似用户贡献。</p>
+            <div class="canvas-shell">
+              <canvas id="userCanvas"></canvas>
+              <div class="tooltip" id="canvasTip"></div>
+            </div>
+            <div class="lesson-grid">
+              <article class="lesson-card"><span>读图 1</span><strong>当前用户</strong><p>当前用户是推荐目标。系统先读取他的历史行为，把他变成一个喜欢物品集合。</p></article>
+              <article class="lesson-card"><span>读图 2</span><strong>相似用户</strong><p>其他用户越靠近当前用户，说明共同喜欢的内容越多，相似度越高。</p></article>
+              <article class="lesson-card"><span>读图 3</span><strong>推荐候选</strong><p>右侧候选来自相似用户喜欢过、当前用户没喜欢过的物品。连线表示谁贡献了这个推荐。</p></article>
+            </div>
+          </section>
+        </section>
+
+        <section class="view" id="roadmap">
+          <section class="panel">
+            <h2>学习路线与面试题</h2>
+            <div id="roadmapPanel" class="interview-grid"></div>
+          </section>
+        </section>
+      </main>
+    </div>
+    <script src="../../推荐系统核心技术实验室/前端原型/recommendation-shared.js?v=20260512-data-v1"></script>
+    <script src="./app.js?v=20260512-data-v1"></script>
+  </body>
+</html>

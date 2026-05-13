@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>四类 RAG 学习手册</title>
+  <style>
+    :root {
+      --bg: #f4f7f9;
+      --paper: #fff;
+      --ink: #172229;
+      --muted: #66727f;
+      --line: #dfe6ec;
+      --brand: #1f7a8c;
+      --deep: #10252c;
+      --accent: #d97706;
+      --soft: #eef4f8;
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: linear-gradient(120deg, rgba(31,122,140,.09), transparent 34%), var(--bg);
+    }
+    header {
+      padding: 44px 20px 28px;
+      color: #eef8fa;
+      background: linear-gradient(135deg, #10252c, #1f7a8c);
+    }
+    .wrap { max-width: 1120px; margin: 0 auto; }
+    h1 { margin: 0; font-size: clamp(32px, 6vw, 64px); line-height: 1.08; letter-spacing: 0; }
+    header p { max-width: 760px; margin: 18px 0 0; color: #cfe0e4; line-height: 1.8; font-size: 17px; }
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 3;
+      border-bottom: 1px solid var(--line);
+      background: rgba(255,255,255,.92);
+      backdrop-filter: blur(14px);
+    }
+    nav .wrap { display: flex; gap: 8px; overflow-x: auto; padding: 10px 20px; }
+    nav a {
+      flex: 0 0 auto;
+      min-height: 36px;
+      display: inline-flex;
+      align-items: center;
+      padding: 0 12px;
+      border-radius: 8px;
+      color: var(--deep);
+      background: var(--soft);
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 14px;
+    }
+    main { padding: 22px 20px 40px; }
+    section {
+      margin: 18px auto;
+      padding: 24px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--paper);
+      box-shadow: 0 12px 34px rgba(16,37,44,.07);
+    }
+    h2 { margin: 0 0 10px; font-size: clamp(24px, 4vw, 36px); letter-spacing: 0; }
+    h3 { margin: 22px 0 8px; font-size: 20px; }
+    p, li { color: var(--muted); line-height: 1.85; }
+    .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+    .card { padding: 16px; border: 1px solid var(--line); border-radius: 8px; background: #fff; }
+    .card strong { display: block; margin-bottom: 6px; color: var(--ink); }
+    pre {
+      overflow-x: auto;
+      padding: 14px;
+      border-radius: 8px;
+      color: #eaf8fa;
+      background: var(--deep);
+      line-height: 1.7;
+    }
+    .callout { padding: 16px; border-left: 4px solid var(--brand); border-radius: 8px; background: #eef8fa; line-height: 1.8; }
+    table { width: 100%; border-collapse: collapse; min-width: 760px; }
+    .table-wrap { overflow-x: auto; }
+    th, td { padding: 12px; border: 1px solid var(--line); text-align: left; vertical-align: top; line-height: 1.7; }
+    th { background: var(--soft); }
+    @media (max-width: 760px) {
+      .grid { grid-template-columns: 1fr; }
+      section { padding: 18px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap">
+      <h1>四类 RAG 学习手册</h1>
+      <p>只学最重要的四条主线：Naive RAG 跑通基础链路，Advanced RAG 做企业级优化，Agentic RAG 做自主决策，Graph RAG 做复杂关系推理。</p>
+    </div>
+  </header>
+  <nav>
+    <div class="wrap">
+      <a href="#naive">Naive RAG</a>
+      <a href="#advanced">Advanced RAG</a>
+      <a href="#agentic">Agentic RAG</a>
+      <a href="#graph">Graph RAG</a>
+      <a href="#route">学习路线</a>
+    </div>
+  </nav>
+  <main class="wrap">
+    <section>
+      <h2>为什么只保留这四类</h2>
+      <p>RAG 分类很多，但对你现在来说，太多分类会分散注意力。Standard RAG 可以归到 Naive RAG；Hybrid、Fusion、Adaptive 的很多能力可以归到 Advanced RAG；Multi-Modal、Structured、Code 是知识形态扩展，后面再作为专项做。</p>
+      <div class="callout"><strong>当前重点：</strong>Naive RAG 跑通 + Advanced RAG 深入。这两步学扎实，就已经具备企业 RAG 项目的核心能力。</div>
+    </section>
+
+    <section id="naive">
+      <h2>1. Naive RAG：基础 / 标准 RAG</h2>
+      <pre>文档 -> 分块 -> 向量化 -> 向量检索 -> 拼接上下文 -> 大模型生成回答</pre>
+      <div class="grid">
+        <div class="card"><strong>是什么</strong><p>最基础的 RAG。先把文档切成小块，再把问题和文档块都变成向量，找最相似的片段，让大模型基于片段回答。</p></div>
+        <div class="card"><strong>适合什么</strong><p>FAQ、简单文档问答、产品说明问答、RAG 入门项目。</p></div>
+        <div class="card"><strong>优点</strong><p>简单、清晰、容易部署，是所有高级 RAG 的地基。</p></div>
+        <div class="card"><strong>缺点</strong><p>检索不准时容易答偏；没有重排序、查询改写和评测时，幻觉风险更高。</p></div>
+      </div>
+      <h3>在知行者里怎么练</h3>
+      <p>进入 RAG 实验室，用默认参数跑一次“RAG 的核心流程是什么？”。重点看命中片段是否包含答案、引用是否来自正确文档。</p>
+    </section>
+
+    <section id="advanced">
+      <h2>2. Advanced RAG：进阶 / 企业级 RAG</h2>
+      <pre>检索前：查询重写、扩展、意图识别
+检索中：Hybrid 检索、多路召回
+检索后：Rerank、上下文压缩、去冗余
+评测：无依据拒答、自动评测集</pre>
+      <div class="grid">
+        <div class="card"><strong>是什么</strong><p>在 Naive RAG 上做全流程优化，让检索更准、证据更干净、回答更可信。</p></div>
+        <div class="card"><strong>适合什么</strong><p>企业知识库、测试知识助手、智能客服、产品助手等需要较高准确率的场景。</p></div>
+        <div class="card"><strong>优点</strong><p>更接近工业界主流，能处理更多复杂问题，可以通过评测持续优化。</p></div>
+        <div class="card"><strong>缺点</strong><p>链路更长，参数更多，如果没有评测集，很难知道优化是否真的有效。</p></div>
+      </div>
+      <h3>在知行者里怎么练</h3>
+      <p>同一个问题只改一个变量：先对比 Hybrid 开关，再对比 Rerank 开关，最后运行自动评测集，看通过率是否变化。</p>
+    </section>
+
+    <section id="agentic">
+      <h2>3. Agentic RAG：智能体 RAG</h2>
+      <pre>判断是否需要检索 -> 决定检索什么 -> 调用工具 -> 检查证据是否够 -> 不够继续检索 -> 生成回答或任务</pre>
+      <div class="grid">
+        <div class="card"><strong>是什么</strong><p>用大模型当智能体，动态决定是否检索、检索几次、用什么工具、是否反思修正。</p></div>
+        <div class="card"><strong>适合什么</strong><p>复杂多跳问题、长任务、自动分析报告、测试风险分析、需要工具调用的工作流。</p></div>
+        <div class="card"><strong>优点</strong><p>更像真正的 AI 助手，能把知识问答扩展成计划、任务和复盘。</p></div>
+        <div class="card"><strong>缺点</strong><p>更难测试，可能循环检索、调用错工具、成本失控，需要步骤日志和停止条件。</p></div>
+      </div>
+      <h3>在知行者里未来怎么做</h3>
+      <p>让 AI 自动拆解问题、选择知识库、检索资料、判断依据是否足够、生成任务，并进入复盘。它会把知行者从知识问答升级成知识行动助手。</p>
+    </section>
+
+    <section id="graph">
+      <h2>4. Graph RAG：图谱 RAG</h2>
+      <pre>文档 -> 实体抽取 -> 关系抽取 -> 知识图谱 -> 图检索 / 多跳推理 -> 生成回答</pre>
+      <div class="grid">
+        <div class="card"><strong>是什么</strong><p>把文档构建成实体和关系组成的知识图谱，再支持多跳关联推理。</p></div>
+        <div class="card"><strong>适合什么</strong><p>金融风控、医疗知识关联、法律条文推理、组织关系、论文方法关系分析。</p></div>
+        <div class="card"><strong>优点</strong><p>适合回答“谁影响谁”“A 和 B 有什么关系”“多份资料之间如何关联”。</p></div>
+        <div class="card"><strong>缺点</strong><p>构建成本高，实体和关系抽取容易出错，需要图数据库或图查询能力。</p></div>
+      </div>
+      <h3>你现在怎么学</h3>
+      <p>先不用实现。现在只要能从文档里识别实体和关系，并画出简单关系图。Graph RAG 是后期专项，不是当前主线。</p>
+    </section>
+
+    <section id="route">
+      <h2>最终学习路线</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>阶段</th><th>学习目标</th><th>知行者里怎么做</th></tr></thead>
+          <tbody>
+            <tr><td>Naive RAG</td><td>跑通上传、切片、向量化、检索、回答、引用。</td><td>用 RAG 实验室默认参数跑通基础问题。</td></tr>
+            <tr><td>Advanced RAG</td><td>掌握 Hybrid、Rerank、评测集、拒答、上下文优化。</td><td>对比参数并运行自动评测集。</td></tr>
+            <tr><td>Agentic RAG</td><td>让系统能判断、检索、反思、生成任务。</td><td>设计问题拆解和工具调用流程。</td></tr>
+            <tr><td>Graph RAG</td><td>做实体关系、多跳推理、复杂知识关联。</td><td>先从 AI 前沿资料包抽取实体关系。</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

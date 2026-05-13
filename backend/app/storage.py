@@ -73,6 +73,9 @@ def init_db() -> None:
             CREATE TABLE IF NOT EXISTS chunk_vectors (
                 chunk_id TEXT PRIMARY KEY,
                 vector_json TEXT NOT NULL,
+                model_name TEXT NOT NULL DEFAULT 'local-hash-384',
+                provider TEXT NOT NULL DEFAULT 'local',
+                dimensions INTEGER NOT NULL DEFAULT 384,
                 updated_at TEXT NOT NULL,
                 FOREIGN KEY (chunk_id) REFERENCES document_chunks(id) ON DELETE CASCADE
             );
@@ -142,8 +145,98 @@ def init_db() -> None:
 
             CREATE INDEX IF NOT EXISTS idx_live_trend_explanations_status
             ON live_trend_explanations(status);
+
+            CREATE TABLE IF NOT EXISTS rag_lab_runs (
+                id TEXT PRIMARY KEY,
+                knowledge_base_id TEXT NOT NULL,
+                question TEXT NOT NULL,
+                params_json TEXT NOT NULL,
+                chunk_count INTEGER NOT NULL DEFAULT 0,
+                retrieved_chunks_json TEXT NOT NULL DEFAULT '[]',
+                evaluation_json TEXT NOT NULL DEFAULT '{}',
+                learning_notes_json TEXT NOT NULL DEFAULT '[]',
+                created_at TEXT NOT NULL,
+                FOREIGN KEY (knowledge_base_id) REFERENCES knowledge_bases(id) ON DELETE CASCADE
+            );
+
+            CREATE INDEX IF NOT EXISTS idx_rag_lab_runs_kb_created
+            ON rag_lab_runs(knowledge_base_id, created_at);
+
+            CREATE TABLE IF NOT EXISTS agent_lab_runs (
+                id TEXT PRIMARY KEY,
+                knowledge_base_id TEXT NOT NULL,
+                goal TEXT NOT NULL,
+                mode TEXT NOT NULL,
+                summary TEXT NOT NULL DEFAULT '',
+                steps_json TEXT NOT NULL DEFAULT '[]',
+                suggested_tasks_json TEXT NOT NULL DEFAULT '[]',
+                created_task_ids_json TEXT NOT NULL DEFAULT '[]',
+                created_at TEXT NOT NULL,
+                FOREIGN KEY (knowledge_base_id) REFERENCES knowledge_bases(id) ON DELETE CASCADE
+            );
+
+            CREATE INDEX IF NOT EXISTS idx_agent_lab_runs_kb_created
+            ON agent_lab_runs(knowledge_base_id, created_at);
+
+            CREATE TABLE IF NOT EXISTS rag_eval_cases (
+                id TEXT PRIMARY KEY,
+                knowledge_base_id TEXT NOT NULL,
+                question TEXT NOT NULL,
+                expected_verdict TEXT NOT NULL,
+                expected_terms TEXT NOT NULL DEFAULT '[]',
+                note TEXT NOT NULL DEFAULT '',
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL,
+                FOREIGN KEY (knowledge_base_id) REFERENCES knowledge_bases(id) ON DELETE CASCADE
+            );
+
+            CREATE INDEX IF NOT EXISTS idx_rag_eval_cases_kb_created
+            ON rag_eval_cases(knowledge_base_id, created_at);
+
+            CREATE TABLE IF NOT EXISTS rag_eval_batches (
+                id TEXT PRIMARY KEY,
+                knowledge_base_id TEXT NOT NULL,
+                params_json TEXT NOT NULL,
+                total_count INTEGER NOT NULL DEFAULT 0,
+                passed_count INTEGER NOT NULL DEFAULT 0,
+                failed_count INTEGER NOT NULL DEFAULT 0,
+                pass_rate REAL NOT NULL DEFAULT 0,
+                created_at TEXT NOT NULL,
+                FOREIGN KEY (knowledge_base_id) REFERENCES knowledge_bases(id) ON DELETE CASCADE
+            );
+
+            CREATE INDEX IF NOT EXISTS idx_rag_eval_batches_kb_created
+            ON rag_eval_batches(knowledge_base_id, created_at);
+
+            CREATE TABLE IF NOT EXISTS rag_eval_results (
+                id TEXT PRIMARY KEY,
+                batch_id TEXT NOT NULL,
+                case_id TEXT NOT NULL,
+                question TEXT NOT NULL,
+                expected_verdict TEXT NOT NULL,
+                actual_verdict TEXT NOT NULL,
+                passed INTEGER NOT NULL DEFAULT 0,
+                reason TEXT NOT NULL DEFAULT '',
+                evaluation_json TEXT NOT NULL DEFAULT '{}',
+                retrieved_chunks_json TEXT NOT NULL DEFAULT '[]',
+                created_at TEXT NOT NULL,
+                FOREIGN KEY (batch_id) REFERENCES rag_eval_batches(id) ON DELETE CASCADE,
+                FOREIGN KEY (case_id) REFERENCES rag_eval_cases(id) ON DELETE CASCADE
+            );
+
+            CREATE INDEX IF NOT EXISTS idx_rag_eval_results_batch
+            ON rag_eval_results(batch_id);
             """
         )
+        ensure_column(conn, "chunk_vectors", "model_name", "TEXT NOT NULL DEFAULT 'local-hash-384'")
+        ensure_column(conn, "chunk_vectors", "provider", "TEXT NOT NULL DEFAULT 'local'")
+        ensure_column(conn, "chunk_vectors", "dimensions", "INTEGER NOT NULL DEFAULT 384")
+
+
+def ensure_column(conn: sqlite3.Connection, table: str, column: str, definition: str) -> None:
+    columns = {row["name"] for row in conn.execute(f"PRAGMA table_info({table})").fetchall()}
+    if column not in columns:
+        conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {definition}")
 
 
 def row_to_dict(row: Optional[sqlite3.Row]) -> Optional[Dict[str, Any]]:
